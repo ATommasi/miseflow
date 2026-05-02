@@ -1,6 +1,6 @@
 {
-	"name": "obsidian-pantry",
-	"version": "1.0.0",
+	"name": "pantry",
+	"version": "1.0.1",
 	"description": "Plan meals, generate grocery lists, and view recipe notes as interactive cards.",
 	"main": "main.js",
 	"type": "module",

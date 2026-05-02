@@ -215,7 +215,7 @@ npm run build    # type-check and produce a production main.js
 npm run lint     # run eslint
 ```
 
-To test locally, this folder must live at `<Vault>/.obsidian/plugins/obsidian-pantry/` (matching the `id` in `manifest.json`). After building, reload Obsidian and enable **Pantry** under **Settings → Community plugins**.
+To test locally, this folder must live at `<Vault>/.obsidian/plugins/pantry/` (matching the `id` in `manifest.json`). After building, reload Obsidian and enable **Pantry** under **Settings → Community plugins**.
 
 ## Release
 
