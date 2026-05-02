@@ -1,0 +1,10 @@
+{
+	"id": "obsidian-pantry",
+	"name": "Pantry",
+	"version": "1.0.0",
+	"minAppVersion": "1.12.0",
+	"description": "Manage your recipes and generate grocery lists.",
+	"author": "TheEkrizdis",
+	"authorUrl": "",
+	"isDesktopOnly": false
+}

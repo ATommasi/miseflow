@@ -1,0 +1,1199 @@
+.pantry-view {
+	padding: var(--size-4-3);
+	padding-bottom: calc(var(--size-4-12) + var(--safe-area-inset-bottom, 0px));
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-4-2);
+	overflow-y: auto;
+}
+
+.is-mobile .pantry-view {
+	padding-bottom: calc(var(--size-4-16) + var(--safe-area-inset-bottom, 0px));
+}
+
+.pantry-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	flex-wrap: wrap;
+	gap: var(--size-4-2);
+}
+
+.pantry-title {
+	font-size: var(--font-ui-large);
+	font-weight: var(--font-semibold);
+}
+
+.pantry-actions {
+	display: flex;
+	align-items: center;
+	gap: var(--size-2-2);
+	flex-wrap: wrap;
+}
+
+.pantry-actions .clickable-icon {
+	padding: var(--size-2-1);
+}
+
+.pantry-add {
+	margin-left: var(--size-2-1);
+	background-color: var(--color-green, #2ea043);
+	color: var(--text-on-accent, #ffffff);
+	border: none;
+}
+
+.pantry-add:hover,
+.pantry-add:focus-visible {
+	background-color: var(--color-green, #2ea043);
+	filter: brightness(1.1);
+	color: var(--text-on-accent, #ffffff);
+}
+
+.pantry-clear {
+	margin-left: var(--size-2-1);
+}
+
+.pantry-summary {
+	font-size: var(--font-ui-small);
+	color: var(--text-muted);
+}
+
+.pantry-recipes:not(:empty) {
+	padding: var(--size-2-3) var(--size-2-3);
+	background: var(--background-secondary);
+	border-radius: var(--radius-m);
+}
+
+.pantry-recipes-header {
+	font-size: var(--font-ui-small);
+	font-weight: var(--font-semibold);
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	color: var(--text-muted);
+	margin-bottom: var(--size-2-2);
+}
+
+.pantry-recipes-list {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: block;
+	line-height: 1.7;
+}
+
+.pantry-recipe-link {
+	color: var(--text-normal);
+	text-decoration: none;
+	cursor: pointer;
+}
+
+.pantry-recipe-link:hover,
+.pantry-recipe-link:focus-visible {
+	color: var(--text-accent);
+	text-decoration: underline;
+}
+
+.pantry-recipe {
+	display: inline;
+}
+
+.pantry-recipe + .pantry-recipe::before {
+	content: ", ";
+	color: var(--text-muted);
+}
+
+.pantry-recipe .pantry-recipe-allergen-icon,
+.pantry-recipe .pantry-recipe-multiplier {
+	margin-inline-start: var(--size-2-2);
+	vertical-align: middle;
+}
+
+.pantry-recipe-multiplier {
+	font-size: var(--font-ui-smaller);
+	font-weight: var(--font-semibold);
+	font-variant-numeric: tabular-nums;
+	color: var(--text-on-accent, #ffffff);
+	background-color: var(--interactive-accent);
+	padding: 0 var(--size-2-2);
+	border-radius: var(--radius-s);
+	flex-shrink: 0;
+}
+
+.pantry-recipe-allergen-icon {
+	display: inline-flex;
+	align-items: center;
+	color: var(--color-red, #e5484d);
+	cursor: help;
+	flex-shrink: 0;
+}
+
+.pantry-recipe-allergen-icon .svg-icon {
+	width: 14px;
+	height: 14px;
+}
+
+.pantry-empty {
+	padding: var(--size-4-4);
+	text-align: center;
+	color: var(--text-muted);
+}
+
+.pantry-empty .pantry-hint {
+	font-size: var(--font-ui-small);
+	margin-top: var(--size-4-2);
+}
+
+.pantry-group {
+	border-top: 1px solid var(--background-modifier-border);
+	padding-top: var(--size-4-2);
+}
+
+.pantry-group:first-of-type {
+	border-top: none;
+	padding-top: 0;
+}
+
+.pantry-group-header {
+	display: flex;
+	align-items: center;
+	gap: var(--size-2-2);
+	width: 100%;
+	margin: 0 0 var(--size-2-2) 0;
+	padding: var(--size-2-1) var(--size-2-2);
+	background: transparent;
+	border: none;
+	border-radius: var(--radius-s);
+	color: var(--text-muted);
+	cursor: pointer;
+	text-align: left;
+	box-shadow: none;
+}
+
+.pantry-group-header:hover {
+	background-color: var(--background-modifier-hover);
+	color: var(--text-normal);
+}
+
+.pantry-chevron {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+	transition: transform 120ms ease-in-out;
+}
+
+.pantry-group.is-collapsed .pantry-chevron {
+	transform: rotate(-90deg);
+}
+
+.pantry-group-title {
+	font-size: var(--font-ui-small);
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	font-weight: var(--font-semibold);
+	flex-grow: 1;
+	margin: 0;
+}
+
+.pantry-group-count {
+	font-size: var(--font-ui-smaller);
+	font-variant-numeric: tabular-nums;
+	color: var(--text-faint);
+	flex-shrink: 0;
+}
+
+.pantry-group.is-complete .pantry-group-title,
+.pantry-group.is-complete .pantry-group-count {
+	color: var(--text-faint);
+}
+
+.pantry-group.is-collapsed .pantry-items {
+	display: none;
+}
+
+.pantry-items {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-2-1);
+}
+
+.pantry-item {
+	display: flex;
+	align-items: flex-start;
+	gap: var(--size-4-2);
+	padding: var(--size-2-2) var(--size-2-3);
+	border-radius: var(--radius-s);
+}
+
+.pantry-item:hover {
+	background-color: var(--background-modifier-hover);
+}
+
+.pantry-checkbox {
+	margin-top: 4px;
+	flex-shrink: 0;
+}
+
+.pantry-item-body {
+	display: flex;
+	flex-direction: column;
+	flex-grow: 1;
+	min-width: 0;
+}
+
+.pantry-item-main {
+	display: block;
+	word-break: break-word;
+}
+
+.pantry-qty {
+	font-variant-numeric: tabular-nums;
+	color: var(--text-muted);
+}
+
+.pantry-name {
+	color: var(--text-normal);
+	font-weight: var(--font-semibold);
+}
+
+.pantry-meta {
+	font-size: var(--font-ui-smaller);
+	color: var(--text-muted);
+	margin-top: 2px;
+}
+
+.pantry-item.is-checked .pantry-name,
+.pantry-item.is-checked .pantry-qty {
+	text-decoration: line-through;
+	color: var(--text-muted);
+}
+
+.pantry-remove {
+	flex-shrink: 0;
+	opacity: 0;
+	transition: opacity 120ms ease-in-out;
+}
+
+.pantry-item:hover .pantry-remove,
+.pantry-item:focus-within .pantry-remove {
+	opacity: 1;
+}
+
+/* ============================================================
+   Recipe view
+   ============================================================ */
+
+.pantry-recipe-view {
+	padding: var(--size-4-3);
+	max-width: 900px;
+	margin: 0 auto;
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-4-2);
+}
+
+.pantry-recipe-title-block {
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-2-2);
+}
+
+.pantry-recipe-title {
+	margin: 0;
+	font-size: var(--font-ui-larger);
+}
+
+.pantry-recipe-badges {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--size-2-2);
+}
+
+.pantry-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 2px 10px;
+	border-radius: 999px;
+	font-size: var(--font-ui-smaller);
+	line-height: 1.4;
+	font-weight: var(--font-medium);
+	background: var(--background-secondary);
+	color: var(--text-muted);
+	border: 1px solid var(--background-modifier-border);
+	white-space: nowrap;
+}
+
+.pantry-badge-icon {
+	display: inline-flex;
+	color: var(--text-faint);
+}
+
+.pantry-badge-icon .svg-icon {
+	width: 12px;
+	height: 12px;
+}
+
+.pantry-badge-label {
+	color: var(--text-muted);
+	text-transform: uppercase;
+	font-size: var(--font-ui-smaller);
+	letter-spacing: 0.04em;
+}
+
+.pantry-badge-value {
+	color: var(--text-normal);
+	font-variant-numeric: tabular-nums;
+}
+
+.pantry-badge-diet {
+	background: var(--background-modifier-success-rgb, var(--background-secondary));
+	color: var(--color-green, #2ea043);
+	border-color: color-mix(in srgb, var(--color-green, #2ea043) 30%, transparent);
+	background-color: color-mix(in srgb, var(--color-green, #2ea043) 12%, var(--background-secondary));
+	text-transform: capitalize;
+}
+
+.pantry-recipe-allergen-warning {
+	display: flex;
+	gap: var(--size-4-2);
+	align-items: flex-start;
+	padding: var(--size-4-2);
+	border-radius: var(--radius-l);
+	background-color: color-mix(in srgb, var(--color-red, #e5484d) 12%, var(--background-secondary));
+	border: 1px solid color-mix(in srgb, var(--color-red, #e5484d) 35%, transparent);
+	color: var(--text-normal);
+}
+
+.pantry-recipe-allergen-warning-icon {
+	display: inline-flex;
+	color: var(--color-red, #e5484d);
+	flex-shrink: 0;
+	margin-top: 2px;
+}
+
+.pantry-recipe-allergen-warning-icon .svg-icon {
+	width: 20px;
+	height: 20px;
+}
+
+.pantry-recipe-allergen-warning-body {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	min-width: 0;
+}
+
+.pantry-recipe-allergen-warning-title {
+	font-weight: var(--font-semibold);
+	color: var(--color-red, #e5484d);
+}
+
+.pantry-recipe-allergen-warning-text {
+	color: var(--text-normal);
+	text-transform: capitalize;
+}
+
+.pantry-recipe-meta-actions {
+	display: inline-flex;
+	gap: var(--size-2-2);
+	align-items: center;
+	flex-shrink: 0;
+}
+
+.pantry-recipe-favorite-toggle {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 32px;
+	height: 32px;
+	padding: 0;
+	border-radius: var(--radius-m);
+	background-color: transparent;
+	border: 1px solid var(--background-modifier-border);
+	color: var(--text-muted);
+	cursor: pointer;
+	box-shadow: none;
+	transition:
+		background-color 80ms ease-in-out,
+		color 80ms ease-in-out,
+		border-color 80ms ease-in-out;
+}
+
+.pantry-recipe-favorite-toggle:hover,
+.pantry-recipe-favorite-toggle:focus-visible {
+	color: var(--text-normal);
+	border-color: var(--background-modifier-border-hover, var(--background-modifier-border));
+	background-color: var(--background-modifier-hover);
+}
+
+.pantry-recipe-favorite-toggle.is-favorite {
+	color: var(--color-yellow, #f1c40f);
+	border-color: color-mix(in srgb, var(--color-yellow, #f1c40f) 60%, transparent);
+	background-color: color-mix(in srgb, var(--color-yellow, #f1c40f) 18%, var(--background-secondary));
+}
+
+.pantry-recipe-favorite-toggle.is-favorite .svg-icon {
+	fill: currentColor;
+}
+
+.pantry-recipe-favorite-toggle .svg-icon {
+	width: 18px;
+	height: 18px;
+}
+
+.pantry-recipe-body {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) minmax(220px, 280px);
+	gap: var(--size-4-3);
+	align-items: start;
+	flex-shrink: 0;
+}
+
+@media (max-width: 700px) {
+	.pantry-recipe-body {
+		grid-template-columns: 1fr;
+	}
+
+	.pantry-recipe-image-card {
+		order: -1;
+	}
+}
+
+.pantry-recipe-body-main {
+	min-width: 0;
+	display: flex;
+	flex-direction: column;
+}
+
+.pantry-recipe-image-card {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	aspect-ratio: 4 / 3;
+	overflow: hidden;
+	background: var(--background-secondary);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-l);
+}
+
+.pantry-recipe-image {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	display: block;
+}
+
+.pantry-recipe-image-card.is-placeholder {
+	color: var(--text-faint);
+}
+
+.pantry-recipe-image-placeholder {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: var(--size-2-3);
+	padding: var(--size-4-3);
+	text-align: center;
+}
+
+.pantry-recipe-image-placeholder-icon {
+	display: inline-flex;
+	color: var(--text-faint);
+}
+
+.pantry-recipe-image-placeholder-icon .svg-icon {
+	width: 48px;
+	height: 48px;
+}
+
+.pantry-recipe-image-placeholder-text {
+	font-size: var(--font-ui-small);
+	color: var(--text-muted);
+}
+
+.pantry-recipe-cart-toggle {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 32px;
+	height: 32px;
+	padding: 0;
+	border-radius: var(--radius-m);
+	background-color: transparent;
+	border: 1px solid var(--background-modifier-border);
+	color: var(--text-muted);
+	cursor: pointer;
+	box-shadow: none;
+	transition:
+		background-color 80ms ease-in-out,
+		color 80ms ease-in-out,
+		border-color 80ms ease-in-out;
+}
+
+.pantry-recipe-cart-toggle:hover,
+.pantry-recipe-cart-toggle:focus-visible {
+	color: var(--text-normal);
+	border-color: var(--background-modifier-border-hover, var(--background-modifier-border));
+	background-color: var(--background-modifier-hover);
+}
+
+.pantry-recipe-cart-toggle.is-selected {
+	background-color: var(--color-green, #2ea043);
+	border-color: var(--color-green, #2ea043);
+	color: var(--text-on-accent, #ffffff);
+}
+
+.pantry-recipe-cart-toggle.is-selected:hover,
+.pantry-recipe-cart-toggle.is-selected:focus-visible {
+	color: var(--text-on-accent, #ffffff);
+	filter: brightness(1.1);
+}
+
+.pantry-recipe-cart-toggle .svg-icon {
+	width: 18px;
+	height: 18px;
+}
+
+.pantry-recipe-meta-banner {
+	display: flex;
+	align-items: flex-start;
+	gap: var(--size-4-3);
+	padding: var(--size-2-3) var(--size-4-2);
+	background: var(--background-secondary);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-l);
+	flex-wrap: wrap;
+}
+
+.pantry-recipe-meta-cells {
+	display: flex;
+	flex-grow: 1;
+	flex-wrap: wrap;
+	gap: var(--size-2-3) var(--size-4-3);
+	align-items: flex-start;
+}
+
+.pantry-recipe-meta-cell {
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+}
+
+.pantry-recipe-meta-cell-main {
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	gap: var(--size-2-2);
+	min-height: 30px;
+}
+
+.pantry-recipe-meta-label {
+	font-size: var(--font-ui-smaller);
+	font-weight: var(--font-semibold);
+	color: var(--text-muted);
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	white-space: nowrap;
+}
+
+.pantry-recipe-stepper {
+	display: inline-flex;
+	align-items: stretch;
+	width: max-content;
+	background-color: var(--background-primary);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-m);
+	overflow: hidden;
+	height: 30px;
+}
+
+.pantry-recipe-stepper-button {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 28px;
+	height: 100%;
+	border-radius: 0;
+	background-color: transparent;
+	border: none;
+	box-shadow: none;
+	cursor: pointer;
+	color: var(--text-muted);
+	flex-shrink: 0;
+	font-size: 14px;
+	font-weight: var(--font-semibold);
+	line-height: 1;
+	padding: 0;
+}
+
+.pantry-recipe-stepper-button:hover,
+.pantry-recipe-stepper-button:focus-visible {
+	background-color: var(--background-modifier-hover);
+	color: var(--text-normal);
+	box-shadow: none;
+}
+
+.pantry-recipe-stepper-input {
+	width: 44px;
+	height: 100%;
+	min-height: 0;
+	text-align: center;
+	font-variant-numeric: tabular-nums;
+	font-weight: var(--font-semibold);
+	font-size: var(--font-ui-small);
+	background-color: transparent;
+	border: none;
+	border-left: 1px solid var(--background-modifier-border);
+	border-right: 1px solid var(--background-modifier-border);
+	padding: 0;
+	box-shadow: none;
+	border-radius: 0;
+	-webkit-appearance: none;
+	appearance: none;
+	color: var(--text-normal);
+}
+
+.pantry-recipe-stepper-input:focus,
+.pantry-recipe-stepper-input:focus-visible {
+	outline: none;
+	box-shadow: none;
+	background-color: var(--background-modifier-hover);
+}
+
+/* Hide native number input spin buttons inside the stepper */
+.pantry-recipe-stepper-input::-webkit-inner-spin-button,
+.pantry-recipe-stepper-input::-webkit-outer-spin-button {
+	-webkit-appearance: none;
+	margin: 0;
+}
+
+.pantry-recipe-meta-value {
+	font-size: var(--font-ui-medium);
+	font-weight: var(--font-semibold);
+	color: var(--text-accent);
+	font-variant-numeric: tabular-nums;
+	line-height: 1;
+}
+
+.pantry-recipe-meta-value.is-empty {
+	color: var(--text-faint);
+	font-weight: var(--font-normal);
+}
+
+.pantry-recipe-nutrition-value {
+	font-size: var(--font-ui-medium);
+	font-weight: var(--font-semibold);
+	color: var(--text-accent);
+	font-variant-numeric: tabular-nums;
+	line-height: 1;
+}
+
+.pantry-recipe-nutrition-value.is-empty {
+	color: var(--text-faint);
+	font-weight: var(--font-normal);
+}
+
+.pantry-recipe-ingredients {
+	display: flex;
+	flex-direction: column;
+	flex-grow: 1;
+	flex-shrink: 0;
+	background: var(--background-secondary);
+	border-radius: var(--radius-l);
+	border: 1px solid var(--background-modifier-border);
+	overflow: hidden;
+}
+
+.pantry-recipe-ingredients-header {
+	display: flex;
+	align-items: center;
+	gap: var(--size-2-2);
+	padding: var(--size-2-3) var(--size-4-2);
+	border-bottom: 1px solid var(--background-modifier-border);
+	color: var(--text-muted);
+}
+
+.pantry-recipe-ingredients-icon {
+	display: inline-flex;
+	align-items: center;
+	color: var(--text-accent);
+}
+
+.pantry-recipe-ingredients-title {
+	margin: 0;
+	font-size: var(--font-ui-small);
+	font-weight: var(--font-semibold);
+	text-transform: uppercase;
+	letter-spacing: 0.06em;
+	color: var(--text-muted);
+}
+
+.pantry-recipe-ingredient-list {
+	list-style: none;
+	padding: 0;
+	margin: 0;
+	flex-grow: 1;
+}
+
+.pantry-recipe-ingredient {
+	display: grid;
+	grid-template-columns: minmax(72px, max-content) 1fr auto;
+	gap: var(--size-4-2);
+	align-items: baseline;
+	padding: var(--size-2-3) var(--size-4-2);
+	font-size: var(--font-ui-medium);
+	transition: background-color 80ms ease-in-out;
+}
+
+.pantry-recipe-ingredient + .pantry-recipe-ingredient {
+	border-top: 1px solid var(--background-modifier-border);
+}
+
+.pantry-recipe-ingredient:hover {
+	background: var(--background-modifier-hover);
+}
+
+.pantry-recipe-ingredient-qty {
+	font-variant-numeric: tabular-nums;
+	font-weight: var(--font-semibold);
+	color: var(--text-accent);
+	text-align: right;
+	white-space: nowrap;
+}
+
+.pantry-recipe-ingredient-qty.is-empty::before {
+	content: "·";
+	color: var(--text-faint);
+}
+
+.pantry-recipe-ingredient-name {
+	color: var(--text-normal);
+	min-width: 0;
+	word-break: break-word;
+}
+
+.pantry-recipe-ingredient-temp {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--size-2-1);
+	padding: 2px 6px;
+	border-radius: var(--radius-s);
+	font-size: var(--font-ui-smaller);
+	font-weight: var(--font-medium);
+	line-height: 1;
+	white-space: nowrap;
+	cursor: help;
+	background-color: var(--background-modifier-warning, rgba(255, 191, 0, 0.15));
+	border: 1px solid var(--color-yellow, rgba(255, 191, 0, 0.45));
+	color: var(--color-orange, var(--text-warning, #b88500));
+	font-variant-numeric: tabular-nums;
+	align-self: center;
+}
+
+.pantry-recipe-ingredient-temp-icon {
+	display: inline-flex;
+	align-items: center;
+}
+
+.pantry-recipe-ingredient-temp-icon .svg-icon {
+	width: 12px;
+	height: 12px;
+}
+
+.pantry-recipe-ingredient-gi {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--size-2-1);
+	padding: 2px 6px;
+	border-radius: var(--radius-s);
+	font-size: var(--font-ui-smaller);
+	font-weight: var(--font-medium);
+	line-height: 1;
+	white-space: nowrap;
+	cursor: help;
+	background-color: color-mix(in srgb, var(--color-orange, #d97706) 14%, var(--background-secondary));
+	border: 1px solid color-mix(in srgb, var(--color-orange, #d97706) 40%, transparent);
+	color: var(--color-orange, #d97706);
+	letter-spacing: 0.04em;
+	align-self: center;
+}
+
+.pantry-recipe-ingredient-gi-icon {
+	display: inline-flex;
+	align-items: center;
+}
+
+.pantry-recipe-ingredient-gi-icon .svg-icon {
+	width: 12px;
+	height: 12px;
+}
+
+.pantry-recipe-ingredient-gi-text {
+	font-weight: var(--font-semibold);
+}
+
+.pantry-settings-gi-textarea {
+	font-family: var(--font-monospace);
+	font-size: var(--font-ui-smaller);
+	min-height: 220px;
+}
+
+.pantry-settings-gi-errors {
+	margin-top: var(--size-2-2);
+	padding: var(--size-2-3) var(--size-4-2);
+	border-radius: var(--radius-m);
+	background: color-mix(in srgb, var(--color-red, #e5484d) 10%, var(--background-secondary));
+	border: 1px solid color-mix(in srgb, var(--color-red, #e5484d) 35%, transparent);
+	color: var(--text-normal);
+	font-size: var(--font-ui-smaller);
+}
+
+.pantry-settings-gi-errors:empty {
+	display: none;
+}
+
+.pantry-settings-gi-errors-title {
+	color: var(--color-red, #e5484d);
+	font-weight: var(--font-semibold);
+	margin-bottom: var(--size-2-2);
+}
+
+.pantry-settings-gi-errors-list {
+	margin: 0;
+	padding-left: var(--size-4-3);
+	font-family: var(--font-monospace);
+}
+
+.pantry-recipe-instructions {
+	display: flex;
+	flex-direction: column;
+	flex-shrink: 0;
+	background: var(--background-secondary);
+	border-radius: var(--radius-l);
+	border: 1px solid var(--background-modifier-border);
+	overflow: hidden;
+	margin-top: var(--size-4-3);
+}
+
+.pantry-recipe-instructions-header {
+	display: flex;
+	align-items: center;
+	gap: var(--size-2-2);
+	padding: var(--size-2-3) var(--size-4-2);
+	border-bottom: 1px solid var(--background-modifier-border);
+	color: var(--text-muted);
+}
+
+.pantry-recipe-instructions-icon {
+	display: inline-flex;
+	align-items: center;
+	color: var(--text-accent);
+}
+
+.pantry-recipe-instructions-title {
+	margin: 0;
+	font-size: var(--font-ui-small);
+	font-weight: var(--font-semibold);
+	text-transform: uppercase;
+	letter-spacing: 0.06em;
+	color: var(--text-muted);
+}
+
+.pantry-recipe-instruction-list {
+	list-style: none;
+	padding: 0;
+	margin: 0;
+	counter-reset: instruction;
+}
+
+.pantry-recipe-instruction {
+	display: grid;
+	grid-template-columns: 32px 1fr;
+	gap: var(--size-4-2);
+	align-items: start;
+	padding: var(--size-4-2) var(--size-4-3);
+	transition: background-color 80ms ease-in-out;
+}
+
+.pantry-recipe-instruction + .pantry-recipe-instruction {
+	border-top: 1px solid var(--background-modifier-border);
+}
+
+.pantry-recipe-instruction:hover {
+	background: var(--background-modifier-hover);
+}
+
+.pantry-recipe-instruction-number {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 28px;
+	height: 28px;
+	border-radius: 50%;
+	background: var(--interactive-accent);
+	color: var(--text-on-accent);
+	font-size: var(--font-ui-small);
+	font-weight: var(--font-bold);
+	font-variant-numeric: tabular-nums;
+	flex-shrink: 0;
+	margin-top: 2px;
+}
+
+.pantry-recipe-instruction-body {
+	color: var(--text-normal);
+	line-height: var(--line-height-normal, 1.55);
+	min-width: 0;
+}
+
+.pantry-recipe-instruction-body > :first-child {
+	margin-top: 0;
+}
+
+.pantry-recipe-instruction-body > :last-child {
+	margin-bottom: 0;
+}
+
+.pantry-recipe-instruction-body p {
+	margin: 0 0 var(--size-2-2) 0;
+}
+
+.pantry-recipe-instruction-body p:last-child {
+	margin-bottom: 0;
+}
+
+.pantry-recipe-instruction-body ul,
+.pantry-recipe-instruction-body ol {
+	margin: var(--size-2-1) 0 0 var(--size-4-3);
+	padding: 0;
+}
+
+.pantry-recipe-markdown {
+	color: var(--text-normal);
+}
+
+/* ----------------------------------------------------------------------
+ * Suggest a meal modal
+ * --------------------------------------------------------------------*/
+
+.pantry-suggest-modal .modal-content {
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-4-2);
+}
+
+.pantry-suggest-filters {
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-2-1);
+	padding-bottom: var(--size-2-2);
+	border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.pantry-suggest-filters .setting-item {
+	border: none;
+	padding: var(--size-2-2) 0;
+}
+
+.pantry-suggest-list {
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-2-3);
+	max-height: 50vh;
+	overflow-y: auto;
+}
+
+.pantry-suggest-empty {
+	padding: var(--size-4-3);
+	color: var(--text-muted);
+	text-align: center;
+	background: var(--background-secondary);
+	border-radius: var(--radius-l);
+}
+
+.pantry-suggest-card {
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-2-2);
+	padding: var(--size-4-2);
+	background: var(--background-secondary);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-l);
+}
+
+.pantry-suggest-card-title {
+	display: flex;
+	align-items: center;
+	gap: var(--size-2-2);
+	font-weight: var(--font-semibold);
+	color: var(--text-normal);
+	font-size: var(--font-ui-medium);
+}
+
+.pantry-suggest-card-link {
+	color: var(--text-normal);
+	cursor: pointer;
+}
+
+.pantry-suggest-card-link:hover {
+	color: var(--text-accent);
+	text-decoration: underline;
+}
+
+.pantry-suggest-card-fav {
+	display: inline-flex;
+	color: var(--color-yellow, #f1c40f);
+}
+
+.pantry-suggest-card-fav .svg-icon {
+	width: 14px;
+	height: 14px;
+	fill: currentColor;
+}
+
+.pantry-suggest-card-meta {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--size-2-3);
+	color: var(--text-muted);
+	font-size: var(--font-ui-small);
+}
+
+.pantry-suggest-card-meta-item::after {
+	content: "·";
+	margin-left: var(--size-2-3);
+	color: var(--text-faint);
+}
+
+.pantry-suggest-card-meta-item:last-child::after {
+	content: "";
+	margin-left: 0;
+}
+
+.pantry-suggest-card-tags {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--size-2-2);
+}
+
+.pantry-suggest-card-actions {
+	display: flex;
+	gap: var(--size-2-2);
+	justify-content: flex-end;
+}
+
+.pantry-suggest-footer {
+	display: flex;
+	justify-content: flex-end;
+	padding-top: var(--size-2-3);
+	border-top: 1px solid var(--background-modifier-border);
+}
+
+/* ----------------------------------------------------------------------
+ * Cooking stats / leaderboard modal
+ * --------------------------------------------------------------------*/
+
+.pantry-leaderboard-modal .modal-content {
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-4-2);
+}
+
+.pantry-leaderboard-empty {
+	padding: var(--size-4-3);
+	color: var(--text-muted);
+	text-align: center;
+	background: var(--background-secondary);
+	border-radius: var(--radius-l);
+}
+
+.pantry-leaderboard-summary {
+	color: var(--text-muted);
+	font-size: var(--font-ui-small);
+}
+
+.pantry-leaderboard-table {
+	width: 100%;
+	border-collapse: collapse;
+	font-variant-numeric: tabular-nums;
+}
+
+.pantry-leaderboard-table th,
+.pantry-leaderboard-table td {
+	padding: var(--size-2-2) var(--size-4-2);
+	text-align: left;
+	border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.pantry-leaderboard-table th {
+	color: var(--text-muted);
+	text-transform: uppercase;
+	font-size: var(--font-ui-smaller);
+	letter-spacing: 0.04em;
+	font-weight: var(--font-semibold);
+}
+
+.pantry-leaderboard-table tbody tr:hover {
+	background: var(--background-modifier-hover);
+}
+
+.pantry-leaderboard-rank {
+	width: 3em;
+	color: var(--text-faint);
+}
+
+.pantry-leaderboard-count {
+	width: 6em;
+	text-align: right;
+	font-weight: var(--font-semibold);
+}
+
+.pantry-leaderboard-date {
+	width: 8em;
+	color: var(--text-muted);
+}
+
+.pantry-leaderboard-link {
+	color: var(--text-normal);
+	cursor: pointer;
+}
+
+.pantry-leaderboard-link:hover {
+	color: var(--text-accent);
+	text-decoration: underline;
+}
+
+/* ----------------------------------------------------------------------
+ * Export grocery list modal
+ * --------------------------------------------------------------------*/
+
+.pantry-export-modal .modal-content {
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-2-3);
+}
+
+.pantry-export-preview {
+	width: 100%;
+	min-height: 180px;
+	font-family: var(--font-monospace);
+	font-size: var(--font-ui-small);
+	background: var(--background-primary-alt);
+	color: var(--text-normal);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-m);
+	padding: var(--size-2-3);
+	resize: vertical;
+}
+
+.pantry-export-footer {
+	display: flex;
+	gap: var(--size-2-2);
+	justify-content: flex-end;
+	padding-top: var(--size-2-3);
+	border-top: 1px solid var(--background-modifier-border);
+}
