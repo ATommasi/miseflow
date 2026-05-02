@@ -2,6 +2,16 @@
 
 An [Obsidian](https://obsidian.md) plugin that turns recipe notes into a consolidated, category-grouped grocery list you can check off while shopping — and renders those recipe notes as interactive cards while you cook.
 
+## Screenshots
+
+Grouped grocery list with recipe links, checkboxes, and category sections:
+
+![Pantry grocery list view in Obsidian](assets/shoppinglist.png)
+
+Recipe view with hero image, scaled ingredients, instructions, and portion multiplier:
+
+![Pantry recipe view in Obsidian](assets/recipemode.png)
+
 ## Features
 
 - **Recipes-as-source-of-truth.** Mark any recipe note with a single boolean frontmatter property to add it to this week's list.
