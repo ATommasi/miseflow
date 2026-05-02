@@ -220,3 +220,7 @@ To test locally, this folder must live at `<Vault>/.obsidian/plugins/pantry/` (m
 ## Release
 
 Attach `main.js`, `manifest.json`, and `styles.css` as individual assets to a GitHub release whose tag exactly matches the `version` in `manifest.json` (no leading `v`).
+
+## Support
+
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/Z8Z31YAERO)

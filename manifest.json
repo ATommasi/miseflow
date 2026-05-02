@@ -6,5 +6,9 @@
 	"description": "Manage your recipes and generate grocery lists.",
 	"author": "TheEkrizdis",
 	"authorUrl": "",
+	"fundingUrl": {
+		"ko-fi": "https://ko-fi.com/ekrizdis",
+		"buy-me-a-coffee": "buymeacoffee.com/TheEkrizdis"
+	},
 	"isDesktopOnly": false
 }
