@@ -387,8 +387,7 @@ export class PantrySettingsTab extends PluginSettingTab {
 
 	private renderGiDictionarySetting(containerEl: HTMLElement): void {
 		const setting = new Setting(containerEl)
-			// eslint-disable-next-line obsidianmd/ui/sentence-case -- "GI" is an acronym (glycemic index)
-			.setName("High GI dictionary")
+			.setName("High glycemic index dictionary")
 			.setDesc(
 				"One regex per line, case-insensitive. Lines starting with # are comments. Patterns are matched against ingredient names; matches earn an up-arrow badge in the recipe view. Glycemic index values vary by source - this list is informational, not medical advice.",
 			);
@@ -414,8 +413,7 @@ export class PantrySettingsTab extends PluginSettingTab {
 		);
 
 		new Setting(containerEl)
-			// eslint-disable-next-line obsidianmd/ui/sentence-case -- "GI" is an acronym (glycemic index)
-			.setName("Reset GI dictionary")
+			.setName("Reset glycemic index dictionary")
 			.setDesc(
 				"Restore the shipped list of widely-cited high glycemic index foods.",
 			)

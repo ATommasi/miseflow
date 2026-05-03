@@ -76,11 +76,12 @@ export class GroceryListView extends ItemView {
 		this.renderList();
 	}
 
-	async onClose(): Promise<void> {
+	onClose(): Promise<void> {
 		if (this.changedRef) {
 			this.deps.manager.offref(this.changedRef);
 			this.changedRef = null;
 		}
+		return Promise.resolve();
 	}
 
 	private renderHeader(): void {
@@ -110,23 +111,21 @@ export class GroceryListView extends ItemView {
 		});
 
 		const addBtn = new ButtonComponent(actionsEl)
-			// eslint-disable-next-line obsidianmd/ui/sentence-case -- title-case label requested by plugin owner
-			.setButtonText("Add Item")
+			.setButtonText("Add item")
 			.onClick(() => {
 				new AddOneOffModal(this.app, this.deps.manager).open();
 			});
 		addBtn.buttonEl.addClass("pantry-add");
 
 		const clearBtn = new ButtonComponent(actionsEl)
-			// eslint-disable-next-line obsidianmd/ui/sentence-case -- title-case label requested by plugin owner
-			.setButtonText("Clear List")
+			.setButtonText("Clear list")
 			.setWarning()
 			.onClick(() => {
 				new ConfirmModal(this.app, {
-					title: "Clear List?",
+					title: "Clear list?",
 					message:
 						"This will deselect every recipe currently on the list, remove all one-off items, and reset all checks. This can't be undone.",
-					confirmText: "Clear List",
+					confirmText: "Clear list",
 					destructive: true,
 					onConfirm: async () => {
 						await this.deps.manager.clearAll();
