@@ -1,5 +1,6 @@
 import { App, TFile } from "obsidian";
 import { fileInRecipeFolders, isRecipeSelected } from "../parser/recipe";
+import { listMarkdownFilesInRecipeFolders } from "../utils/vault-files";
 import {
 	daysSince,
 	matchingAllergens,
@@ -27,7 +28,7 @@ export function listRecipeLibrary(
 ): RecipeEntry[] {
 	const target = settings.recipeTypeValue.trim().toLowerCase() || "recipe";
 	const out: RecipeEntry[] = [];
-	for (const file of app.vault.getMarkdownFiles()) {
+	for (const file of listMarkdownFilesInRecipeFolders(app, settings)) {
 		if (!fileInRecipeFolders(file, settings.recipeFolders)) continue;
 		const cache = app.metadataCache.getFileCache(file);
 		const fm = (cache?.frontmatter ?? {}) as Record<string, unknown>;

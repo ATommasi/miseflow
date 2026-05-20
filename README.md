@@ -27,7 +27,7 @@ Recipe view with hero image, scaled ingredients, instructions, and portion multi
 - **Last-made tracking & cook counts.** Optionally stamp today's date into `lastMade` and increment `cookedCount` whenever you add a recipe to the grocery list — powering the cooking-stats leaderboard.
 - **Meal recommender.** "Suggest a meal" surfaces recipes you haven't cooked recently, with optional filters for favorites and allergens.
 - **Cooking stats leaderboard.** "Show cooking stats" ranks every recipe by how often you've cooked it.
-- **Export & share.** Copy the current grocery list to the clipboard or append it to any note as plain text, a Markdown checklist, or grouped by category.
+- **Export & share.** Export the grocery list from a modal and copy it yourself, or append it to any note as plain text, a Markdown checklist, or grouped by category.
 - **Diabetic mode.** Optional toggle that surfaces high-glycemic-index ingredients with an inline `↑ GI` badge in the recipe view. Ships with a curated regex dictionary you can edit freely.
 - **One command to start fresh.** "Clear grocery list" deselects every flagged recipe, removes all one-offs, and resets all checks.
 
@@ -139,7 +139,7 @@ With `multiplier: 1.5`, the recipe view shows `1.5 lb spaghetti` and the grocery
 | Open as Markdown | Switch the active recipe view back to standard Markdown editing. |
 | Suggest a meal | Open a modal with N recipes you haven't cooked recently. Filter by favorites, hide allergens. |
 | Show cooking stats | Open the leaderboard ranking every recipe by `cookedCount`. |
-| Export grocery list | Copy the current list to the clipboard or append it to a note (plain, checklist, or grouped). |
+| Export grocery list | Open a modal to copy the current list or append it to a note (plain, checklist, or grouped). |
 
 All commands appear in the command palette under the **Pantry:** prefix.
 
@@ -147,7 +147,7 @@ All commands appear in the command palette under the **Pantry:** prefix.
 
 - **Suggest a meal** picks recipes from your library (anything with `type: recipe` in the configured folders) that you haven't cooked within the **Suggestion day window** (default: 14 days). The window and number of suggestions live in **Settings → Recipe library**.
 - **Show cooking stats** sorts the same library by `cookedCount` (descending), then by `lastMade`. Click any row to jump straight to the recipe.
-- **Export grocery list** opens a modal with a live preview and three formats (plain text, Markdown checklist, Markdown grouped by category). Copy to the clipboard or append to a note path of your choice; missing notes are created automatically.
+- **Export grocery list** opens a modal with a live preview and three formats (plain text, Markdown checklist, Markdown grouped by category). Select and copy the preview with your system shortcut, or append to a note path of your choice; missing notes are created automatically.
 
 ## Allergens
 
@@ -204,7 +204,9 @@ The order in which categories appear in the view is configurable via **Category 
 
 ## Privacy
 
-The plugin runs entirely offline. It only reads notes inside the configured recipe folders, only writes to its own data file, and only modifies recipe frontmatter when you explicitly clear the list, use the toggle command, or change the multiplier in the recipe view.
+The plugin runs entirely offline and **does not access** your system clipboard. Export opens a modal with the generated text so you can copy it yourself or append it to a note.
+
+Recipe discovery walks only the folders you configure in **Recipe folders** (or the vault root when that list is empty) — it does not call `vault.getMarkdownFiles()` or enumerate unrelated files. The plugin writes to its own data file and only modifies recipe frontmatter when you explicitly clear the list, use the toggle command, or change the multiplier in the recipe view.
 
 ## Development
 
@@ -219,7 +221,7 @@ To test locally, this folder must live at `<Vault>/.obsidian/plugins/pantry/` (m
 
 ## Release
 
-Attach `main.js`, `manifest.json`, and `styles.css` as individual assets to a GitHub release whose tag exactly matches the `version` in `manifest.json` (no leading `v`).
+Push a tag whose name exactly matches the `version` in `manifest.json` (no leading `v`, e.g. `1.0.3`). The [release workflow](.github/workflows/release.yml) builds the plugin, attests `main.js` and `styles.css`, and publishes a GitHub release with auto-generated notes and the three assets (`main.js`, `manifest.json`, `styles.css`).
 
 ## Support
 

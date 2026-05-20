@@ -20,9 +20,9 @@ interface ExportModalDeps {
 }
 
 /**
- * Lets the user copy the current grocery list to the clipboard or
- * append it to an existing note. The preview updates live so they
- * can switch formats without reopening the modal.
+ * Lets the user copy the current grocery list manually or append it
+ * to an existing note. The preview updates live so they can switch
+ * formats without reopening the modal.
  */
 export class ExportListModal extends Modal {
 	private format: ExportFormat = "checklist";
@@ -76,6 +76,11 @@ export class ExportListModal extends Modal {
 				}),
 			);
 
+		contentEl.createEl("p", {
+			cls: "pantry-export-hint",
+			text: "Select the text below and copy with your system shortcut, or append it to a note.",
+		});
+
 		this.previewEl = contentEl.createEl("textarea", {
 			cls: "pantry-export-preview",
 		});
@@ -85,9 +90,7 @@ export class ExportListModal extends Modal {
 
 		new Setting(contentEl)
 			.setName("Append to note")
-			.setDesc(
-				"Vault-relative path. Optional - leave blank when only copying to clipboard.",
-			)
+			.setDesc("Vault-relative path. Leave blank to copy from the preview only.")
 			.addText((text) =>
 				text
 					.setPlaceholder("Shopping/2026-04-24.md")
@@ -99,21 +102,17 @@ export class ExportListModal extends Modal {
 
 		const footer = contentEl.createDiv({ cls: "pantry-export-footer" });
 
-		const copyBtn = footer.createEl("button", {
-			cls: "mod-cta",
-			text: "Copy to clipboard",
-			attr: { type: "button" },
-		});
-		copyBtn.addEventListener("click", () => {
-			void this.copyToClipboard();
-		});
-
 		const appendBtn = footer.createEl("button", {
+			cls: "mod-cta",
 			text: "Append to note",
 			attr: { type: "button" },
 		});
 		appendBtn.addEventListener("click", () => {
 			void this.appendToNote();
+		});
+
+		footer.createEl("button", { text: "Close", attr: { type: "button" } }).addEventListener("click", () => {
+			this.close();
 		});
 	}
 
@@ -130,21 +129,6 @@ export class ExportListModal extends Modal {
 	private refreshPreview(): void {
 		const content = this.buildContent();
 		this.previewEl.value = content || "(grocery list is empty)";
-	}
-
-	private async copyToClipboard(): Promise<void> {
-		const content = this.buildContent();
-		if (!content) {
-			new Notice("Nothing to export - the list is empty.");
-			return;
-		}
-		try {
-			await navigator.clipboard.writeText(content);
-			new Notice("Grocery list copied to clipboard.");
-		} catch (err) {
-			console.error("pantry: clipboard write failed", err);
-			new Notice("Couldn't copy to clipboard.");
-		}
 	}
 
 	private async appendToNote(): Promise<void> {

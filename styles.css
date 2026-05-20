@@ -1177,6 +1177,12 @@
 	gap: var(--size-2-3);
 }
 
+.pantry-export-hint {
+	margin: 0;
+	color: var(--text-muted);
+	font-size: var(--font-ui-small);
+}
+
 .pantry-export-preview {
 	width: 100%;
 	min-height: 180px;

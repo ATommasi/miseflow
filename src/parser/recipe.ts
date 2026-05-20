@@ -1,5 +1,6 @@
 import { App, CachedMetadata, TFile } from "obsidian";
 import { PantrySettings, RECIPE_FRONTMATTER } from "../settings";
+import { listMarkdownFilesInRecipeFolders } from "../utils/vault-files";
 import { RecipeIngredient } from "../types";
 import { hasIgnoreTag, parseIngredientLine } from "./ingredient";
 
@@ -39,9 +40,8 @@ export function findSelectedRecipes(
 	app: App,
 	settings: PantrySettings,
 ): TFile[] {
-	const all = app.vault.getMarkdownFiles();
 	const selected: TFile[] = [];
-	for (const file of all) {
+	for (const file of listMarkdownFilesInRecipeFolders(app, settings)) {
 		if (!fileInRecipeFolders(file, settings.recipeFolders)) continue;
 		const cache = app.metadataCache.getFileCache(file);
 		if (isRecipeSelected(cache, settings.selectionProperty)) {
