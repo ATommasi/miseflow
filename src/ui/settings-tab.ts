@@ -195,7 +195,35 @@ export class PantrySettingsTab extends PluginSettingTab {
 			);
 
 		new Setting(containerEl)
-			.setName("Track last made date")
+			.setName("Show mark as cooked button")
+			.setDesc(
+				"Display a button in the recipe view to manually mark the recipe as cooked, updating the last made date and cooked count.",
+			)
+			.addToggle((toggle) =>
+				toggle
+					.setValue(this.host.settings.showMarkCookedButton)
+					.onChange(async (value) => {
+						this.host.settings.showMarkCookedButton = value;
+						await this.host.saveSettings();
+					}),
+			);
+
+		new Setting(containerEl)
+			.setName("Ask for date when marking cooked")
+			.setDesc(
+				"When enabled, clicking the mark as cooked button opens a date picker instead of using today's date.",
+			)
+			.addToggle((toggle) =>
+				toggle
+					.setValue(this.host.settings.markCookedAskDate)
+					.onChange(async (value) => {
+						this.host.settings.markCookedAskDate = value;
+						await this.host.saveSettings();
+					}),
+			);
+
+		new Setting(containerEl)
+			.setName("Auto track last made date when adding to grocery list")
 			.setDesc(
 				"When a recipe is added to the grocery list, write today's date to its frontmatter so you can see the last time you cooked it.",
 			)
@@ -227,7 +255,7 @@ export class PantrySettingsTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName("Track cooked count")
 			.setDesc(
-				"Increment the recipe's `cookedCount` frontmatter when it's added to the grocery list on a new day. Powers the cooking stats leaderboard.",
+				"Increment the recipe's `cookedCount` frontmatter when it's added to the grocery list on a new day, or when manually marked as cooked. Powers the cooking stats leaderboard.",
 			)
 			.addToggle((toggle) =>
 				toggle

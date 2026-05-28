@@ -1,11 +1,12 @@
 import {
 	MarkdownRenderer,
+	Notice,
 	TextFileView,
 	TFile,
 	WorkspaceLeaf,
 	setIcon,
 } from "obsidian";
-import { setRecipeSelection } from "../grocery/selection";
+import { setRecipeSelection, stampRecipeCooked } from "../grocery/selection";
 import { isHighGi, parseGiDictionary } from "../parser/glycemic";
 import { parseIngredientLine } from "../parser/ingredient";
 import { detectMeatTemp, MeatTemp } from "../parser/meat";
@@ -28,6 +29,7 @@ import {
 	PantrySettings,
 	RECIPE_FRONTMATTER,
 } from "../settings";
+import { MarkCookedModal } from "./mark-cooked-modal";
 
 export const VIEW_TYPE_RECIPE = "pantry-recipe";
 
@@ -479,6 +481,9 @@ export class RecipeView extends TextFileView {
 			cls: "pantry-recipe-meta-actions",
 		});
 		this.renderFavoriteToggle(actions, file, isFavorite);
+		if (settings.showMarkCookedButton) {
+			this.renderMarkCookedButton(actions, file, settings);
+		}
 		this.renderCartToggle(actions, file, isSelected, settings);
 	}
 
@@ -523,6 +528,42 @@ export class RecipeView extends TextFileView {
 				}
 			},
 		);
+	}
+
+	private renderMarkCookedButton(
+		actions: HTMLElement,
+		file: TFile,
+		settings: PantrySettings,
+	): void {
+		const btn = actions.createEl("button", {
+			cls: "pantry-recipe-mark-cooked-button",
+			attr: { type: "button", "aria-label": "Mark as cooked", title: "Mark as cooked" },
+		});
+		setIcon(btn, "chef-hat");
+
+		btn.addEventListener("click", () => {
+			if (settings.markCookedAskDate) {
+				new MarkCookedModal(this.app, (date) =>
+					this.markAsCooked(file, date, settings),
+				).open();
+			} else {
+				const today = localDateISO();
+				void this.markAsCooked(file, today, settings);
+			}
+		});
+	}
+
+	private async markAsCooked(
+		file: TFile,
+		date: string,
+		settings: PantrySettings,
+	): Promise<void> {
+		const { newCount } = await stampRecipeCooked(this.app, file, date, settings);
+		if (newCount !== null) {
+			new Notice(`Marked "${file.basename}" as cooked. Total: ${newCount} time${newCount === 1 ? "" : "s"}.`);
+		} else {
+			new Notice(`Marked "${file.basename}" as cooked.`);
+		}
 	}
 
 	private renderCartToggle(
@@ -937,6 +978,14 @@ function resolveNutritionDisplayValue(
 		return perServing ?? baseValue;
 	}
 	return total ?? baseValue;
+}
+
+function localDateISO(): string {
+	const d = new Date();
+	const y = d.getFullYear();
+	const m = String(d.getMonth() + 1).padStart(2, "0");
+	const day = String(d.getDate()).padStart(2, "0");
+	return `${y}-${m}-${day}`;
 }
 
 function titleCase(name: string): string {

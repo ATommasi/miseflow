@@ -339,6 +339,14 @@ function mergeSettings(
 			raw.nutritionSource === "per-serving"
 				? raw.nutritionSource
 				: base.nutritionSource,
+		showMarkCookedButton:
+			typeof raw.showMarkCookedButton === "boolean"
+				? raw.showMarkCookedButton
+				: base.showMarkCookedButton,
+		markCookedAskDate:
+			typeof raw.markCookedAskDate === "boolean"
+				? raw.markCookedAskDate
+				: base.markCookedAskDate,
 		state: {
 			oneOffs: Array.isArray(raw.state?.oneOffs)
 				? (raw.state?.oneOffs ?? [])

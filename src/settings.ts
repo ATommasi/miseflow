@@ -33,6 +33,10 @@ export interface PantrySettings {
 	nutritionDisplay: NutritionDisplay;
 	/** Whether frontmatter nutrition values are stored as recipe totals or per-serving values. */
 	nutritionSource: NutritionSource;
+	/** Show a "Mark as cooked" button in the recipe view action bar. */
+	showMarkCookedButton: boolean;
+	/** When true, clicking "Mark as cooked" prompts for a date instead of using today. */
+	markCookedAskDate: boolean;
 	/** When true, writes today's date to a recipe's frontmatter when it's added to the grocery list. */
 	trackLastMade: boolean;
 	/** Frontmatter property name used to record the last time a recipe was added to the grocery list. */
@@ -114,6 +118,8 @@ export const DEFAULT_SETTINGS: PantrySettings = {
 	recipeTypeValue: "recipe",
 	nutritionDisplay: "per-serving",
 	nutritionSource: "recipe-total",
+	showMarkCookedButton: true,
+	markCookedAskDate: false,
 	trackLastMade: true,
 	lastMadeProperty: "lastMade",
 	trackCookedCount: true,
