@@ -329,6 +329,16 @@ function mergeSettings(
 			typeof raw.recipeTypeValue === "string" && raw.recipeTypeValue.trim()
 				? raw.recipeTypeValue.trim()
 				: base.recipeTypeValue,
+		nutritionDisplay:
+			raw.nutritionDisplay === "per-serving" ||
+			raw.nutritionDisplay === "total"
+				? raw.nutritionDisplay
+				: base.nutritionDisplay,
+		nutritionSource:
+			raw.nutritionSource === "recipe-total" ||
+			raw.nutritionSource === "per-serving"
+				? raw.nutritionSource
+				: base.nutritionSource,
 		state: {
 			oneOffs: Array.isArray(raw.state?.oneOffs)
 				? (raw.state?.oneOffs ?? [])

@@ -470,6 +470,7 @@ export class RecipeView extends TextFileView {
 				field,
 				frontmatter,
 				servings,
+				settings.nutritionSource,
 				settings.nutritionDisplay,
 			);
 		}
@@ -655,17 +656,16 @@ export class RecipeView extends TextFileView {
 		field: NutritionField,
 		frontmatter: Record<string, unknown>,
 		baseServings: number | null,
+		sourceMode: PantrySettings["nutritionSource"],
 		displayMode: PantrySettings["nutritionDisplay"],
 	): void {
 		const baseValue = readNutritionValue(frontmatter, field);
-		const perServing =
-			baseValue !== null && baseServings !== null && baseServings > 0
-				? baseValue / baseServings
-				: null;
-		const displayValue =
-			displayMode === "per-serving" && perServing !== null
-				? perServing
-				: baseValue;
+		const displayValue = resolveNutritionDisplayValue(
+			baseValue,
+			baseServings,
+			sourceMode,
+			displayMode,
+		);
 
 		const cell = container.createDiv({
 			cls: "pantry-recipe-meta-cell",
@@ -908,6 +908,35 @@ function roundForDisplay(num: number): string {
 		return String(Math.round(rounded));
 	}
 	return rounded.toFixed(1);
+}
+
+function resolveNutritionDisplayValue(
+	baseValue: number | null,
+	baseServings: number | null,
+	sourceMode: PantrySettings["nutritionSource"],
+	displayMode: PantrySettings["nutritionDisplay"],
+): number | null {
+	if (baseValue === null) return null;
+
+	const hasServings =
+		baseServings !== null && Number.isFinite(baseServings) && baseServings > 0;
+	const perServing =
+		sourceMode === "per-serving"
+			? baseValue
+			: hasServings
+				? baseValue / baseServings
+				: null;
+	const total =
+		sourceMode === "recipe-total"
+			? baseValue
+			: hasServings
+				? baseValue * baseServings
+				: null;
+
+	if (displayMode === "per-serving") {
+		return perServing ?? baseValue;
+	}
+	return total ?? baseValue;
 }
 
 function titleCase(name: string): string {

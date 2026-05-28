@@ -176,6 +176,25 @@ export class PantrySettingsTab extends PluginSettingTab {
 			);
 
 		new Setting(containerEl)
+			.setName("Nutrition source")
+			.setDesc(
+				"Whether your frontmatter nutrition fields are saved as totals for the whole recipe or already per serving.",
+			)
+			.addDropdown((dd) =>
+				dd
+					.addOptions({
+						"recipe-total": "Recipe total",
+						"per-serving": "Per serving",
+					})
+					.setValue(this.host.settings.nutritionSource)
+					.onChange(async (value) => {
+						this.host.settings.nutritionSource =
+							value as PantrySettings["nutritionSource"];
+						await this.host.saveSettings();
+					}),
+			);
+
+		new Setting(containerEl)
 			.setName("Track last made date")
 			.setDesc(
 				"When a recipe is added to the grocery list, write today's date to its frontmatter so you can see the last time you cooked it.",

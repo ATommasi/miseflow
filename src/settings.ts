@@ -31,6 +31,8 @@ export interface PantrySettings {
 	recipeTypeValue: string;
 	/** How nutrition values are displayed in the recipe view. */
 	nutritionDisplay: NutritionDisplay;
+	/** Whether frontmatter nutrition values are stored as recipe totals or per-serving values. */
+	nutritionSource: NutritionSource;
 	/** When true, writes today's date to a recipe's frontmatter when it's added to the grocery list. */
 	trackLastMade: boolean;
 	/** Frontmatter property name used to record the last time a recipe was added to the grocery list. */
@@ -52,6 +54,7 @@ export interface PantrySettings {
 }
 
 export type NutritionDisplay = "per-serving" | "total";
+export type NutritionSource = "recipe-total" | "per-serving";
 
 export interface PantrySavedState {
 	/** One-off shopping items the user has added manually. */
@@ -110,6 +113,7 @@ export const DEFAULT_SETTINGS: PantrySettings = {
 	autoOpenRecipeView: true,
 	recipeTypeValue: "recipe",
 	nutritionDisplay: "per-serving",
+	nutritionSource: "recipe-total",
 	trackLastMade: true,
 	lastMadeProperty: "lastMade",
 	trackCookedCount: true,
