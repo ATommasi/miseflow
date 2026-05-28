@@ -8,7 +8,7 @@ import {
 	findSelectedRecipes,
 	parseRecipeFile,
 } from "../parser/recipe";
-import { PantrySettings } from "../settings";
+import { IngredientSelectionMode, PantrySettings } from "../settings";
 import { GroceryItem, OneOffItem, RecipeIngredient } from "../types";
 import { buildGroceryList, groupForDisplay } from "./aggregator";
 
@@ -48,6 +48,48 @@ export class GroceryListManager extends Events {
 		return this.selectedRecipes;
 	}
 
+	/** Per-ingredient override map for a recipe (ingredientKey -> include/exclude). */
+	getIngredientSelections(
+		recipePath: string,
+	): Record<string, IngredientSelectionMode> {
+		const map = this.sink.settings.state.ingredientSelectionsByRecipe;
+		if (!map) return {};
+		const overrides = map[recipePath];
+		if (!overrides || typeof overrides !== "object") return {};
+		return { ...overrides };
+	}
+
+	/** Persist the include/exclude/default state for one recipe ingredient key. */
+	async setIngredientSelection(
+		recipePath: string,
+		ingredient: string,
+		mode: IngredientSelectionMode | "default",
+	): Promise<void> {
+		const path = recipePath.trim();
+		const key = ingredient.trim();
+		if (!path || !key) return;
+
+		const state = this.sink.settings.state;
+		state.ingredientSelectionsByRecipe ??= {};
+		const map = state.ingredientSelectionsByRecipe;
+		const current = { ...this.getIngredientSelections(path) };
+
+		if (mode === "default") {
+			delete current[key];
+		} else {
+			current[key] = mode;
+		}
+
+		if (Object.keys(current).length === 0) {
+			delete map[path];
+		} else {
+			map[path] = current;
+		}
+
+		await this.sink.save();
+		await this.refresh();
+	}
+
 	/**
 	 * Rebuild the grocery list from selected recipes and one-off items.
 	 * Concurrent calls coalesce so spamming the refresh button is safe.
@@ -57,6 +99,9 @@ export class GroceryListManager extends Events {
 		this.rebuildPromise = (async () => {
 			try {
 				const files = findSelectedRecipes(this.app, this.sink.settings);
+				const selectedPaths = new Set(files.map((file) => file.path));
+				const ingredientSelections =
+					this.sink.settings.state.ingredientSelectionsByRecipe ?? {};
 				const allIngredients: RecipeIngredient[] = [];
 				for (const file of files) {
 					try {
@@ -65,10 +110,58 @@ export class GroceryListManager extends Events {
 							file,
 							this.sink.settings,
 						);
-						allIngredients.push(...parsed);
+						const overrides = ingredientSelections[file.path] ?? {};
+						for (const ingredient of parsed) {
+							const key = ingredientKey(
+								ingredient.name,
+								ingredient.unit,
+							);
+							if (overrides[key] === "exclude") continue;
+							allIngredients.push(ingredient);
+						}
 					} catch (err) {
 						console.error(
 							`pantry: failed to parse ${file.path}`,
+							err,
+						);
+					}
+				}
+
+				for (const [path, selectedKeysRaw] of Object.entries(
+					ingredientSelections,
+				)) {
+					if (selectedPaths.has(path)) continue;
+					if (!selectedKeysRaw || typeof selectedKeysRaw !== "object") continue;
+					const includeKeys = new Set(
+						Object.keys(selectedKeysRaw).filter(
+							(key) => selectedKeysRaw[key] === "include",
+						),
+					);
+					if (includeKeys.size === 0) continue;
+
+					const abstract = this.app.vault.getAbstractFileByPath(path);
+					if (!(abstract instanceof TFile) || abstract.extension !== "md") {
+						continue;
+					}
+
+					try {
+						const parsed = await parseRecipeFile(
+							this.app,
+							abstract,
+							this.sink.settings,
+						);
+						for (const ingredient of parsed) {
+							const key = ingredientKey(
+								ingredient.name,
+								ingredient.unit,
+							);
+							if (includeKeys.has(key)) {
+								allIngredients.push(ingredient);
+							}
+						}
+					} catch (err) {
+						console.error(
+							`pantry: failed to parse ${path}`,
 							err,
 						);
 					}
@@ -80,6 +173,7 @@ export class GroceryListManager extends Events {
 					}),
 				);
 				this.rebuildItems();
+				await this.pruneMissingManualSelections();
 				await this.pruneStaleCheckedKeys();
 			} finally {
 				this.rebuildPromise = null;
@@ -247,6 +341,7 @@ export class GroceryListManager extends Events {
 
 		const oneOffsCleared = this.sink.settings.state.oneOffs.length;
 		this.sink.settings.state.oneOffs = [];
+		this.sink.settings.state.ingredientSelectionsByRecipe = {};
 		this.sink.settings.state.checkedKeys = {};
 		this.sink.settings.state.collapsedGroups = {};
 		await this.sink.save();
@@ -290,6 +385,44 @@ export class GroceryListManager extends Events {
 				changed = true;
 			}
 		}
+		if (changed) await this.sink.save();
+	}
+
+	private async pruneMissingManualSelections(): Promise<void> {
+		const map = this.sink.settings.state.ingredientSelectionsByRecipe;
+		if (!map) return;
+
+		let changed = false;
+		for (const [path, overrides] of Object.entries(map)) {
+			if (!overrides || typeof overrides !== "object") {
+				delete map[path];
+				changed = true;
+				continue;
+			}
+
+			let hasAny = false;
+			for (const key of Object.keys(overrides)) {
+				const mode = overrides[key];
+				if (mode === "include" || mode === "exclude") {
+					hasAny = true;
+					continue;
+				}
+				delete overrides[key];
+				changed = true;
+			}
+			if (!hasAny) {
+				delete map[path];
+				changed = true;
+				continue;
+			}
+
+			const abstract = this.app.vault.getAbstractFileByPath(path);
+			if (!(abstract instanceof TFile) || abstract.extension !== "md") {
+				delete map[path];
+				changed = true;
+			}
+		}
+
 		if (changed) await this.sink.save();
 	}
 

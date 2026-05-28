@@ -44,6 +44,18 @@ export default class PantryPlugin extends Plugin {
 				new RecipeView(leaf, {
 					getSettings: () => this.settings,
 					openInMarkdown: (target) => this.openLeafInMarkdown(target),
+					getIngredientSelections: (recipePath) =>
+						this.manager.getIngredientSelections(recipePath),
+					setIngredientSelection: (
+						recipePath,
+						ingredientKey,
+						mode,
+					) =>
+						this.manager.setIngredientSelection(
+							recipePath,
+							ingredientKey,
+							mode,
+						),
 					onSelectionChanged: () => {
 						void this.manager.refresh();
 					},
@@ -296,11 +308,49 @@ function mergeSettings(
 		recipeFolders: [],
 		state: {
 			oneOffs: [],
+			ingredientSelectionsByRecipe: {},
 			checkedKeys: {},
 			collapsedGroups: {},
 		},
 	};
 	if (!raw) return base;
+
+	const ingredientSelectionsByRecipe: Record<
+		string,
+		Record<string, "include" | "exclude">
+	> = {};
+	const rawSelections = raw.state?.ingredientSelectionsByRecipe;
+	if (rawSelections && typeof rawSelections === "object") {
+		for (const path in rawSelections as Record<string, unknown>) {
+			const overrides = (rawSelections as Record<string, unknown>)[path];
+			if (!overrides || typeof overrides !== "object") continue;
+			const cleaned: Record<string, "include" | "exclude"> = {};
+			for (const key in overrides as Record<string, unknown>) {
+				const mode = (overrides as Record<string, unknown>)[key];
+				if (mode === "include" || mode === "exclude") {
+					cleaned[key] = mode;
+				}
+			}
+			if (Object.keys(cleaned).length > 0) {
+				ingredientSelectionsByRecipe[path] = cleaned;
+			}
+		}
+	}
+
+	// Backward-compat: previous state stored include-only arrays.
+	const legacySelected = (raw.state as Record<string, unknown> | undefined)
+		?.selectedIngredientsByRecipe;
+	if (legacySelected && typeof legacySelected === "object") {
+		for (const path in legacySelected as Record<string, unknown>) {
+			const keys = (legacySelected as Record<string, unknown>)[path];
+			if (!Array.isArray(keys)) continue;
+			ingredientSelectionsByRecipe[path] ??= {};
+			for (const key of keys) {
+				if (typeof key !== "string") continue;
+				ingredientSelectionsByRecipe[path][key] = "include";
+			}
+		}
+	}
 
 	const merged: PantrySettings = {
 		...base,
@@ -351,6 +401,7 @@ function mergeSettings(
 			oneOffs: Array.isArray(raw.state?.oneOffs)
 				? (raw.state?.oneOffs ?? [])
 				: [],
+			ingredientSelectionsByRecipe,
 			checkedKeys:
 				raw.state?.checkedKeys && typeof raw.state.checkedKeys === "object"
 					? { ...raw.state.checkedKeys }

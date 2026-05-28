@@ -59,10 +59,19 @@ export interface PantrySettings {
 
 export type NutritionDisplay = "per-serving" | "total";
 export type NutritionSource = "recipe-total" | "per-serving";
+export type IngredientSelectionMode = "include" | "exclude";
 
 export interface PantrySavedState {
 	/** One-off shopping items the user has added manually. */
 	oneOffs: OneOffItem[];
+	/**
+	 * Per-recipe ingredient overrides from recipe view.
+	 * Keyed by source file path, then ingredient key -> include/exclude.
+	 */
+	ingredientSelectionsByRecipe: Record<
+		string,
+		Record<string, IngredientSelectionMode>
+	>;
 	/**
 	 * Map from item key to checked status. Survives refreshes so that recomputing
 	 * the list from recipes doesn't lose the user's progress while shopping.
@@ -130,6 +139,7 @@ export const DEFAULT_SETTINGS: PantrySettings = {
 	giDictionary: DEFAULT_GI_DICTIONARY,
 	state: {
 		oneOffs: [],
+		ingredientSelectionsByRecipe: {},
 		checkedKeys: {},
 		collapsedGroups: {},
 	},

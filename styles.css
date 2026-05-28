@@ -718,6 +718,12 @@
 	color: var(--text-muted);
 }
 
+.pantry-recipe-ingredients-selection-hint {
+	margin-left: auto;
+	font-size: var(--font-ui-smaller);
+	color: var(--text-faint);
+}
+
 .pantry-recipe-ingredients-icon {
 	display: inline-flex;
 	align-items: center;
@@ -742,7 +748,7 @@
 
 .pantry-recipe-ingredient {
 	display: grid;
-	grid-template-columns: minmax(72px, max-content) 1fr auto;
+	grid-template-columns: auto minmax(72px, max-content) 1fr auto;
 	gap: var(--size-4-2);
 	align-items: baseline;
 	padding: var(--size-2-3) var(--size-4-2);
@@ -756,6 +762,51 @@
 
 .pantry-recipe-ingredient:hover {
 	background: var(--background-modifier-hover);
+}
+
+.pantry-recipe-ingredient.is-picked {
+	background: color-mix(in srgb, var(--interactive-accent) 10%, transparent);
+}
+
+.pantry-recipe-ingredient.is-excluded {
+	opacity: 0.9;
+}
+
+.pantry-recipe-ingredient-toggle {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 24px;
+	height: 24px;
+	padding: 0;
+	margin: 0;
+	align-self: center;
+	border-radius: var(--radius-s);
+	border: 1px solid var(--background-modifier-border);
+	background: var(--background-primary);
+	color: var(--text-faint);
+	box-shadow: none;
+}
+
+.pantry-recipe-ingredient-toggle:hover:not(:disabled),
+.pantry-recipe-ingredient-toggle:focus-visible:not(:disabled) {
+	background: var(--background-modifier-hover);
+	color: var(--text-normal);
+}
+
+.pantry-recipe-ingredient-toggle.is-include {
+	color: var(--interactive-accent);
+	border-color: color-mix(in srgb, var(--interactive-accent) 40%, var(--background-modifier-border));
+}
+
+.pantry-recipe-ingredient-toggle.is-exclude {
+	color: var(--text-error, var(--color-red, #e5484d));
+	border-color: color-mix(in srgb, var(--text-error, var(--color-red, #e5484d)) 40%, var(--background-modifier-border));
+}
+
+.pantry-recipe-ingredient-toggle:disabled {
+	opacity: 0.75;
+	cursor: not-allowed;
 }
 
 .pantry-recipe-ingredient-qty {

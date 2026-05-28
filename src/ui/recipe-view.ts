@@ -8,7 +8,11 @@ import {
 } from "obsidian";
 import { setRecipeSelection, stampRecipeCooked } from "../grocery/selection";
 import { isHighGi, parseGiDictionary } from "../parser/glycemic";
-import { parseIngredientLine } from "../parser/ingredient";
+import {
+	hasIgnoreTag,
+	ingredientKey,
+	parseIngredientLine,
+} from "../parser/ingredient";
 import { detectMeatTemp, MeatTemp } from "../parser/meat";
 import { formatQuantity } from "../parser/quantity";
 import {
@@ -26,6 +30,7 @@ import {
 	RecipeTimes,
 } from "../parser/recipe-meta";
 import {
+	IngredientSelectionMode,
 	PantrySettings,
 	RECIPE_FRONTMATTER,
 } from "../settings";
@@ -36,6 +41,14 @@ export const VIEW_TYPE_RECIPE = "pantry-recipe";
 interface RecipeViewDeps {
 	getSettings: () => PantrySettings;
 	openInMarkdown: (leaf: WorkspaceLeaf) => Promise<void>;
+	getIngredientSelections: (
+		recipePath: string,
+	) => Record<string, IngredientSelectionMode>;
+	setIngredientSelection: (
+		recipePath: string,
+		ingredientKey: string,
+		mode: IngredientSelectionMode | "default",
+	) => Promise<void>;
 	onSelectionChanged: () => void;
 }
 
@@ -195,8 +208,10 @@ export class RecipeView extends TextFileView {
 		if (split.ingredientLines.length > 0) {
 			this.renderIngredients(
 				ingredientsCol,
+				file,
 				split.ingredientLines,
 				multiplier,
+				isSelected,
 				settings,
 			);
 		}
@@ -728,8 +743,10 @@ export class RecipeView extends TextFileView {
 
 	private renderIngredients(
 		root: HTMLElement,
+		file: TFile,
 		ingredientLines: string[],
 		multiplier: number,
+		recipeSelected: boolean,
 		settings: PantrySettings,
 	): void {
 		const wrap = root.createDiv({
@@ -748,9 +765,18 @@ export class RecipeView extends TextFileView {
 			text: settings.ingredientsHeading,
 		});
 
+		if (recipeSelected) {
+			header.createDiv({
+				cls: "pantry-recipe-ingredients-selection-hint",
+				text: "All ingredients included by default",
+			});
+		}
+
 		const ul = wrap.createEl("ul", {
 			cls: "pantry-recipe-ingredient-list",
 		});
+
+		const overrides = this.deps.getIngredientSelections(file.path);
 
 		const giDictionary = settings.diabeticMode
 			? parseGiDictionary(settings.giDictionary)
@@ -759,8 +785,105 @@ export class RecipeView extends TextFileView {
 		for (const raw of ingredientLines) {
 			const parsed = parseIngredientLine(raw);
 			if (!parsed) continue;
+			const key = ingredientKey(parsed.name, parsed.unit);
+			let mode: IngredientSelectionMode | "default" =
+				overrides[key] ?? "default";
+			const ignoredByTag = hasIgnoreTag(parsed.tags);
+			if (ignoredByTag) mode = "exclude";
+
 			const li = ul.createEl("li", {
 				cls: "pantry-recipe-ingredient",
+			});
+
+			const toggle = li.createEl("button", {
+				cls: "pantry-recipe-ingredient-toggle",
+				attr: {
+					type: "button",
+				},
+			});
+
+			const applyVisualState = (): void => {
+				const effectivelyIncluded =
+					!ignoredByTag && (mode === "include" || (mode === "default" && recipeSelected));
+				li.toggleClass("is-picked", effectivelyIncluded);
+				li.toggleClass("is-excluded", mode === "exclude" || ignoredByTag);
+				toggle.toggleClass("is-include", mode === "include");
+				toggle.toggleClass("is-exclude", mode === "exclude" || ignoredByTag);
+				toggle.toggleClass("is-default", mode === "default" && !ignoredByTag);
+				toggle.empty();
+
+				if (ignoredByTag) {
+					setIcon(toggle, "ban");
+					toggle.setAttribute(
+						"aria-label",
+						`${titleCase(parsed.name)} is excluded by #ignoreingredient`,
+					);
+					toggle.title = "Excluded by #ignoreingredient tag";
+					return;
+				}
+
+				if (mode === "include") {
+					setIcon(toggle, "shopping-cart");
+					toggle.setAttribute(
+						"aria-label",
+						`${titleCase(parsed.name)} is set to add to grocery list`,
+					);
+					toggle.title = "Will be added to grocery list";
+					return;
+				}
+
+				if (mode === "exclude") {
+					setIcon(toggle, "ban");
+					toggle.setAttribute(
+						"aria-label",
+						`${titleCase(parsed.name)} is set to not add to grocery list`,
+					);
+					toggle.title = "Will not be added to grocery list";
+					return;
+				}
+
+				if (recipeSelected) {
+					setIcon(toggle, "shopping-cart");
+					toggle.setAttribute(
+						"aria-label",
+						`${titleCase(parsed.name)} follows recipe default and is added`,
+					);
+					toggle.title = "Default: added because recipe is on grocery list";
+					return;
+				}
+
+				setIcon(toggle, "circle");
+				toggle.setAttribute(
+					"aria-label",
+					`${titleCase(parsed.name)} follows recipe default and is not added`,
+				);
+				toggle.title = "Default: not added unless recipe or ingredient is selected";
+			};
+
+			applyVisualState();
+			toggle.disabled = ignoredByTag;
+			toggle.addEventListener("click", () => {
+				if (ignoredByTag) return;
+				const next: IngredientSelectionMode | "default" =
+					mode === "default"
+						? "include"
+						: mode === "include"
+							? "exclude"
+							: "default";
+				const previous = mode;
+				mode = next;
+				applyVisualState();
+				void this.deps
+					.setIngredientSelection(file.path, key, next)
+					.then(() => {
+						this.deps.onSelectionChanged();
+					})
+					.catch((err) => {
+						console.error("pantry: failed to toggle ingredient", err);
+						mode = previous;
+						applyVisualState();
+						new Notice("Could not update grocery ingredient selection.");
+					});
 			});
 
 			const scaledQty =
