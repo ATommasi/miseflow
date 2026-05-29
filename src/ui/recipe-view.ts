@@ -26,6 +26,7 @@ import {
 	readAllergens,
 	readDiet,
 	readFavorite,
+	readLastMade,
 	readTimes,
 	RecipeTimes,
 } from "../parser/recipe-meta";
@@ -174,12 +175,13 @@ export class RecipeView extends TextFileView {
 		const allergens = readAllergens(frontmatter);
 		const times = readTimes(frontmatter);
 		const isFavorite = readFavorite(frontmatter);
+		const lastMade = readLastMade(frontmatter, settings.lastMadeProperty);
 		const allergenWarnings = matchingAllergens(
 			allergens,
 			settings.myAllergens,
 		);
 
-		this.renderTitle(root, file, diet, times);
+		this.renderTitle(root, file, diet, times, lastMade);
 		if (allergenWarnings.length > 0) {
 			this.renderAllergenWarning(root, allergenWarnings);
 		}
@@ -370,10 +372,7 @@ export class RecipeView extends TextFileView {
 	}
 
 	private renderTitle(
-		root: HTMLElement,
-		file: TFile,
-		diet: readonly string[],
-		times: RecipeTimes,
+		root: HTMLElement, file: TFile, diet: readonly string[], times: RecipeTimes, lastMade: string | null,
 	): void {
 		const header = root.createDiv({ cls: "pantry-recipe-title-block" });
 		header.createEl("h1", {
@@ -385,7 +384,8 @@ export class RecipeView extends TextFileView {
 			diet.length > 0 ||
 			times.prep !== null ||
 			times.cook !== null ||
-			times.total !== null;
+			times.total !== null ||
+			lastMade !== null;
 		if (!hasBadges) return;
 
 		const badges = header.createDiv({ cls: "pantry-recipe-badges" });
@@ -404,6 +404,10 @@ export class RecipeView extends TextFileView {
 		// Total is just their sum and would be redundant noise).
 		if (times.prep === null && times.cook === null) {
 			this.renderTimeBadge(badges, "Total", times.total);
+		}
+
+		if (lastMade !== null) {
+			this.renderLastMade(badges, lastMade);
 		}
 	}
 
@@ -427,6 +431,27 @@ export class RecipeView extends TextFileView {
 			text: formatMinutes(minutes),
 		});
 		badge.setAttribute("title", `${label} time: ${formatMinutes(minutes)}`);
+	}
+
+	private renderLastMade(
+		row: HTMLElement,
+		lastMade: string | null,
+	): void {
+		if (lastMade === null) return;
+		const badge = row.createSpan({
+			cls: "pantry-badge pantry-badge-last-made",
+		});
+		const icon = badge.createSpan({ cls: "pantry-badge-icon" });
+		setIcon(icon, "calendar");
+		badge.createSpan({
+			cls: "pantry-badge-label",
+			text: "Last made",
+		});
+		badge.createSpan({
+			cls: "pantry-badge-value",
+			text: lastMade,
+		});
+		badge.setAttribute("title", `Last made: ${lastMade}`);
 	}
 
 	private renderAllergenWarning(

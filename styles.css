@@ -97,7 +97,7 @@
 	display: inline;
 }
 
-.pantry-recipe + .pantry-recipe::before {
+.pantry-recipe+.pantry-recipe::before {
 	content: ", ";
 	color: var(--text-muted);
 }
@@ -349,6 +349,15 @@
 	font-variant-numeric: tabular-nums;
 }
 
+.pantry-badge-last-made {
+	background: var(--background-modifier-success-rgb, var(--background-secondary));
+	color: var(--color-green, #2ea043);
+	background-color: color-mix(in srgb, var(--color-green, #2ea043) 12%, var(--background-secondary));
+	border-color: color-mix(in srgb, var(--color-green, #2ea043) 30%, transparent);
+
+}
+
+
 .pantry-badge-diet {
 	background: var(--background-modifier-success-rgb, var(--background-secondary));
 	color: var(--color-green, #2ea043);
@@ -356,6 +365,8 @@
 	background-color: color-mix(in srgb, var(--color-green, #2ea043) 12%, var(--background-secondary));
 	text-transform: capitalize;
 }
+
+
 
 .pantry-recipe-allergen-warning {
 	display: flex;
@@ -756,7 +767,7 @@
 	transition: background-color 80ms ease-in-out;
 }
 
-.pantry-recipe-ingredient + .pantry-recipe-ingredient {
+.pantry-recipe-ingredient+.pantry-recipe-ingredient {
 	border-top: 1px solid var(--background-modifier-border);
 }
 
@@ -971,7 +982,7 @@
 	transition: background-color 80ms ease-in-out;
 }
 
-.pantry-recipe-instruction + .pantry-recipe-instruction {
+.pantry-recipe-instruction+.pantry-recipe-instruction {
 	border-top: 1px solid var(--background-modifier-border);
 }
 
@@ -1001,11 +1012,11 @@
 	min-width: 0;
 }
 
-.pantry-recipe-instruction-body > :first-child {
+.pantry-recipe-instruction-body> :first-child {
 	margin-top: 0;
 }
 
-.pantry-recipe-instruction-body > :last-child {
+.pantry-recipe-instruction-body> :last-child {
 	margin-bottom: 0;
 }
 
