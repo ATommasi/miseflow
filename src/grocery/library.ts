@@ -1,6 +1,10 @@
 import { App, TFile } from "obsidian";
 import { fileInRecipeFolders, isRecipeSelected } from "../parser/recipe";
-import { listMarkdownFilesInRecipeFolders } from "../utils/vault-files";
+import {
+	frontmatterTypeMatches,
+	listMarkdownFilesInRecipeFolders,
+	normalizeRecipeTypeToken,
+} from "../utils/vault-files";
 import {
 	daysSince,
 	matchingAllergens,
@@ -26,15 +30,13 @@ export function listRecipeLibrary(
 	app: App,
 	settings: PantrySettings,
 ): RecipeEntry[] {
-	const target = settings.recipeTypeValue.trim().toLowerCase() || "recipe";
+	const target = normalizeRecipeTypeToken(settings.recipeTypeValue) || "recipe";
 	const out: RecipeEntry[] = [];
 	for (const file of listMarkdownFilesInRecipeFolders(app, settings)) {
 		if (!fileInRecipeFolders(file, settings.recipeFolders)) continue;
 		const cache = app.metadataCache.getFileCache(file);
 		const fm = (cache?.frontmatter ?? {}) as Record<string, unknown>;
-		const type = fm[RECIPE_FRONTMATTER.type];
-		if (typeof type !== "string") continue;
-		if (type.trim().toLowerCase() !== target) continue;
+		if (!frontmatterTypeMatches(fm[RECIPE_FRONTMATTER.type], target)) continue;
 		out.push({
 			file,
 			meta: readRecipeMeta(cache, settings.lastMadeProperty),

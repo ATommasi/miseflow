@@ -43,3 +43,43 @@ export function listMarkdownFilesInRecipeFolders(
 	}
 	return out;
 }
+
+/**
+ * Normalizes a recipe type token by trimming whitespace, converting to
+ * lowercase, and handling Obsidian link syntax ([[Target File|Alias]]).
+ */
+export function normalizeRecipeTypeToken(value: string): string {
+	const trimmed = value.trim();
+	if (!trimmed) return "";
+
+	if (trimmed.startsWith("[[") && trimmed.endsWith("]]")) {
+		const inner = trimmed.slice(2, -2).trim();
+		const pipeIndex = inner.indexOf("|");
+		const hashIndex = inner.indexOf("#");
+		let cutoff = inner.length;
+		if (pipeIndex >= 0) cutoff = Math.min(cutoff, pipeIndex);
+		if (hashIndex >= 0) cutoff = Math.min(cutoff, hashIndex);
+		return inner.slice(0, cutoff).trim().toLowerCase();
+	}
+
+	return trimmed.toLowerCase();
+}
+
+/**
+ * Returns true if a frontmatter type value (string or string array) matches
+ * the normalised target token.
+ */
+export function frontmatterTypeMatches(value: unknown, target: string): boolean {
+	if (typeof value === "string") {
+		return normalizeRecipeTypeToken(value) === target;
+	}
+
+	if (Array.isArray(value)) {
+		return value.some((item) => {
+			if (typeof item !== "string") return false;
+			return normalizeRecipeTypeToken(item) === target;
+		});
+	}
+
+	return false;
+}
