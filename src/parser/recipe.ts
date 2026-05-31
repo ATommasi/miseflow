@@ -1,7 +1,7 @@
 import { App, CachedMetadata, TFile } from "obsidian";
 import { PantrySettings, RECIPE_FRONTMATTER } from "../settings";
 import { listMarkdownFilesInRecipeFolders } from "../utils/vault-files";
-import { RecipeIngredient } from "../types";
+import { IngredientGroup, InstructionGroup, RecipeIngredient } from "../types";
 import { hasIgnoreTag, parseIngredientLine } from "./ingredient";
 
 /** Returns true if the file lives inside one of the configured folders (or all are empty). */
@@ -167,10 +167,9 @@ export function stripFrontmatter(contents: string): string {
 
 /**
  * Split a recipe body into the markdown that comes before the
- * ingredients section, the raw ingredient lines, and the markdown that
- * comes after. Used by the recipe view to render the surrounding
- * markdown verbatim while replacing the ingredients section with an
- * interactive, multiplier-aware display.
+ * ingredients section, grouped ingredient lines, and the markdown that
+ * comes after. Subheadings within the ingredients section (e.g.
+ * "For the Bolognese Sauce") become group headings.
  *
  * If no ingredients heading is found, the entire body is returned in
  * `before` so the recipe view can render it as-is and the multiplier
@@ -179,7 +178,7 @@ export function stripFrontmatter(contents: string): string {
 export function splitBodyAroundIngredients(
 	body: string,
 	headingName: string,
-): { before: string; ingredientLines: string[]; after: string } {
+): { before: string; ingredientGroups: IngredientGroup[]; after: string } {
 	const lines = body.split(/\r?\n/);
 	const headingPattern = /^(#{1,6})\s+(.*?)\s*#*\s*$/;
 	const target = headingName.trim().toLowerCase();
@@ -199,33 +198,51 @@ export function splitBodyAroundIngredients(
 	}
 
 	if (headingIndex === -1) {
-		return { before: body, ingredientLines: [], after: "" };
+		return { before: body, ingredientGroups: [], after: "" };
 	}
 
-	const ingredientLines: string[] = [];
+	const groups: IngredientGroup[] = [];
+	let current: IngredientGroup = { heading: null, lines: [] };
 	let endIndex = lines.length;
+
 	for (let i = headingIndex + 1; i < lines.length; i++) {
 		const line = lines[i] ?? "";
 		const heading = line.match(headingPattern);
+
 		if (heading && (heading[1] ?? "").length <= headingLevel) {
 			endIndex = i;
 			break;
 		}
-		if (/^\s*[-*+]\s+/.test(line) || /^\s*\d+\.\s+/.test(line)) {
-			ingredientLines.push(line);
+
+		if (heading) {
+			if (current.heading !== null || current.lines.length > 0) {
+				groups.push(current);
+			}
+			current = { heading: (heading[2] ?? "").trim(), lines: [] };
+		} else if (/^\s*[-*+]\s+/.test(line) || /^\s*\d+\.\s+/.test(line)) {
+			current.lines.push(line);
 		}
+	}
+
+	if (current.heading !== null || current.lines.length > 0) {
+		groups.push(current);
 	}
 
 	const before = lines.slice(0, headingIndex).join("\n").trimEnd();
 	const after = lines.slice(endIndex).join("\n").trim();
-	return { before, ingredientLines, after };
+	return { before, ingredientGroups: groups, after };
 }
 
 /**
  * Split an arbitrary block of markdown into the part before the
- * instructions heading, an array of step strings, and the part after
- * the instructions section. Returns `steps: []` when no heading or no
- * list items are found, and the original input in `before`.
+ * instructions heading, groups of steps (each with an optional
+ * subheading and its own numbering), and the part after the
+ * instructions section.
+ *
+ * Subheadings within the instructions section become group headings;
+ * step counters reset to 1 for each group. Returns `groups: []` when
+ * no heading or no list items are found, and the original input in
+ * `before`.
  *
  * Each step string is the raw markdown of that step's body, with any
  * leading list marker removed. Continuation lines (everything between
@@ -235,7 +252,7 @@ export function splitBodyAroundIngredients(
 export function splitBodyAroundInstructions(
 	body: string,
 	headingName: string,
-): { before: string; steps: string[]; after: string } {
+): { before: string; groups: InstructionGroup[]; after: string } {
 	const lines = body.split(/\r?\n/);
 	const headingPattern = /^(#{1,6})\s+(.*?)\s*#*\s*$/;
 	const target = headingName.trim().toLowerCase();
@@ -255,7 +272,7 @@ export function splitBodyAroundInstructions(
 	}
 
 	if (headingIndex === -1) {
-		return { before: body, steps: [], after: "" };
+		return { before: body, groups: [], after: "" };
 	}
 
 	let endIndex = lines.length;
@@ -268,21 +285,73 @@ export function splitBodyAroundInstructions(
 	}
 
 	const sectionLines = lines.slice(headingIndex + 1, endIndex);
-	const steps = parseInstructionSteps(sectionLines);
+	const groups = parseInstructionGroups(sectionLines, headingLevel);
 
 	const before = lines.slice(0, headingIndex).join("\n").trimEnd();
 	const after = lines.slice(endIndex).join("\n").trim();
-	return { before, steps, after };
+	return { before, groups, after };
 }
 
-function parseInstructionSteps(sectionLines: string[]): string[] {
+function parseInstructionGroups(
+	sectionLines: string[],
+	baseLevel: number,
+): InstructionGroup[] {
+	const headingPattern = /^(#{1,6})\s+(.*?)\s*#*\s*$/;
+
+	// Segment lines into chunks separated by subheadings.
+	type Segment = {
+		heading: string | null;
+		headingLevel: number;
+		lines: string[];
+	};
+	const segments: Segment[] = [];
+	let current: Segment = {
+		heading: null,
+		headingLevel: 0,
+		lines: [],
+	};
+
+	for (const line of sectionLines) {
+		const headingMatch = line.match(headingPattern);
+		if (headingMatch) {
+			const level = (headingMatch[1] ?? "").length;
+			if (level > baseLevel) {
+				if (current.heading !== null || current.lines.length > 0) {
+					segments.push(current);
+				}
+				current = {
+					heading: (headingMatch[2] ?? "").trim(),
+					headingLevel: level,
+					lines: [],
+				};
+				continue;
+			}
+		}
+		current.lines.push(line);
+	}
+	if (current.heading !== null || current.lines.length > 0) {
+		segments.push(current);
+	}
+
+	return segments
+		.map((seg) => ({
+			heading: seg.heading,
+			headingLevel: seg.headingLevel,
+			steps: parseStepsFromLines(seg.lines),
+		}))
+		.filter((g) => g.heading !== null || g.steps.length > 0);
+}
+
+function parseStepsFromLines(lines: string[]): string[] {
 	const orderedRe = /^\s*\d+\.\s+(.*)$/;
 	const unorderedRe = /^\s*[-*+]\s+(.*)$/;
 
-	const startsForPattern = (re: RegExp): { idx: number; first: string }[] => {
+	const startsForPattern = (
+		re: RegExp,
+	): { idx: number; first: string }[] => {
 		const out: { idx: number; first: string }[] = [];
-		for (let i = 0; i < sectionLines.length; i++) {
-			const m = (sectionLines[i] ?? "").match(re);
+		for (let i = 0; i < lines.length; i++) {
+			const m = (lines[i] ?? "").match(re);
 			if (m) out.push({ idx: i, first: m[1] ?? "" });
 		}
 		return out;
@@ -297,12 +366,16 @@ function parseInstructionSteps(sectionLines: string[]): string[] {
 	const steps: string[] = [];
 	for (let i = 0; i < starts.length; i++) {
 		const start = starts[i]!;
-		const next = starts[i + 1]?.idx ?? sectionLines.length;
+		const next = starts[i + 1]?.idx ?? lines.length;
 		const parts = [start.first];
 		for (let j = start.idx + 1; j < next; j++) {
-			parts.push(sectionLines[j] ?? "");
+			parts.push(lines[j] ?? "");
 		}
-		const text = parts.join("\n").trim();
+		// Strip trailing horizontal rules that are decorative section dividers.
+		const text = parts
+			.join("\n")
+			.replace(/(\n\s*---+\s*)+$/, "")
+			.trim();
 		if (text) steps.push(text);
 	}
 	return steps;

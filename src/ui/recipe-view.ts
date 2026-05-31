@@ -31,6 +31,10 @@ import {
 	RecipeTimes,
 } from "../parser/recipe-meta";
 import {
+	IngredientGroup,
+	InstructionGroup,
+} from "../types";
+import {
 	IngredientSelectionMode,
 	PantrySettings,
 	RECIPE_FRONTMATTER,
@@ -207,11 +211,11 @@ export class RecipeView extends TextFileView {
 		const ingredientsCol = bodyRow.createDiv({
 			cls: "pantry-recipe-body-main",
 		});
-		if (split.ingredientLines.length > 0) {
+		if (split.ingredientGroups.length > 0) {
 			this.renderIngredients(
 				ingredientsCol,
 				file,
-				split.ingredientLines,
+				split.ingredientGroups,
 				multiplier,
 				isSelected,
 				settings,
@@ -241,7 +245,7 @@ export class RecipeView extends TextFileView {
 			instructionsHeading,
 		);
 
-		if (split.steps.length === 0) {
+		if (split.groups.length === 0) {
 			void this.renderMarkdown(root, afterMarkdown, sourcePath);
 			return;
 		}
@@ -252,7 +256,7 @@ export class RecipeView extends TextFileView {
 
 		this.renderInstructions(
 			root,
-			split.steps,
+			split.groups,
 			sourcePath,
 			instructionsHeading,
 		);
@@ -264,7 +268,7 @@ export class RecipeView extends TextFileView {
 
 	private renderInstructions(
 		root: HTMLElement,
-		steps: string[],
+		groups: InstructionGroup[],
 		sourcePath: string,
 		title: string,
 	): void {
@@ -284,23 +288,48 @@ export class RecipeView extends TextFileView {
 			text: title,
 		});
 
-		const list = wrap.createEl("ol", {
-			cls: "pantry-recipe-instruction-list",
-		});
+		for (const group of groups) {
+			const groupEl = wrap.createDiv({
+				cls: "pantry-recipe-instruction-group",
+			});
 
-		for (let i = 0; i < steps.length; i++) {
-			const step = steps[i] ?? "";
-			const li = list.createEl("li", {
-				cls: "pantry-recipe-instruction",
-			});
-			li.createDiv({
-				cls: "pantry-recipe-instruction-number",
-				text: String(i + 1),
-			});
-			const body = li.createDiv({
-				cls: "pantry-recipe-instruction-body",
-			});
-			void MarkdownRenderer.render(this.app, step, body, sourcePath, this);
+			if (group.heading) {
+				const levelCls =
+					group.headingLevel >= 4
+						? "pantry-recipe-instruction-group-heading--sub"
+						: "pantry-recipe-instruction-group-heading--section";
+				groupEl.createDiv({
+					cls: `pantry-recipe-instruction-group-heading ${levelCls}`,
+					text: group.heading,
+				});
+			}
+
+			if (group.steps.length > 0) {
+				const list = groupEl.createEl("ol", {
+					cls: "pantry-recipe-instruction-list",
+				});
+
+				for (let i = 0; i < group.steps.length; i++) {
+					const step = group.steps[i] ?? "";
+					const li = list.createEl("li", {
+						cls: "pantry-recipe-instruction",
+					});
+					li.createDiv({
+						cls: "pantry-recipe-instruction-number",
+						text: String(i + 1),
+					});
+					const body = li.createDiv({
+						cls: "pantry-recipe-instruction-body",
+					});
+					void MarkdownRenderer.render(
+						this.app,
+						step,
+						body,
+						sourcePath,
+						this,
+					);
+				}
+			}
 		}
 	}
 
@@ -769,7 +798,7 @@ export class RecipeView extends TextFileView {
 	private renderIngredients(
 		root: HTMLElement,
 		file: TFile,
-		ingredientLines: string[],
+		ingredientGroups: IngredientGroup[],
 		multiplier: number,
 		recipeSelected: boolean,
 		settings: PantrySettings,
@@ -797,147 +826,157 @@ export class RecipeView extends TextFileView {
 			});
 		}
 
-		const ul = wrap.createEl("ul", {
-			cls: "pantry-recipe-ingredient-list",
-		});
-
 		const overrides = this.deps.getIngredientSelections(file.path);
-
 		const giDictionary = settings.diabeticMode
 			? parseGiDictionary(settings.giDictionary)
 			: [];
 
-		for (const raw of ingredientLines) {
-			const parsed = parseIngredientLine(raw);
-			if (!parsed) continue;
-			const key = ingredientKey(parsed.name, parsed.unit);
-			let mode: IngredientSelectionMode | "default" =
-				overrides[key] ?? "default";
-			const ignoredByTag = hasIgnoreTag(parsed.tags);
-			if (ignoredByTag) mode = "exclude";
-
-			const li = ul.createEl("li", {
-				cls: "pantry-recipe-ingredient",
-			});
-
-			const toggle = li.createEl("button", {
-				cls: "pantry-recipe-ingredient-toggle",
-				attr: {
-					type: "button",
-				},
-			});
-
-			const applyVisualState = (): void => {
-				const effectivelyIncluded =
-					!ignoredByTag && (mode === "include" || (mode === "default" && recipeSelected));
-				li.toggleClass("is-picked", effectivelyIncluded);
-				li.toggleClass("is-excluded", mode === "exclude" || ignoredByTag);
-				toggle.toggleClass("is-include", mode === "include");
-				toggle.toggleClass("is-exclude", mode === "exclude" || ignoredByTag);
-				toggle.toggleClass("is-default", mode === "default" && !ignoredByTag);
-				toggle.empty();
-
-				if (ignoredByTag) {
-					setIcon(toggle, "ban");
-					toggle.setAttribute(
-						"aria-label",
-						`${titleCase(parsed.name)} is excluded by #ignoreingredient`,
-					);
-					toggle.title = "Excluded by #ignoreingredient tag";
-					return;
-				}
-
-				if (mode === "include") {
-					setIcon(toggle, "shopping-cart");
-					toggle.setAttribute(
-						"aria-label",
-						`${titleCase(parsed.name)} is set to add to grocery list`,
-					);
-					toggle.title = "Will be added to grocery list";
-					return;
-				}
-
-				if (mode === "exclude") {
-					setIcon(toggle, "ban");
-					toggle.setAttribute(
-						"aria-label",
-						`${titleCase(parsed.name)} is set to not add to grocery list`,
-					);
-					toggle.title = "Will not be added to grocery list";
-					return;
-				}
-
-				if (recipeSelected) {
-					setIcon(toggle, "shopping-cart");
-					toggle.setAttribute(
-						"aria-label",
-						`${titleCase(parsed.name)} follows recipe default and is added`,
-					);
-					toggle.title = "Default: added because recipe is on grocery list";
-					return;
-				}
-
-				setIcon(toggle, "circle");
-				toggle.setAttribute(
-					"aria-label",
-					`${titleCase(parsed.name)} follows recipe default and is not added`,
-				);
-				toggle.title = "Default: not added unless recipe or ingredient is selected";
-			};
-
-			applyVisualState();
-			toggle.disabled = ignoredByTag;
-			toggle.addEventListener("click", () => {
-				if (ignoredByTag) return;
-				const next: IngredientSelectionMode | "default" =
-					mode === "default"
-						? "include"
-						: mode === "include"
-							? "exclude"
-							: "default";
-				const previous = mode;
-				mode = next;
-				applyVisualState();
-				void this.deps
-					.setIngredientSelection(file.path, key, next)
-					.then(() => {
-						this.deps.onSelectionChanged();
-					})
-					.catch((err) => {
-						console.error("pantry: failed to toggle ingredient", err);
-						mode = previous;
-						applyVisualState();
-						new Notice("Could not update grocery ingredient selection.");
-					});
-			});
-
-			const scaledQty =
-				parsed.quantity === null
-					? null
-					: parsed.quantity * multiplier;
-			const qtyText = formatQuantity(scaledQty);
-			const qtyDisplay = [qtyText, parsed.unit]
-				.filter(Boolean)
-				.join(" ");
-
-			const qtyEl = li.createSpan({
-				cls: "pantry-recipe-ingredient-qty",
-				text: qtyDisplay,
-			});
-			if (!qtyDisplay) qtyEl.addClass("is-empty");
-
-			li.createSpan({
-				cls: "pantry-recipe-ingredient-name",
-				text: titleCase(parsed.name),
-			});
-
-			const meatTemp = detectMeatTemp(parsed.name);
-			if (meatTemp) {
-				this.renderMeatTempBadge(li, meatTemp);
+		for (const group of ingredientGroups) {
+			if (group.heading) {
+				wrap.createDiv({
+					cls: "pantry-recipe-ingredient-group-heading",
+					text: group.heading,
+				});
 			}
 
-			if (settings.diabeticMode && isHighGi(parsed.name, giDictionary)) {
-				this.renderHighGiBadge(li);
+			if (group.lines.length === 0) continue;
+
+			const ul = wrap.createEl("ul", {
+				cls: "pantry-recipe-ingredient-list",
+			});
+
+			for (const raw of group.lines) {
+				const parsed = parseIngredientLine(raw);
+				if (!parsed) continue;
+				const key = ingredientKey(parsed.name, parsed.unit);
+				let mode: IngredientSelectionMode | "default" =
+					overrides[key] ?? "default";
+				const ignoredByTag = hasIgnoreTag(parsed.tags);
+				if (ignoredByTag) mode = "exclude";
+
+				const li = ul.createEl("li", {
+					cls: "pantry-recipe-ingredient",
+				});
+
+				const toggle = li.createEl("button", {
+					cls: "pantry-recipe-ingredient-toggle",
+					attr: {
+						type: "button",
+					},
+				});
+
+				const applyVisualState = (): void => {
+					const effectivelyIncluded =
+						!ignoredByTag && (mode === "include" || (mode === "default" && recipeSelected));
+					li.toggleClass("is-picked", effectivelyIncluded);
+					li.toggleClass("is-excluded", mode === "exclude" || ignoredByTag);
+					toggle.toggleClass("is-include", mode === "include");
+					toggle.toggleClass("is-exclude", mode === "exclude" || ignoredByTag);
+					toggle.toggleClass("is-default", mode === "default" && !ignoredByTag);
+					toggle.empty();
+
+					if (ignoredByTag) {
+						setIcon(toggle, "ban");
+						toggle.setAttribute(
+							"aria-label",
+							`${titleCase(parsed.name)} is excluded by #ignoreingredient`,
+						);
+						toggle.title = "Excluded by #ignoreingredient tag";
+						return;
+					}
+
+					if (mode === "include") {
+						setIcon(toggle, "shopping-cart");
+						toggle.setAttribute(
+							"aria-label",
+							`${titleCase(parsed.name)} is set to add to grocery list`,
+						);
+						toggle.title = "Will be added to grocery list";
+						return;
+					}
+
+					if (mode === "exclude") {
+						setIcon(toggle, "ban");
+						toggle.setAttribute(
+							"aria-label",
+							`${titleCase(parsed.name)} is set to not add to grocery list`,
+						);
+						toggle.title = "Will not be added to grocery list";
+						return;
+					}
+
+					if (recipeSelected) {
+						setIcon(toggle, "shopping-cart");
+						toggle.setAttribute(
+							"aria-label",
+							`${titleCase(parsed.name)} follows recipe default and is added`,
+						);
+						toggle.title = "Default: added because recipe is on grocery list";
+						return;
+					}
+
+					setIcon(toggle, "circle");
+					toggle.setAttribute(
+						"aria-label",
+						`${titleCase(parsed.name)} follows recipe default and is not added`,
+					);
+					toggle.title = "Default: not added unless recipe or ingredient is selected";
+				};
+
+				applyVisualState();
+				toggle.disabled = ignoredByTag;
+				toggle.addEventListener("click", () => {
+					if (ignoredByTag) return;
+					const next: IngredientSelectionMode | "default" =
+						mode === "default"
+							? "include"
+							: mode === "include"
+								? "exclude"
+								: "default";
+					const previous = mode;
+					mode = next;
+					applyVisualState();
+					void this.deps
+						.setIngredientSelection(file.path, key, next)
+						.then(() => {
+							this.deps.onSelectionChanged();
+						})
+						.catch((err) => {
+							console.error("pantry: failed to toggle ingredient", err);
+							mode = previous;
+							applyVisualState();
+							new Notice("Could not update grocery ingredient selection.");
+						});
+				});
+
+				const scaledQty =
+					parsed.quantity === null
+						? null
+						: parsed.quantity * multiplier;
+				const qtyText = formatQuantity(scaledQty);
+				const qtyDisplay = [qtyText, parsed.unit]
+					.filter(Boolean)
+					.join(" ");
+
+				const qtyEl = li.createSpan({
+					cls: "pantry-recipe-ingredient-qty",
+					text: qtyDisplay,
+				});
+				if (!qtyDisplay) qtyEl.addClass("is-empty");
+
+				li.createSpan({
+					cls: "pantry-recipe-ingredient-name",
+					text: titleCase(parsed.name),
+				});
+
+				const meatTemp = detectMeatTemp(parsed.name);
+				if (meatTemp) {
+					this.renderMeatTempBadge(li, meatTemp);
+				}
+
+				if (settings.diabeticMode && isHighGi(parsed.name, giDictionary)) {
+					this.renderHighGiBadge(li);
+				}
 			}
 		}
 	}
