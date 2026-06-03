@@ -1,4 +1,4 @@
-import { App, Modal, TFile, setIcon } from "obsidian";
+import { App, Modal, TFile } from "obsidian";
 import { ingredientKey, parseIngredientLine } from "../parser/ingredient";
 import { formatQuantity } from "../parser/quantity";
 import { splitBodyAroundIngredients, stripFrontmatter } from "../parser/recipe";

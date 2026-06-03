@@ -1,5 +1,7 @@
 ![logo.png]
 
+> **Early release** — This is the initial public release of MiseFlow. If you run into any bugs or unexpected behaviour, please [open an issue](https://github.com/ATommasi/miseflow/issues).
+
 # MiseFlow
 
 > *Mise en place* — the culinary practice of preparing everything before you cook.

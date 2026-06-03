@@ -93,7 +93,7 @@ export class MiseFlowSettingsTab extends PluginSettingTab {
 		});
 
 		// ── Notes & Storage ──────────────────────────────────────────────
-		new Setting(containerEl).setName("Notes & Storage").setHeading();
+		new Setting(containerEl).setName("Notes & storage").setHeading();
 
 		new Setting(containerEl)
 			.setName("Meal plan note")
@@ -128,7 +128,7 @@ export class MiseFlowSettingsTab extends PluginSettingTab {
 			);
 
 		// ── Recipe Library ───────────────────────────────────────────────
-		new Setting(containerEl).setName("Recipe Library").setHeading();
+		new Setting(containerEl).setName("Recipe library").setHeading();
 
 		{
 			const s = new Setting(containerEl)
@@ -342,7 +342,7 @@ export class MiseFlowSettingsTab extends PluginSettingTab {
 			);
 
 		// ── Cooking & Tracking ───────────────────────────────────────────
-		new Setting(containerEl).setName("Cooking & Tracking").setHeading();
+		new Setting(containerEl).setName("Cooking & tracking").setHeading();
 
 		new Setting(containerEl)
 			.setName("Show mark as cooked button")
@@ -461,7 +461,7 @@ export class MiseFlowSettingsTab extends PluginSettingTab {
 			);
 
 		// ── Meal Suggestions ─────────────────────────────────────────────
-		new Setting(containerEl).setName("Meal Suggestions").setHeading();
+		new Setting(containerEl).setName("Meal suggestions").setHeading();
 
 		new Setting(containerEl)
 			.setName("Suggestion day window")
@@ -498,7 +498,7 @@ export class MiseFlowSettingsTab extends PluginSettingTab {
 			);
 
 		// ── Health & Safety ─────────────────────────────────────────────
-		new Setting(containerEl).setName("Health & Safety").setHeading();
+		new Setting(containerEl).setName("Health & safety").setHeading();
 
 		new Setting(containerEl)
 			.setName("Allergens property")
@@ -702,7 +702,7 @@ export class MiseFlowSettingsTab extends PluginSettingTab {
 					type: "text",
 					value: entry.category,
 					attr: {
-						placeholder: "e.g. Meat",
+						placeholder: "e.g. meat",
 						list: datalistId,
 					},
 				});

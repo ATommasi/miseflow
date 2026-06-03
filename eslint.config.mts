@@ -22,6 +22,16 @@ export default tseslint.config(
 		},
 	},
 	...obsidianmd.configs.recommended,
+	{
+		plugins: { obsidianmd },
+		rules: {
+			// Many legitimate exceptions: placeholders with technical values,
+			// acronyms (GI, YAML), product names, emoji-prefixed text.
+			"obsidianmd/ui/sentence-case": "warn",
+			// Async event handlers are idiomatic in Obsidian plugins.
+			"@typescript-eslint/no-misused-promises": "off",
+		},
+	},
 	globalIgnores([
 		"node_modules",
 		"dist",

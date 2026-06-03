@@ -290,7 +290,7 @@ export class GroceryListView extends ItemView {
 
 		const planLink = planRow.createEl("a", {
 			cls: "mise-summary-note-link",
-			text: " View Meals →",
+			text: " View meals →",
 			href: "#",
 		});
 		planLink.addEventListener("click", (evt) => {
@@ -308,7 +308,7 @@ export class GroceryListView extends ItemView {
 			});
 			const groceryLink = groceryRow.createEl("a", {
 				cls: "mise-summary-note-link",
-				text: " View Grocery List →",
+				text: " View grocery list →",
 				href: "#",
 			});
 			groceryLink.addEventListener("click", (evt) => {
