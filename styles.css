@@ -768,7 +768,7 @@
 
 .mise-recipe-ingredient {
 	display: grid;
-	grid-template-columns: auto minmax(72px, max-content) 1fr auto;
+	grid-template-columns: minmax(72px, max-content) 1fr auto auto;
 	gap: var(--size-4-2);
 	align-items: baseline;
 	padding: var(--size-2-3) var(--size-4-2);
@@ -1442,6 +1442,117 @@
 }
 
 .mise-export-footer {
+	display: flex;
+	gap: var(--size-2-2);
+	justify-content: flex-end;
+	padding-top: var(--size-2-3);
+	border-top: 1px solid var(--background-modifier-border);
+}
+
+/* ----------------------------------------------------------------------
+ * Add to meal plan modal
+ * --------------------------------------------------------------------*/
+
+.mise-meal-plan-modal {
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-4-4);
+	padding-top: var(--size-4-2);
+}
+
+.mise-meal-plan-modal h2 {
+	margin: 0;
+}
+
+.mise-meal-plan-modal-recipe {
+	margin: 0;
+	font-weight: var(--font-semibold);
+	color: var(--text-normal);
+}
+
+.mise-modal-row {
+	display: flex;
+	align-items: center;
+	gap: var(--size-4-2);
+}
+
+.mise-modal-label {
+	flex-shrink: 0;
+	width: 3rem;
+	font-size: var(--font-ui-small);
+	color: var(--text-muted);
+}
+
+.mise-modal-select,
+.mise-modal-input {
+	flex: 1;
+	min-width: 0;
+}
+
+.mise-modal-ingredients {
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-2-3);
+}
+
+.mise-modal-ingredients h3 {
+	margin: 0;
+	font-size: var(--font-ui-small);
+	font-weight: var(--font-semibold);
+	color: var(--text-muted);
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+}
+
+.mise-modal-ingredient-controls {
+	display: flex;
+	gap: var(--size-2-2);
+}
+
+.mise-modal-control-btn {
+	font-size: var(--font-ui-smaller);
+}
+
+.mise-modal-ingredient-list {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: flex;
+	flex-direction: column;
+	max-height: 200px;
+	overflow-y: auto;
+}
+
+.mise-modal-ingredient-item {
+	display: flex;
+	align-items: center;
+	gap: var(--size-2-2);
+	padding: var(--size-2-1) 0;
+	font-size: var(--font-ui-small);
+}
+
+.mise-modal-ingredient-item + .mise-modal-ingredient-item {
+	border-top: 1px solid var(--background-modifier-border);
+}
+
+.mise-modal-ingredient-qty {
+	flex-shrink: 0;
+	font-variant-numeric: tabular-nums;
+	font-weight: var(--font-semibold);
+	color: var(--text-accent);
+}
+
+.mise-modal-ingredient-name {
+	color: var(--text-normal);
+}
+
+.mise-modal-empty {
+	margin: 0;
+	color: var(--text-muted);
+	font-size: var(--font-ui-small);
+}
+
+.mise-modal-actions {
 	display: flex;
 	gap: var(--size-2-2);
 	justify-content: flex-end;
