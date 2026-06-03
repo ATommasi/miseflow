@@ -908,6 +908,154 @@
 	font-weight: var(--font-semibold);
 }
 
+/* ── Settings header (logo + buy me a coffee) ───────────────────────────── */
+
+.mise-settings-header {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: var(--size-4-3);
+	padding: var(--size-4-4) 0 var(--size-4-6);
+	margin-bottom: var(--size-4-4);
+	border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.mise-settings-logo {
+	max-width: 220px;
+	height: auto;
+}
+
+.mise-settings-bmc {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--size-2-2);
+	padding: var(--size-2-3) var(--size-4-4);
+	border-radius: var(--radius-l);
+	background: #FFDD00;
+	color: #000000;
+	font-weight: var(--font-semibold);
+	font-size: var(--font-ui-small);
+	text-decoration: none;
+	transition: opacity 0.15s ease;
+}
+
+.mise-settings-bmc:hover {
+	opacity: 0.85;
+	color: #000000;
+}
+
+/* ── Settings list UI (add/remove rows) ─────────────────────────────────── */
+
+/* Setting items that contain an embedded list switch to column layout */
+.setting-item.mise-settings-has-list {
+	flex-direction: column;
+	align-items: stretch;
+	gap: var(--size-4-1);
+}
+
+.setting-item.mise-settings-has-list .setting-item-info {
+	width: 100%;
+}
+
+/* Hide the (empty) control area — all controls are in the list */
+.setting-item.mise-settings-has-list .setting-item-control {
+	display: none;
+}
+
+.mise-settings-list {
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-2-2);
+	width: 100%;
+}
+
+.mise-settings-list-row {
+	display: flex;
+	align-items: center;
+	gap: var(--size-2-3);
+}
+
+.mise-settings-list-input {
+	flex: 1;
+	min-width: 0;
+	height: var(--input-height);
+	padding: 0 var(--size-4-2);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--input-radius);
+	background: var(--background-primary);
+	color: var(--text-normal);
+	font-size: var(--font-ui-small);
+}
+
+.mise-settings-list-input:focus {
+	border-color: var(--interactive-accent);
+	outline: none;
+	box-shadow: 0 0 0 2px color-mix(in srgb, var(--interactive-accent) 25%, transparent);
+}
+
+.mise-settings-list-remove {
+	flex-shrink: 0;
+	width: 24px;
+	height: 24px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	border: none;
+	border-radius: var(--radius-s);
+	background: transparent;
+	color: var(--text-muted);
+	font-size: 16px;
+	cursor: pointer;
+	padding: 0;
+	line-height: 1;
+}
+
+.mise-settings-list-remove:hover {
+	background: var(--background-modifier-hover);
+	color: var(--text-error);
+}
+
+.mise-settings-list-add-row {
+	padding-top: var(--size-2-1);
+}
+
+.mise-settings-list-add {
+	font-size: var(--font-ui-smaller);
+	color: var(--interactive-accent);
+	background: transparent;
+	border: 1px dashed var(--background-modifier-border);
+	border-radius: var(--radius-s);
+	padding: var(--size-2-1) var(--size-4-2);
+	cursor: pointer;
+}
+
+.mise-settings-list-add:hover {
+	background: var(--background-modifier-hover);
+	border-color: var(--interactive-accent);
+}
+
+/* Category override rows have two equal-width inputs */
+.mise-settings-override-row .mise-settings-list-input:first-of-type {
+	max-width: 40%;
+}
+
+.mise-settings-override-arrow {
+	color: var(--text-muted);
+	flex-shrink: 0;
+	font-size: var(--font-ui-small);
+}
+
+/* ── Category order textarea ─────────────────────────────────────────────── */
+
+.mise-settings-category-order-textarea {
+	width: 100%;
+	min-height: 300px;
+	font-size: var(--font-ui-small);
+	resize: vertical;
+}
+
+/* ── GI dictionary ───────────────────────────────────────────────────────── */
+
 .mise-settings-gi-textarea {
 	font-family: var(--font-monospace);
 	font-size: var(--font-ui-smaller);

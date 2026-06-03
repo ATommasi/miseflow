@@ -96,10 +96,21 @@ export function readDiet(frontmatter: Record<string, unknown>): string[] {
 	return toTagArray(findValue(frontmatter, aliasesFor(RECIPE_FRONTMATTER.diet)));
 }
 
-export function readAllergens(frontmatter: Record<string, unknown>): string[] {
-	return toTagArray(
-		findValue(frontmatter, aliasesFor(RECIPE_FRONTMATTER.allergens)),
-	);
+/**
+ * Read allergens from frontmatter. Accepts both YAML lists and CSV text.
+ * `primaryKey` is the configured property name (default "allergens"). The
+ * standard aliases (allergen, allergies) are always checked as fallbacks.
+ */
+export function readAllergens(
+	frontmatter: Record<string, unknown>,
+	primaryKey: string = RECIPE_FRONTMATTER.allergens,
+): string[] {
+	// Build lookup order: configured key first, then standard aliases (deduplicated).
+	const keys = [primaryKey];
+	for (const alias of aliasesFor(RECIPE_FRONTMATTER.allergens)) {
+		if (!keys.includes(alias)) keys.push(alias);
+	}
+	return toTagArray(findValue(frontmatter, keys));
 }
 
 export interface RecipeTimes {
@@ -208,11 +219,12 @@ export interface RecipeMeta {
 export function readRecipeMeta(
 	cache: CachedMetadata | null,
 	lastMadeKey: string,
+	allergensKey?: string,
 ): RecipeMeta {
 	const fm = (cache?.frontmatter ?? {}) as Record<string, unknown>;
 	return {
 		diet: readDiet(fm),
-		allergens: readAllergens(fm),
+		allergens: readAllergens(fm, allergensKey),
 		times: readTimes(fm),
 		favorite: readFavorite(fm),
 		cookedCount: readCookedCount(fm),

@@ -173,7 +173,7 @@ export class RecipeView extends TextFileView {
 		);
 
 		const diet = readDiet(frontmatter);
-		const allergens = readAllergens(frontmatter);
+		const allergens = readAllergens(frontmatter, settings.allergensProperty);
 		const times = readTimes(frontmatter);
 		const isFavorite = readFavorite(frontmatter);
 		const lastMade = readLastMade(frontmatter, settings.lastMadeProperty);
@@ -859,9 +859,11 @@ export class RecipeView extends TextFileView {
 					text: titleCase(parsed.name),
 				});
 
-				const meatTemp = detectMeatTemp(parsed.name);
-				if (meatTemp) {
-					this.renderMeatTempBadge(li, meatTemp);
+				if (settings.showMeatTempWarnings) {
+					const meatTemp = detectMeatTemp(parsed.name);
+					if (meatTemp) {
+						this.renderMeatTempBadge(li, meatTemp);
+					}
 				}
 
 				if (settings.diabeticMode && isHighGi(parsed.name, giDictionary)) {

@@ -22,7 +22,9 @@ export interface MiseFlowSettings {
 	grouping: GroupingMode;
 	/** Where each item's category comes from. */
 	categorySource: CategorySource;
-	/** Order of categories. Unknown categories appear at the end alphabetically. */
+	/** When true, categories are sorted alphabetically; manual order is ignored. */
+	categoryAutoSort: boolean;
+	/** Manual category order used when categoryAutoSort is false. */
 	categoryOrder: string[];
 	/** User-defined category overrides applied before the built-in categorizer. */
 	categoryOverrides: CategoryOverride[];
@@ -46,8 +48,12 @@ export interface MiseFlowSettings {
 	lastMadeProperty: string;
 	/** When true, increments `cookedCount` whenever `lastMade` is stamped to a new day. */
 	trackCookedCount: boolean;
+	/** Frontmatter property name that stores a recipe's allergens. Accepts CSV text or YAML list. */
+	allergensProperty: string;
 	/** Allergen tags the user wants to be warned about (lowercase). */
 	myAllergens: string[];
+	/** Show unsafe internal temperature warnings on meat ingredients in the recipe view. */
+	showMeatTempWarnings: boolean;
 	/** Recipes cooked within this many days are excluded from the meal recommender. */
 	suggestionDayWindow: number;
 	/** Default number of suggestions the recommender surfaces. */
@@ -112,6 +118,7 @@ export const DEFAULT_SETTINGS: MiseFlowSettings = {
 	instructionsHeading: "Instructions",
 	grouping: "category",
 	categorySource: "dictionary",
+	categoryAutoSort: true,
 	categoryOrder: [...DEFAULT_CATEGORY_ORDER],
 	categoryOverrides: [],
 	autoCollapseCompleted: true,
@@ -124,7 +131,9 @@ export const DEFAULT_SETTINGS: MiseFlowSettings = {
 	trackLastMade: true,
 	lastMadeProperty: "lastMade",
 	trackCookedCount: true,
+	allergensProperty: "allergens",
 	myAllergens: [],
+	showMeatTempWarnings: true,
 	suggestionDayWindow: 14,
 	suggestionCount: 5,
 	diabeticMode: false,

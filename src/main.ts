@@ -305,6 +305,10 @@ function mergeSettings(
 				raw.categorySource === "dictionary"
 				? raw.categorySource
 				: base.categorySource,
+		categoryAutoSort:
+			typeof raw.categoryAutoSort === "boolean"
+				? raw.categoryAutoSort
+				: base.categoryAutoSort,
 		autoCollapseCompleted:
 			typeof raw.autoCollapseCompleted === "boolean"
 				? raw.autoCollapseCompleted
@@ -357,12 +361,20 @@ function mergeSettings(
 		recipeFolders: Array.isArray(raw.recipeFolders)
 			? raw.recipeFolders
 			: base.recipeFolders,
+		allergensProperty:
+			typeof raw.allergensProperty === "string" && raw.allergensProperty.trim()
+				? raw.allergensProperty.trim()
+				: base.allergensProperty,
 		myAllergens: Array.isArray(raw.myAllergens)
 			? raw.myAllergens
 				.filter((s): s is string => typeof s === "string")
 				.map((s) => s.trim().toLowerCase())
 				.filter(Boolean)
 			: base.myAllergens,
+		showMeatTempWarnings:
+			typeof raw.showMeatTempWarnings === "boolean"
+				? raw.showMeatTempWarnings
+				: base.showMeatTempWarnings,
 		trackCookedCount:
 			typeof raw.trackCookedCount === "boolean"
 				? raw.trackCookedCount

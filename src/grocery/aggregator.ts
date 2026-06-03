@@ -248,18 +248,19 @@ export function groupForDisplay(
 		pushTo(groups, item.category || "Other", item);
 	}
 
-	const order = settings.categoryOrder.length
-		? settings.categoryOrder
-		: [];
+	// When auto-sort is on (or no manual order exists), sort all alphabetically.
+	if (settings.categoryAutoSort || settings.categoryOrder.length === 0) {
+		return [...groups.keys()].sort().map((k) => [k, groups.get(k) ?? []]);
+	}
+
 	const orderedKeys: string[] = [];
-	for (const key of order) {
+	for (const key of settings.categoryOrder) {
 		if (groups.has(key)) orderedKeys.push(key);
 	}
 	const remaining = [...groups.keys()]
 		.filter((k) => !orderedKeys.includes(k))
 		.sort();
-	const finalKeys = [...orderedKeys, ...remaining];
-	return finalKeys.map((k) => [k, groups.get(k) ?? []]);
+	return [...orderedKeys, ...remaining].map((k) => [k, groups.get(k) ?? []]);
 }
 
 function pushTo(map: Map<string, GroceryItem[]>, key: string, item: GroceryItem) {
