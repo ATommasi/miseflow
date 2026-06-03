@@ -1,5 +1,5 @@
 import { App, CachedMetadata, TFile } from "obsidian";
-import { PantrySettings, RECIPE_FRONTMATTER } from "../settings";
+import { MiseFlowSettings, RECIPE_FRONTMATTER } from "../settings";
 import { listMarkdownFilesInRecipeFolders } from "../utils/vault-files";
 import { IngredientGroup, InstructionGroup, RecipeIngredient } from "../types";
 import { hasIgnoreTag, parseIngredientLine } from "./ingredient";
@@ -101,7 +101,7 @@ export function extractIngredientLines(
 export async function parseRecipeFile(
 	app: App,
 	file: TFile,
-	settings: PantrySettings,
+	settings: MiseFlowSettings,
 ): Promise<RecipeIngredient[]> {
 	const contents = await app.vault.cachedRead(file);
 	const body = stripFrontmatter(contents);

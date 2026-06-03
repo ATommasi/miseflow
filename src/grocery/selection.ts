@@ -1,6 +1,6 @@
 import { App, TFile } from "obsidian";
 import { readCookedCount, readLastMade } from "../parser/recipe-meta";
-import { PantrySettings, RECIPE_FRONTMATTER } from "../settings";
+import { MiseFlowSettings, RECIPE_FRONTMATTER } from "../settings";
 
 /**
  * Stamps a recipe's "last made" date to the given date string and, when
@@ -13,7 +13,7 @@ export async function stampRecipeCooked(
 	app: App,
 	file: TFile,
 	date: string,
-	settings: PantrySettings,
+	settings: MiseFlowSettings,
 ): Promise<{ newCount: number | null }> {
 	if (!settings.trackLastMade) return { newCount: null };
 	let newCount: number | null = null;

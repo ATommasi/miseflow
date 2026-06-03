@@ -1,5 +1,5 @@
 {
-	"name": "pantry",
+	"name": "miseflow",
 	"version": "1.0.3",
 	"description": "Plan meals, generate grocery lists, and view recipe notes as interactive cards.",
 	"main": "main.js",

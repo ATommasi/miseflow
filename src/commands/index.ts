@@ -1,6 +1,6 @@
 import { Notice, Plugin, TFile } from "obsidian";
 import { GroceryListManager } from "../grocery/manager";
-import { PantrySettings } from "../settings";
+import { MiseFlowSettings } from "../settings";
 import { AddOneOffModal } from "../ui/add-item-modal";
 import { AddToMealPlanModal } from "../ui/add-to-meal-plan-modal";
 import { ExportListModal } from "../ui/export-modal";
@@ -10,7 +10,7 @@ import { SuggestMealModal } from "../ui/suggest-modal";
 export interface CommandsHost {
 	plugin: Plugin;
 	manager: GroceryListManager;
-	settings: PantrySettings;
+	settings: MiseFlowSettings;
 	saveSettings(): Promise<void>;
 	openView(): Promise<void>;
 	openCurrentAsRecipe(): Promise<void>;

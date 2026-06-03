@@ -1,9 +1,9 @@
 import { App, Modal } from "obsidian";
 import { leaderboard, listRecipeLibrary } from "../grocery/library";
-import { PantrySettings } from "../settings";
+import { MiseFlowSettings } from "../settings";
 
 interface LeaderboardModalDeps {
-	getSettings: () => PantrySettings;
+	getSettings: () => MiseFlowSettings;
 }
 
 /**
@@ -19,7 +19,7 @@ export class LeaderboardModal extends Modal {
 	}
 
 	onOpen(): void {
-		this.modalEl.addClass("pantry-leaderboard-modal");
+		this.modalEl.addClass("mise-leaderboard-modal");
 		this.titleEl.setText("Cooking stats");
 		this.render();
 	}
@@ -37,7 +37,7 @@ export class LeaderboardModal extends Modal {
 
 		if (ranked.length === 0) {
 			contentEl.createDiv({
-				cls: "pantry-leaderboard-empty",
+				cls: "mise-leaderboard-empty",
 				text: `No recipes found. Tag a note with type: ${settings.recipeTypeValue} to start tracking.`,
 			});
 			return;
@@ -45,12 +45,12 @@ export class LeaderboardModal extends Modal {
 
 		const cooked = ranked.filter((e) => e.meta.cookedCount > 0).length;
 		contentEl.createDiv({
-			cls: "pantry-leaderboard-summary",
+			cls: "mise-leaderboard-summary",
 			text: `${cooked} of ${ranked.length} recipes cooked.`,
 		});
 
 		const table = contentEl.createEl("table", {
-			cls: "pantry-leaderboard-table",
+			cls: "mise-leaderboard-table",
 		});
 		const head = table.createEl("thead").createEl("tr");
 		head.createEl("th", { text: "#" });
@@ -62,12 +62,12 @@ export class LeaderboardModal extends Modal {
 		ranked.forEach((entry, idx) => {
 			const row = body.createEl("tr");
 			row.createEl("td", {
-				cls: "pantry-leaderboard-rank",
+				cls: "mise-leaderboard-rank",
 				text: `${idx + 1}`,
 			});
 			const nameCell = row.createEl("td");
 			const link = nameCell.createEl("a", {
-				cls: "pantry-leaderboard-link",
+				cls: "mise-leaderboard-link",
 				text: entry.file.basename,
 				href: "#",
 			});
@@ -80,11 +80,11 @@ export class LeaderboardModal extends Modal {
 			});
 
 			row.createEl("td", {
-				cls: "pantry-leaderboard-count",
+				cls: "mise-leaderboard-count",
 				text: String(entry.meta.cookedCount),
 			});
 			row.createEl("td", {
-				cls: "pantry-leaderboard-date",
+				cls: "mise-leaderboard-date",
 				text: entry.meta.lastMade ?? "—",
 			});
 		});

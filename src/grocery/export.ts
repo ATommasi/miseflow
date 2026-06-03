@@ -1,6 +1,6 @@
 import { groupForDisplay } from "./aggregator";
 import { formatQuantity } from "../parser/quantity";
-import { PantrySettings } from "../settings";
+import { MiseFlowSettings } from "../settings";
 import { GroceryItem } from "../types";
 import { toTitleCase } from "../utils/text";
 
@@ -31,7 +31,7 @@ const DEFAULT_OPTIONS: ExportOptions = { includeChecked: true };
  */
 export function exportGroceryList(
 	items: readonly GroceryItem[],
-	settings: PantrySettings,
+	settings: MiseFlowSettings,
 	format: ExportFormat,
 	options: ExportOptions = DEFAULT_OPTIONS,
 ): string {
@@ -60,7 +60,7 @@ function renderFlat(
 
 function renderGrouped(
 	items: readonly GroceryItem[],
-	settings: PantrySettings,
+	settings: MiseFlowSettings,
 	options: ExportOptions,
 ): string {
 	const groups = groupForDisplay([...items], settings);

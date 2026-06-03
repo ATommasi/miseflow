@@ -8,10 +8,10 @@ import {
 } from "../grocery/library";
 import { AddToMealPlanModal } from "./add-to-meal-plan-modal";
 import { daysSince, formatMinutes } from "../parser/recipe-meta";
-import { PantrySettings } from "../settings";
+import { MiseFlowSettings } from "../settings";
 
 interface SuggestModalDeps {
-	getSettings: () => PantrySettings;
+	getSettings: () => MiseFlowSettings;
 	manager: GroceryListManager;
 }
 
@@ -36,7 +36,7 @@ export class SuggestMealModal extends Modal {
 	}
 
 	onOpen(): void {
-		this.modalEl.addClass("pantry-suggest-modal");
+		this.modalEl.addClass("mise-suggest-modal");
 		this.titleEl.setText("Suggest a meal");
 		this.render();
 	}
@@ -61,11 +61,11 @@ export class SuggestMealModal extends Modal {
 			settings.suggestionCount,
 		);
 
-		const list = contentEl.createDiv({ cls: "pantry-suggest-list" });
+		const list = contentEl.createDiv({ cls: "mise-suggest-list" });
 
 		if (suggestions.length === 0) {
 			list.createDiv({
-				cls: "pantry-suggest-empty",
+				cls: "mise-suggest-empty",
 				text: this.emptyMessage(library, settings),
 			});
 		} else {
@@ -74,7 +74,7 @@ export class SuggestMealModal extends Modal {
 			}
 		}
 
-		const footer = contentEl.createDiv({ cls: "pantry-suggest-footer" });
+		const footer = contentEl.createDiv({ cls: "mise-suggest-footer" });
 		const reroll = footer.createEl("button", {
 			cls: "mod-cta",
 			text: "Suggest other meals",
@@ -87,10 +87,10 @@ export class SuggestMealModal extends Modal {
 
 	private renderFilters(
 		container: HTMLElement,
-		settings: PantrySettings,
+		settings: MiseFlowSettings,
 	): void {
 		const filters = container.createDiv({
-			cls: "pantry-suggest-filters",
+			cls: "mise-suggest-filters",
 		});
 
 		new Setting(filters)
@@ -116,11 +116,11 @@ export class SuggestMealModal extends Modal {
 
 	private renderSuggestion(parent: HTMLElement, entry: RecipeEntry): void {
 		const { file, meta } = entry;
-		const card = parent.createDiv({ cls: "pantry-suggest-card" });
+		const card = parent.createDiv({ cls: "mise-suggest-card" });
 
-		const title = card.createDiv({ cls: "pantry-suggest-card-title" });
+		const title = card.createDiv({ cls: "mise-suggest-card-title" });
 		const link = title.createEl("a", {
-			cls: "pantry-suggest-card-link",
+			cls: "mise-suggest-card-link",
 			text: file.basename,
 			href: "#",
 		});
@@ -131,13 +131,13 @@ export class SuggestMealModal extends Modal {
 		});
 		if (meta.favorite) {
 			const star = title.createSpan({
-				cls: "pantry-suggest-card-fav",
+				cls: "mise-suggest-card-fav",
 			});
 			setIcon(star, "star");
 			star.setAttribute("title", "Favorite");
 		}
 
-		const meta_row = card.createDiv({ cls: "pantry-suggest-card-meta" });
+		const meta_row = card.createDiv({ cls: "mise-suggest-card-meta" });
 		const days = daysSince(meta.lastMade);
 		const lastMadeText =
 			days === null
@@ -148,33 +148,33 @@ export class SuggestMealModal extends Modal {
 						? "Made yesterday"
 						: `${days} days ago`;
 		meta_row.createSpan({
-			cls: "pantry-suggest-card-meta-item",
+			cls: "mise-suggest-card-meta-item",
 			text: lastMadeText,
 		});
 		if (meta.cookedCount > 0) {
 			meta_row.createSpan({
-				cls: "pantry-suggest-card-meta-item",
+				cls: "mise-suggest-card-meta-item",
 				text: `Cooked ${meta.cookedCount}×`,
 			});
 		}
 		if (meta.times.total !== null) {
 			meta_row.createSpan({
-				cls: "pantry-suggest-card-meta-item",
+				cls: "mise-suggest-card-meta-item",
 				text: formatMinutes(meta.times.total),
 			});
 		}
 
 		if (meta.diet.length > 0) {
-			const tags = card.createDiv({ cls: "pantry-suggest-card-tags" });
+			const tags = card.createDiv({ cls: "mise-suggest-card-tags" });
 			for (const tag of meta.diet) {
 				tags.createSpan({
-					cls: "pantry-badge pantry-badge-diet",
+					cls: "mise-badge mise-badge-diet",
 					text: tag,
 				});
 			}
 		}
 
-		const actions = card.createDiv({ cls: "pantry-suggest-card-actions" });
+		const actions = card.createDiv({ cls: "mise-suggest-card-actions" });
 		const addBtn = actions.createEl("button", {
 			cls: "mod-cta",
 			text: "Add to meal plan",
@@ -200,7 +200,7 @@ export class SuggestMealModal extends Modal {
 
 	private emptyMessage(
 		library: readonly RecipeEntry[],
-		settings: PantrySettings,
+		settings: MiseFlowSettings,
 	): string {
 		if (library.length === 0) {
 			return `No recipes found. Tag a note with type: ${settings.recipeTypeValue} to populate the library.`;

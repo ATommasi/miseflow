@@ -1,5 +1,5 @@
 import { ingredientKey } from "../parser/ingredient";
-import { PantrySettings } from "../settings";
+import { MiseFlowSettings } from "../settings";
 import {
 	GroceryItem,
 	GroceryItemSource,
@@ -11,7 +11,7 @@ import { categorize } from "./categorizer";
 interface BuildOptions {
 	recipeIngredients: RecipeIngredient[];
 	oneOffs: OneOffItem[];
-	settings: PantrySettings;
+	settings: MiseFlowSettings;
 	checkedKeys: Record<string, boolean>;
 }
 
@@ -141,7 +141,7 @@ function mergeInto(
  */
 export function groupForDisplay(
 	items: GroceryItem[],
-	settings: PantrySettings,
+	settings: MiseFlowSettings,
 ): Array<[string, GroceryItem[]]> {
 	const grouping = settings.grouping;
 	const sortedItems = [...items].sort((a, b) =>

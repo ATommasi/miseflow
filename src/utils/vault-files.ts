@@ -1,5 +1,5 @@
 import { App, TFile, TFolder } from "obsidian";
-import { PantrySettings } from "../settings";
+import { MiseFlowSettings } from "../settings";
 
 /** Collect markdown files under a folder without calling vault.getMarkdownFiles(). */
 export function collectMarkdownFiles(folder: TFolder): TFile[] {
@@ -20,7 +20,7 @@ export function collectMarkdownFiles(folder: TFolder): TFile[] {
  */
 export function listMarkdownFilesInRecipeFolders(
 	app: App,
-	settings: PantrySettings,
+	settings: MiseFlowSettings,
 ): TFile[] {
 	const folders = settings.recipeFolders
 		.map((f) => f.replace(/\/+$/, "").trim())

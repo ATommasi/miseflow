@@ -2,7 +2,7 @@ import { App, Modal, TFile, setIcon } from "obsidian";
 import { ingredientKey, parseIngredientLine } from "../parser/ingredient";
 import { formatQuantity } from "../parser/quantity";
 import { splitBodyAroundIngredients, stripFrontmatter } from "../parser/recipe";
-import { PantrySettings } from "../settings";
+import { MiseFlowSettings } from "../settings";
 import { GroceryContribution } from "../grocery/note-writer";
 
 const DAYS = [
@@ -26,7 +26,7 @@ interface SelectedIngredient {
 }
 
 interface AddToMealPlanDeps {
-	getSettings: () => PantrySettings;
+	getSettings: () => MiseFlowSettings;
 	onConfirm: (
 		day: string | undefined,
 		mealType: string | undefined,
@@ -49,34 +49,34 @@ export class AddToMealPlanModal extends Modal {
 	async onOpen(): Promise<void> {
 		const { contentEl } = this;
 		contentEl.empty();
-		contentEl.addClass("pantry-meal-plan-modal");
+		contentEl.addClass("mise-meal-plan-modal");
 
 		contentEl.createEl("h2", { text: `Add to meal plan` });
 		contentEl.createEl("p", {
-			cls: "pantry-meal-plan-modal-recipe",
+			cls: "mise-meal-plan-modal-recipe",
 			text: this.file.basename,
 		});
 
 		// --- Day picker ---
-		const dayRow = contentEl.createDiv({ cls: "pantry-modal-row" });
-		dayRow.createEl("label", { text: "Day", cls: "pantry-modal-label" });
-		const daySelect = dayRow.createEl("select", { cls: "pantry-modal-select" });
+		const dayRow = contentEl.createDiv({ cls: "mise-modal-row" });
+		dayRow.createEl("label", { text: "Day", cls: "mise-modal-label" });
+		const daySelect = dayRow.createEl("select", { cls: "mise-modal-select" });
 		for (const day of DAYS) {
 			const opt = daySelect.createEl("option", { text: day, value: day });
 			if (day === "Unscheduled") opt.selected = true;
 		}
 
 		// --- Meal type ---
-		const typeRow = contentEl.createDiv({ cls: "pantry-modal-row" });
-		typeRow.createEl("label", { text: "Meal", cls: "pantry-modal-label" });
+		const typeRow = contentEl.createDiv({ cls: "mise-modal-row" });
+		typeRow.createEl("label", { text: "Meal", cls: "mise-modal-label" });
 		const typeInput = typeRow.createEl("input", {
-			cls: "pantry-modal-input",
+			cls: "mise-modal-input",
 			type: "text",
 			placeholder: "Breakfast, Lunch, Dinner, Snack…",
-			attr: { list: "pantry-meal-types" },
+			attr: { list: "mise-meal-types" },
 		});
 		const datalist = typeRow.createEl("datalist");
-		datalist.id = "pantry-meal-types";
+		datalist.id = "mise-meal-types";
 		for (const mt of MEAL_TYPES) {
 			datalist.createEl("option", { value: mt });
 		}
@@ -85,26 +85,26 @@ export class AddToMealPlanModal extends Modal {
 		const settings = this.deps.getSettings();
 		await this.loadIngredients(settings);
 
-		const ingSection = contentEl.createDiv({ cls: "pantry-modal-ingredients" });
+		const ingSection = contentEl.createDiv({ cls: "mise-modal-ingredients" });
 		ingSection.createEl("h3", { text: "Ingredients to buy" });
 
-		const controls = ingSection.createDiv({ cls: "pantry-modal-ingredient-controls" });
+		const controls = ingSection.createDiv({ cls: "mise-modal-ingredient-controls" });
 		const selectAll = controls.createEl("button", {
 			text: "Select all",
-			cls: "pantry-modal-control-btn",
+			cls: "mise-modal-control-btn",
 			attr: { type: "button" },
 		});
 		const deselectAll = controls.createEl("button", {
 			text: "Deselect all",
-			cls: "pantry-modal-control-btn",
+			cls: "mise-modal-control-btn",
 			attr: { type: "button" },
 		});
 
-		const listEl = ingSection.createEl("ul", { cls: "pantry-modal-ingredient-list" });
+		const listEl = ingSection.createEl("ul", { cls: "mise-modal-ingredient-list" });
 		const checkboxes: HTMLInputElement[] = [];
 
 		for (const ing of this.allIngredients) {
-			const li = listEl.createEl("li", { cls: "pantry-modal-ingredient-item" });
+			const li = listEl.createEl("li", { cls: "mise-modal-ingredient-item" });
 			const cb = li.createEl("input", { type: "checkbox" });
 			cb.dataset.key = ing.key;
 			cb.addEventListener("change", () => {
@@ -117,14 +117,14 @@ export class AddToMealPlanModal extends Modal {
 				.filter(Boolean)
 				.join(" ");
 			if (qtyStr) {
-				li.createSpan({ cls: "pantry-modal-ingredient-qty", text: qtyStr });
+				li.createSpan({ cls: "mise-modal-ingredient-qty", text: qtyStr });
 			}
-			li.createSpan({ cls: "pantry-modal-ingredient-name", text: titleCase(ing.name) });
+			li.createSpan({ cls: "mise-modal-ingredient-name", text: titleCase(ing.name) });
 		}
 
 		if (this.allIngredients.length === 0) {
 			ingSection.createEl("p", {
-				cls: "pantry-modal-empty",
+				cls: "mise-modal-empty",
 				text: "No ingredients found in this recipe.",
 			});
 		}
@@ -143,17 +143,17 @@ export class AddToMealPlanModal extends Modal {
 		});
 
 		// --- Actions ---
-		const actions = contentEl.createDiv({ cls: "pantry-modal-actions" });
+		const actions = contentEl.createDiv({ cls: "mise-modal-actions" });
 		const cancelBtn = actions.createEl("button", {
 			text: "Cancel",
-			cls: "pantry-modal-cancel",
+			cls: "mise-modal-cancel",
 			attr: { type: "button" },
 		});
 		cancelBtn.addEventListener("click", () => this.close());
 
 		const confirmBtn = actions.createEl("button", {
 			text: "Add to plan",
-			cls: "pantry-modal-confirm mod-cta",
+			cls: "mise-modal-confirm mod-cta",
 			attr: { type: "button" },
 		});
 		confirmBtn.addEventListener("click", async () => {
@@ -174,7 +174,7 @@ export class AddToMealPlanModal extends Modal {
 		this.contentEl.empty();
 	}
 
-	private async loadIngredients(settings: PantrySettings): Promise<void> {
+	private async loadIngredients(settings: MiseFlowSettings): Promise<void> {
 		const contents = await this.app.vault.cachedRead(this.file);
 		const body = stripFrontmatter(contents);
 		const { ingredientGroups } = splitBodyAroundIngredients(

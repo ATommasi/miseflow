@@ -34,16 +34,16 @@ import {
 	InstructionGroup,
 } from "../types";
 import {
-	PantrySettings,
+	MiseFlowSettings,
 	RECIPE_FRONTMATTER,
 } from "../settings";
 import { MarkCookedModal } from "./mark-cooked-modal";
 import { AddToMealPlanModal } from "./add-to-meal-plan-modal";
 
-export const VIEW_TYPE_RECIPE = "pantry-recipe";
+export const VIEW_TYPE_RECIPE = "mise-recipe";
 
 interface RecipeViewDeps {
-	getSettings: () => PantrySettings;
+	getSettings: () => MiseFlowSettings;
 	openInMarkdown: (leaf: WorkspaceLeaf) => Promise<void>;
 	isInMealPlan: (recipePath: string) => boolean;
 	addToMealPlan: (
@@ -147,7 +147,7 @@ export class RecipeView extends TextFileView {
 	private render(): void {
 		const root = this.contentEl;
 		root.empty();
-		root.addClass("pantry-recipe-view");
+		root.addClass("mise-recipe-view");
 
 		const file = this.file;
 		if (!file) return;
@@ -202,11 +202,11 @@ export class RecipeView extends TextFileView {
 		}
 
 		const bodyRow = root.createDiv({
-			cls: "pantry-recipe-body",
+			cls: "mise-recipe-body",
 		});
 
 		const ingredientsCol = bodyRow.createDiv({
-			cls: "pantry-recipe-body-main",
+			cls: "mise-recipe-body-main",
 		});
 		if (split.ingredientGroups.length > 0) {
 			this.renderIngredients(
@@ -268,53 +268,53 @@ export class RecipeView extends TextFileView {
 		title: string,
 	): void {
 		const wrap = root.createDiv({
-			cls: "pantry-recipe-instructions",
+			cls: "mise-recipe-instructions",
 		});
 
 		const header = wrap.createDiv({
-			cls: "pantry-recipe-instructions-header",
+			cls: "mise-recipe-instructions-header",
 		});
 		const headerIcon = header.createSpan({
-			cls: "pantry-recipe-instructions-icon",
+			cls: "mise-recipe-instructions-icon",
 		});
 		setIcon(headerIcon, "list-ordered");
 		header.createEl("h2", {
-			cls: "pantry-recipe-instructions-title",
+			cls: "mise-recipe-instructions-title",
 			text: title,
 		});
 
 		for (const group of groups) {
 			const groupEl = wrap.createDiv({
-				cls: "pantry-recipe-instruction-group",
+				cls: "mise-recipe-instruction-group",
 			});
 
 			if (group.heading) {
 				const levelCls =
 					group.headingLevel >= 4
-						? "pantry-recipe-instruction-group-heading--sub"
-						: "pantry-recipe-instruction-group-heading--section";
+						? "mise-recipe-instruction-group-heading--sub"
+						: "mise-recipe-instruction-group-heading--section";
 				groupEl.createDiv({
-					cls: `pantry-recipe-instruction-group-heading ${levelCls}`,
+					cls: `mise-recipe-instruction-group-heading ${levelCls}`,
 					text: group.heading,
 				});
 			}
 
 			if (group.steps.length > 0) {
 				const list = groupEl.createEl("ol", {
-					cls: "pantry-recipe-instruction-list",
+					cls: "mise-recipe-instruction-list",
 				});
 
 				for (let i = 0; i < group.steps.length; i++) {
 					const step = group.steps[i] ?? "";
 					const li = list.createEl("li", {
-						cls: "pantry-recipe-instruction",
+						cls: "mise-recipe-instruction",
 					});
 					li.createDiv({
-						cls: "pantry-recipe-instruction-number",
+						cls: "mise-recipe-instruction-number",
 						text: String(i + 1),
 					});
 					const body = li.createDiv({
-						cls: "pantry-recipe-instruction-body",
+						cls: "mise-recipe-instruction-body",
 					});
 					void MarkdownRenderer.render(
 						this.app,
@@ -334,7 +334,7 @@ export class RecipeView extends TextFileView {
 		frontmatter: Record<string, unknown>,
 	): void {
 		const card = root.createDiv({
-			cls: "pantry-recipe-image-card",
+			cls: "mise-recipe-image-card",
 		});
 
 		const raw = readStringFromKeys(frontmatter, IMAGE_KEYS);
@@ -346,7 +346,7 @@ export class RecipeView extends TextFileView {
 		}
 
 		const img = card.createEl("img", {
-			cls: "pantry-recipe-image",
+			cls: "mise-recipe-image",
 			attr: { alt: file.basename, src: url },
 		});
 		img.addEventListener("error", () => {
@@ -358,14 +358,14 @@ export class RecipeView extends TextFileView {
 	private renderImagePlaceholder(card: HTMLElement): void {
 		card.addClass("is-placeholder");
 		const inner = card.createDiv({
-			cls: "pantry-recipe-image-placeholder",
+			cls: "mise-recipe-image-placeholder",
 		});
 		const icon = inner.createSpan({
-			cls: "pantry-recipe-image-placeholder-icon",
+			cls: "mise-recipe-image-placeholder-icon",
 		});
 		setIcon(icon, "image-off");
 		inner.createDiv({
-			cls: "pantry-recipe-image-placeholder-text",
+			cls: "mise-recipe-image-placeholder-text",
 			text: "No image",
 		});
 	}
@@ -398,9 +398,9 @@ export class RecipeView extends TextFileView {
 	private renderTitle(
 		root: HTMLElement, file: TFile, diet: readonly string[], times: RecipeTimes, lastMade: string | null,
 	): void {
-		const header = root.createDiv({ cls: "pantry-recipe-title-block" });
+		const header = root.createDiv({ cls: "mise-recipe-title-block" });
 		header.createEl("h1", {
-			cls: "pantry-recipe-title",
+			cls: "mise-recipe-title",
 			text: file.basename,
 		});
 
@@ -412,11 +412,11 @@ export class RecipeView extends TextFileView {
 			lastMade !== null;
 		if (!hasBadges) return;
 
-		const badges = header.createDiv({ cls: "pantry-recipe-badges" });
+		const badges = header.createDiv({ cls: "mise-recipe-badges" });
 
 		for (const tag of diet) {
 			const badge = badges.createSpan({
-				cls: "pantry-badge pantry-badge-diet",
+				cls: "mise-badge mise-badge-diet",
 				text: tag,
 			});
 			badge.setAttribute("title", `Diet: ${tag}`);
@@ -442,16 +442,16 @@ export class RecipeView extends TextFileView {
 	): void {
 		if (minutes === null) return;
 		const badge = row.createSpan({
-			cls: "pantry-badge pantry-badge-time",
+			cls: "mise-badge mise-badge-time",
 		});
-		const icon = badge.createSpan({ cls: "pantry-badge-icon" });
+		const icon = badge.createSpan({ cls: "mise-badge-icon" });
 		setIcon(icon, "clock");
 		badge.createSpan({
-			cls: "pantry-badge-label",
+			cls: "mise-badge-label",
 			text: `${label}`,
 		});
 		badge.createSpan({
-			cls: "pantry-badge-value",
+			cls: "mise-badge-value",
 			text: formatMinutes(minutes),
 		});
 		badge.setAttribute("title", `${label} time: ${formatMinutes(minutes)}`);
@@ -463,16 +463,16 @@ export class RecipeView extends TextFileView {
 	): void {
 		if (lastMade === null) return;
 		const badge = row.createSpan({
-			cls: "pantry-badge pantry-badge-last-made",
+			cls: "mise-badge mise-badge-last-made",
 		});
-		const icon = badge.createSpan({ cls: "pantry-badge-icon" });
+		const icon = badge.createSpan({ cls: "mise-badge-icon" });
 		setIcon(icon, "calendar");
 		badge.createSpan({
-			cls: "pantry-badge-label",
+			cls: "mise-badge-label",
 			text: "Last made",
 		});
 		badge.createSpan({
-			cls: "pantry-badge-value",
+			cls: "mise-badge-value",
 			text: lastMade,
 		});
 		badge.setAttribute("title", `Last made: ${lastMade}`);
@@ -483,22 +483,22 @@ export class RecipeView extends TextFileView {
 		matches: readonly string[],
 	): void {
 		const banner = root.createDiv({
-			cls: "pantry-recipe-allergen-warning",
+			cls: "mise-recipe-allergen-warning",
 			attr: { role: "alert" },
 		});
 		const icon = banner.createSpan({
-			cls: "pantry-recipe-allergen-warning-icon",
+			cls: "mise-recipe-allergen-warning-icon",
 		});
 		setIcon(icon, "alert-octagon");
 		const body = banner.createDiv({
-			cls: "pantry-recipe-allergen-warning-body",
+			cls: "mise-recipe-allergen-warning-body",
 		});
 		body.createDiv({
-			cls: "pantry-recipe-allergen-warning-title",
+			cls: "mise-recipe-allergen-warning-title",
 			text: "Allergen warning",
 		});
 		body.createDiv({
-			cls: "pantry-recipe-allergen-warning-text",
+			cls: "mise-recipe-allergen-warning-text",
 			text: `Contains ${matches.join(", ")}.`,
 		});
 	}
@@ -511,13 +511,13 @@ export class RecipeView extends TextFileView {
 		servings: number | null,
 		isInPlan: boolean,
 		isFavorite: boolean,
-		settings: PantrySettings,
+		settings: MiseFlowSettings,
 	): void {
 		const banner = root.createDiv({
-			cls: "pantry-recipe-meta-banner",
+			cls: "mise-recipe-meta-banner",
 		});
 		const cells = banner.createDiv({
-			cls: "pantry-recipe-meta-cells",
+			cls: "mise-recipe-meta-cells",
 		});
 
 		this.renderMultiplierCell(cells, file, multiplier);
@@ -534,7 +534,7 @@ export class RecipeView extends TextFileView {
 		}
 
 		const actions = banner.createDiv({
-			cls: "pantry-recipe-meta-actions",
+			cls: "mise-recipe-meta-actions",
 		});
 		this.renderFavoriteToggle(actions, file, isFavorite);
 		if (settings.showMarkCookedButton) {
@@ -549,7 +549,7 @@ export class RecipeView extends TextFileView {
 		isFavorite: boolean,
 	): void {
 		const toggle = actions.createEl("button", {
-			cls: "pantry-recipe-favorite-toggle",
+			cls: "mise-recipe-favorite-toggle",
 			attr: { type: "button" },
 		});
 		let state = isFavorite;
@@ -589,10 +589,10 @@ export class RecipeView extends TextFileView {
 	private renderMarkCookedButton(
 		actions: HTMLElement,
 		file: TFile,
-		settings: PantrySettings,
+		settings: MiseFlowSettings,
 	): void {
 		const btn = actions.createEl("button", {
-			cls: "pantry-recipe-mark-cooked-button",
+			cls: "mise-recipe-mark-cooked-button",
 			attr: { type: "button", "aria-label": "Mark as cooked", title: "Mark as cooked" },
 		});
 		setIcon(btn, "chef-hat");
@@ -612,7 +612,7 @@ export class RecipeView extends TextFileView {
 	private async markAsCooked(
 		file: TFile,
 		date: string,
-		settings: PantrySettings,
+		settings: MiseFlowSettings,
 	): Promise<void> {
 		const { newCount } = await stampRecipeCooked(this.app, file, date, settings);
 		if (newCount !== null) {
@@ -626,10 +626,10 @@ export class RecipeView extends TextFileView {
 		actions: HTMLElement,
 		file: TFile,
 		isInPlan: boolean,
-		_settings: PantrySettings,
+		_settings: MiseFlowSettings,
 	): void {
 		const btn = actions.createEl("button", {
-			cls: "pantry-recipe-meal-plan-toggle",
+			cls: "mise-recipe-meal-plan-toggle",
 			attr: { type: "button" },
 		});
 		let inPlan = isInPlan;
@@ -671,19 +671,19 @@ export class RecipeView extends TextFileView {
 		multiplier: number,
 	): void {
 		const cell = grid.createDiv({
-			cls: "pantry-recipe-meta-cell",
+			cls: "mise-recipe-meta-cell",
 		});
 		const main = cell.createDiv({
-			cls: "pantry-recipe-meta-cell-main",
+			cls: "mise-recipe-meta-cell-main",
 		});
 
 		const stepper = main.createDiv({
-			cls: "pantry-recipe-stepper",
+			cls: "mise-recipe-stepper",
 			attr: { "aria-label": "Recipe multiplier" },
 		});
 
 		const minus = stepper.createEl("button", {
-			cls: "pantry-recipe-stepper-button",
+			cls: "mise-recipe-stepper-button",
 			text: "\u2212",
 			attr: { type: "button", "aria-label": "Decrease multiplier" },
 		});
@@ -692,7 +692,7 @@ export class RecipeView extends TextFileView {
 		});
 
 		const input = stepper.createEl("input", {
-			cls: "pantry-recipe-stepper-input",
+			cls: "mise-recipe-stepper-input",
 			type: "number",
 		});
 		input.value = formatNumberValue(multiplier);
@@ -708,7 +708,7 @@ export class RecipeView extends TextFileView {
 		});
 
 		const plus = stepper.createEl("button", {
-			cls: "pantry-recipe-stepper-button",
+			cls: "mise-recipe-stepper-button",
 			text: "+",
 			attr: { type: "button", "aria-label": "Increase multiplier" },
 		});
@@ -738,20 +738,20 @@ export class RecipeView extends TextFileView {
 		multiplier: number,
 	): void {
 		const cell = grid.createDiv({
-			cls: "pantry-recipe-meta-cell",
+			cls: "mise-recipe-meta-cell",
 		});
 		const main = cell.createDiv({
-			cls: "pantry-recipe-meta-cell-main",
+			cls: "mise-recipe-meta-cell-main",
 		});
 		main.createDiv({
-			cls: "pantry-recipe-meta-label",
+			cls: "mise-recipe-meta-label",
 			text: "Serves",
 		});
 
 		const total =
 			baseServings === null ? null : baseServings * multiplier;
 		const value = main.createDiv({
-			cls: "pantry-recipe-meta-value",
+			cls: "mise-recipe-meta-value",
 			text: total === null ? "—" : formatNumberValue(total),
 		});
 		if (total === null) value.addClass("is-empty");
@@ -762,8 +762,8 @@ export class RecipeView extends TextFileView {
 		field: NutritionField,
 		frontmatter: Record<string, unknown>,
 		baseServings: number | null,
-		sourceMode: PantrySettings["nutritionSource"],
-		displayMode: PantrySettings["nutritionDisplay"],
+		sourceMode: MiseFlowSettings["nutritionSource"],
+		displayMode: MiseFlowSettings["nutritionDisplay"],
 	): void {
 		const baseValue = readNutritionValue(frontmatter, field);
 		const displayValue = resolveNutritionDisplayValue(
@@ -774,18 +774,18 @@ export class RecipeView extends TextFileView {
 		);
 
 		const cell = container.createDiv({
-			cls: "pantry-recipe-meta-cell",
+			cls: "mise-recipe-meta-cell",
 		});
 		const main = cell.createDiv({
-			cls: "pantry-recipe-meta-cell-main",
+			cls: "mise-recipe-meta-cell-main",
 		});
 		main.createDiv({
-			cls: "pantry-recipe-meta-label",
+			cls: "mise-recipe-meta-label",
 			text: field.label,
 		});
 
 		const valueEl = main.createDiv({
-			cls: "pantry-recipe-nutrition-value",
+			cls: "mise-recipe-nutrition-value",
 			text: displayValue === null ? "—" : roundForDisplay(displayValue),
 		});
 		if (displayValue === null) valueEl.addClass("is-empty");
@@ -795,21 +795,21 @@ export class RecipeView extends TextFileView {
 		root: HTMLElement,
 		ingredientGroups: IngredientGroup[],
 		multiplier: number,
-		settings: PantrySettings,
+		settings: MiseFlowSettings,
 	): void {
 		const wrap = root.createDiv({
-			cls: "pantry-recipe-ingredients",
+			cls: "mise-recipe-ingredients",
 		});
 
 		const header = wrap.createDiv({
-			cls: "pantry-recipe-ingredients-header",
+			cls: "mise-recipe-ingredients-header",
 		});
 		const headerIcon = header.createSpan({
-			cls: "pantry-recipe-ingredients-icon",
+			cls: "mise-recipe-ingredients-icon",
 		});
 		setIcon(headerIcon, "chef-hat");
 		header.createEl("h2", {
-			cls: "pantry-recipe-ingredients-title",
+			cls: "mise-recipe-ingredients-title",
 			text: settings.ingredientsHeading,
 		});
 
@@ -820,7 +820,7 @@ export class RecipeView extends TextFileView {
 		for (const group of ingredientGroups) {
 			if (group.heading) {
 				wrap.createDiv({
-					cls: "pantry-recipe-ingredient-group-heading",
+					cls: "mise-recipe-ingredient-group-heading",
 					text: group.heading,
 				});
 			}
@@ -828,7 +828,7 @@ export class RecipeView extends TextFileView {
 			if (group.lines.length === 0) continue;
 
 			const ul = wrap.createEl("ul", {
-				cls: "pantry-recipe-ingredient-list",
+				cls: "mise-recipe-ingredient-list",
 			});
 
 			for (const raw of group.lines) {
@@ -836,7 +836,7 @@ export class RecipeView extends TextFileView {
 				if (!parsed) continue;
 
 				const li = ul.createEl("li", {
-					cls: "pantry-recipe-ingredient",
+					cls: "mise-recipe-ingredient",
 				});
 
 				const scaledQty =
@@ -849,13 +849,13 @@ export class RecipeView extends TextFileView {
 					.join(" ");
 
 				const qtyEl = li.createSpan({
-					cls: "pantry-recipe-ingredient-qty",
+					cls: "mise-recipe-ingredient-qty",
 					text: qtyDisplay,
 				});
 				if (!qtyDisplay) qtyEl.addClass("is-empty");
 
 				li.createSpan({
-					cls: "pantry-recipe-ingredient-name",
+					cls: "mise-recipe-ingredient-name",
 					text: titleCase(parsed.name),
 				});
 
@@ -875,7 +875,7 @@ export class RecipeView extends TextFileView {
 		const tooltip =
 			"High glycemic index - may cause a faster blood-sugar spike.";
 		const badge = li.createSpan({
-			cls: "pantry-recipe-ingredient-gi",
+			cls: "mise-recipe-ingredient-gi",
 			attr: {
 				role: "note",
 				"aria-label": tooltip,
@@ -883,11 +883,11 @@ export class RecipeView extends TextFileView {
 			},
 		});
 		const icon = badge.createSpan({
-			cls: "pantry-recipe-ingredient-gi-icon",
+			cls: "mise-recipe-ingredient-gi-icon",
 		});
 		setIcon(icon, "arrow-up");
 		badge.createSpan({
-			cls: "pantry-recipe-ingredient-gi-text",
+			cls: "mise-recipe-ingredient-gi-text",
 			text: "GI",
 		});
 	}
@@ -895,7 +895,7 @@ export class RecipeView extends TextFileView {
 	private renderMeatTempBadge(li: HTMLElement, temp: MeatTemp): void {
 		const tooltip = `Cook ${temp.category.toLowerCase()} to a safe internal temperature of ${temp.fahrenheit}°F (${temp.celsius}°C).`;
 		const badge = li.createSpan({
-			cls: "pantry-recipe-ingredient-temp",
+			cls: "mise-recipe-ingredient-temp",
 			attr: {
 				role: "note",
 				"aria-label": tooltip,
@@ -903,11 +903,11 @@ export class RecipeView extends TextFileView {
 			},
 		});
 		const icon = badge.createSpan({
-			cls: "pantry-recipe-ingredient-temp-icon",
+			cls: "mise-recipe-ingredient-temp-icon",
 		});
 		setIcon(icon, "alert-triangle");
 		badge.createSpan({
-			cls: "pantry-recipe-ingredient-temp-text",
+			cls: "mise-recipe-ingredient-temp-text",
 			text: `${temp.fahrenheit}°F`,
 		});
 	}
@@ -918,7 +918,7 @@ export class RecipeView extends TextFileView {
 		sourcePath: string,
 	): Promise<void> {
 		const block = root.createDiv({
-			cls: "pantry-recipe-markdown",
+			cls: "mise-recipe-markdown",
 		});
 		await MarkdownRenderer.render(this.app, markdown, block, sourcePath, this);
 	}
@@ -1020,8 +1020,8 @@ function roundForDisplay(num: number): string {
 function resolveNutritionDisplayValue(
 	baseValue: number | null,
 	baseServings: number | null,
-	sourceMode: PantrySettings["nutritionSource"],
-	displayMode: PantrySettings["nutritionDisplay"],
+	sourceMode: MiseFlowSettings["nutritionSource"],
+	displayMode: MiseFlowSettings["nutritionDisplay"],
 ): number | null {
 	if (baseValue === null) return null;
 

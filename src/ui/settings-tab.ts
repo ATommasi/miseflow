@@ -12,17 +12,17 @@ import {
 } from "../parser/glycemic";
 import {
 	DEFAULT_CATEGORY_ORDER,
-	PantrySettings,
+	MiseFlowSettings,
 } from "../settings";
 
 export interface SettingsHost {
 	app: App;
-	settings: PantrySettings;
+	settings: MiseFlowSettings;
 	saveSettings(): Promise<void>;
 	manager: GroceryListManager;
 }
 
-export class PantrySettingsTab extends PluginSettingTab {
+export class MiseFlowSettingsTab extends PluginSettingTab {
 	constructor(
 		plugin: Plugin,
 		private readonly host: SettingsHost,
@@ -120,7 +120,7 @@ export class PantrySettingsTab extends PluginSettingTab {
 					.setValue(this.host.settings.grouping)
 					.onChange(async (value) => {
 						this.host.settings.grouping =
-							value as PantrySettings["grouping"];
+							value as MiseFlowSettings["grouping"];
 						await this.host.saveSettings();
 						this.host.manager.trigger("changed");
 					}),
@@ -186,7 +186,7 @@ export class PantrySettingsTab extends PluginSettingTab {
 					.setValue(this.host.settings.nutritionDisplay)
 					.onChange(async (value) => {
 						this.host.settings.nutritionDisplay =
-							value as PantrySettings["nutritionDisplay"];
+							value as MiseFlowSettings["nutritionDisplay"];
 						await this.host.saveSettings();
 					}),
 			);
@@ -205,7 +205,7 @@ export class PantrySettingsTab extends PluginSettingTab {
 					.setValue(this.host.settings.nutritionSource)
 					.onChange(async (value) => {
 						this.host.settings.nutritionSource =
-							value as PantrySettings["nutritionSource"];
+							value as MiseFlowSettings["nutritionSource"];
 						await this.host.saveSettings();
 					}),
 			);
@@ -375,7 +375,7 @@ export class PantrySettingsTab extends PluginSettingTab {
 					.setValue(this.host.settings.categorySource)
 					.onChange(async (value) => {
 						this.host.settings.categorySource =
-							value as PantrySettings["categorySource"];
+							value as MiseFlowSettings["categorySource"];
 						await this.host.saveSettings();
 						this.host.manager.trigger("changed");
 					}),
@@ -456,13 +456,13 @@ export class PantrySettingsTab extends PluginSettingTab {
 			);
 
 		const errorEl = containerEl.createDiv({
-			cls: "pantry-settings-gi-errors",
+			cls: "mise-settings-gi-errors",
 		});
 
 		setting.addTextArea((ta) => {
 			ta.setValue(this.host.settings.giDictionary);
 			ta.inputEl.rows = 12;
-			ta.inputEl.addClass("pantry-settings-gi-textarea");
+			ta.inputEl.addClass("mise-settings-gi-textarea");
 			ta.onChange(async (value) => {
 				this.host.settings.giDictionary = value;
 				await this.host.saveSettings();
@@ -494,11 +494,11 @@ function renderErrors(container: HTMLElement, errors: readonly string[]): void {
 	container.empty();
 	if (errors.length === 0) return;
 	container.createDiv({
-		cls: "pantry-settings-gi-errors-title",
+		cls: "mise-settings-gi-errors-title",
 		text: `${errors.length} invalid pattern${errors.length === 1 ? "" : "s"} (skipped):`,
 	});
 	const list = container.createEl("ul", {
-		cls: "pantry-settings-gi-errors-list",
+		cls: "mise-settings-gi-errors-list",
 	});
 	for (const err of errors) {
 		list.createEl("li", { text: err });

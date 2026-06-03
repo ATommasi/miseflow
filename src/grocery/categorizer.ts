@@ -80,7 +80,7 @@ const BUILTIN_CATEGORIES: Record<string, string[]> = {
 		"powdered sugar", "baking powder", "baking soda", "yeast", "vanilla", "cocoa",
 		"chocolate", "honey", "maple syrup", "syrup", "cake",
 	],
-	Pantry: [
+	MiseFlow: [
 		"almond", "walnut", "pecan", "cashew", "pistachio", "peanut", "sunflower seed",
 		"pumpkin seed", "raisin", "cranberry", "soup",
 	],

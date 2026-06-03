@@ -12,10 +12,10 @@ import {
 	exportGroceryList,
 } from "../grocery/export";
 import { GroceryListManager } from "../grocery/manager";
-import { PantrySettings } from "../settings";
+import { MiseFlowSettings } from "../settings";
 
 interface ExportModalDeps {
-	getSettings: () => PantrySettings;
+	getSettings: () => MiseFlowSettings;
 	manager: GroceryListManager;
 }
 
@@ -38,7 +38,7 @@ export class ExportListModal extends Modal {
 	}
 
 	onOpen(): void {
-		this.modalEl.addClass("pantry-export-modal");
+		this.modalEl.addClass("mise-export-modal");
 		this.titleEl.setText("Export grocery list");
 		this.render();
 	}
@@ -77,12 +77,12 @@ export class ExportListModal extends Modal {
 			);
 
 		contentEl.createEl("p", {
-			cls: "pantry-export-hint",
+			cls: "mise-export-hint",
 			text: "Select the text below and copy with your system shortcut, or append it to a note.",
 		});
 
 		this.previewEl = contentEl.createEl("textarea", {
-			cls: "pantry-export-preview",
+			cls: "mise-export-preview",
 		});
 		this.previewEl.readOnly = true;
 		this.previewEl.rows = 10;
@@ -100,7 +100,7 @@ export class ExportListModal extends Modal {
 					}),
 			);
 
-		const footer = contentEl.createDiv({ cls: "pantry-export-footer" });
+		const footer = contentEl.createDiv({ cls: "mise-export-footer" });
 
 		const appendBtn = footer.createEl("button", {
 			cls: "mod-cta",
@@ -163,7 +163,7 @@ export class ExportListModal extends Modal {
 			new Notice(`Appended to ${file.path}.`);
 			this.close();
 		} catch (err) {
-			console.error("pantry: append failed", err);
+			console.error("miseflow: append failed", err);
 			new Notice("Couldn't append to note.");
 		}
 	}

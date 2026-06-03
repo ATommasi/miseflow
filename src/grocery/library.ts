@@ -11,9 +11,9 @@ import {
 	readRecipeMeta,
 	RecipeMeta,
 } from "../parser/recipe-meta";
-import { PantrySettings, RECIPE_FRONTMATTER } from "../settings";
+import { MiseFlowSettings, RECIPE_FRONTMATTER } from "../settings";
 
-/** A recipe file paired with its parsed Pantry metadata. */
+/** A recipe file paired with its parsed MiseFlow metadata. */
 export interface RecipeEntry {
 	file: TFile;
 	meta: RecipeMeta;
@@ -28,7 +28,7 @@ export interface RecipeEntry {
  */
 export function listRecipeLibrary(
 	app: App,
-	settings: PantrySettings,
+	settings: MiseFlowSettings,
 ): RecipeEntry[] {
 	const target = normalizeRecipeTypeToken(settings.recipeTypeValue) || "recipe";
 	const out: RecipeEntry[] = [];
@@ -64,7 +64,7 @@ export interface SuggestionFilters {
  */
 export function suggestMeals(
 	library: readonly RecipeEntry[],
-	settings: PantrySettings,
+	settings: MiseFlowSettings,
 	filters: SuggestionFilters,
 	count: number,
 ): RecipeEntry[] {

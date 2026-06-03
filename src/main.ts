@@ -12,10 +12,10 @@ import { getOrCreateNote } from "./grocery/note-writer";
 import {
 	DEFAULT_CATEGORY_ORDER,
 	DEFAULT_SETTINGS,
-	PantrySettings,
+	MiseFlowSettings,
 	RECIPE_FRONTMATTER,
 } from "./settings";
-import { PantrySettingsTab } from "./ui/settings-tab";
+import { MiseFlowSettingsTab } from "./ui/settings-tab";
 import { RecipeView, VIEW_TYPE_RECIPE } from "./ui/recipe-view";
 import { GroceryListView, VIEW_TYPE_GROCERY_LIST } from "./ui/view";
 import {
@@ -23,8 +23,8 @@ import {
 	normalizeRecipeTypeToken,
 } from "./utils/vault-files";
 
-export default class PantryPlugin extends Plugin {
-	settings!: PantrySettings;
+export default class MiseFlowPlugin extends Plugin {
+	settings!: MiseFlowSettings;
 	manager!: GroceryListManager;
 
 	async onload(): Promise<void> {
@@ -100,7 +100,7 @@ export default class PantryPlugin extends Plugin {
 			),
 		);
 
-		this.addSettingTab(new PantrySettingsTab(this, {
+		this.addSettingTab(new MiseFlowSettingsTab(this, {
 			app: this.app,
 			settings: this.settings,
 			saveSettings: () => this.saveSettings(),
@@ -147,7 +147,7 @@ export default class PantryPlugin extends Plugin {
 
 	async loadSettings(): Promise<void> {
 		const raw = (await this.loadData()) as
-			| Partial<PantrySettings>
+			| Partial<MiseFlowSettings>
 			| null;
 		this.settings = mergeSettings(raw);
 	}
@@ -256,7 +256,7 @@ export default class PantryPlugin extends Plugin {
 }
 
 
-function makeSaveSink(plugin: PantryPlugin): SaveSink {
+function makeSaveSink(plugin: MiseFlowPlugin): SaveSink {
 	return {
 		get settings() {
 			return plugin.settings;
@@ -266,9 +266,9 @@ function makeSaveSink(plugin: PantryPlugin): SaveSink {
 }
 
 function mergeSettings(
-	raw: Partial<PantrySettings> | null,
-): PantrySettings {
-	const base: PantrySettings = {
+	raw: Partial<MiseFlowSettings> | null,
+): MiseFlowSettings {
+	const base: MiseFlowSettings = {
 		...DEFAULT_SETTINGS,
 		categoryOrder: [...DEFAULT_CATEGORY_ORDER],
 		categoryOverrides: [],
@@ -281,7 +281,7 @@ function mergeSettings(
 	};
 	if (!raw) return base;
 
-	const merged: PantrySettings = {
+	const merged: MiseFlowSettings = {
 		...base,
 		...raw,
 		mealPlanNotePath:

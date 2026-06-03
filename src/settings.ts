@@ -7,7 +7,7 @@ import {
 	OneOffItem,
 } from "./types";
 
-export interface PantrySettings {
+export interface MiseFlowSettings {
 	/** Folder paths (vault-relative) to scan for recipes. Empty array = entire vault. */
 	recipeFolders: string[];
 	/** Vault-relative path for the meal plan note. */
@@ -57,13 +57,13 @@ export interface PantrySettings {
 	/** User-editable high-GI dictionary as raw text. One regex per line, `#` comments. */
 	giDictionary: string;
 	/** Persisted state - kept in the same data file so a single saveData() round-trip is enough. */
-	state: PantrySavedState;
+	state: MiseFlowSavedState;
 }
 
 export type NutritionDisplay = "per-serving" | "total";
 export type NutritionSource = "recipe-total" | "per-serving";
 
-export interface PantrySavedState {
+export interface MiseFlowSavedState {
 	/** Planned meals — each recipe with optional day, meal type, and ingredient contributions. */
 	mealPlanEntries: MealPlanEntry[];
 	/** One-off shopping items the user has added manually. */
@@ -93,7 +93,7 @@ export const DEFAULT_CATEGORY_ORDER = [
 	"Oil",
 	"Seasoning",
 	"Baking",
-	"Pantry",
+	"MiseFlow",
 	"Snack",
 	"Frozen",
 	"Beverage",
@@ -104,7 +104,7 @@ export const DEFAULT_CATEGORY_ORDER = [
 	"Other",
 ];
 
-export const DEFAULT_SETTINGS: PantrySettings = {
+export const DEFAULT_SETTINGS: MiseFlowSettings = {
 	recipeFolders: [],
 	mealPlanNotePath: "Meal Plan.md",
 	groceryListNotePath: "Grocery List.md",

@@ -2,7 +2,7 @@ import { App, TFile } from "obsidian";
 import { categorize } from "./categorizer";
 import { ingredientKey, normaliseName, parseIngredientLine } from "../parser/ingredient";
 import { formatQuantity } from "../parser/quantity";
-import { PantrySettings } from "../settings";
+import { MiseFlowSettings } from "../settings";
 import { MealPlanEntry } from "../types";
 
 // ---------------------------------------------------------------------------
@@ -171,7 +171,7 @@ export function insertMealPlanEntryIntoText(
 export async function writeMealPlanNote(
 	app: App,
 	entries: MealPlanEntry[],
-	settings: PantrySettings,
+	settings: MiseFlowSettings,
 ): Promise<void> {
 	const path = settings.mealPlanNotePath.trim() || "Meal Plan.md";
 
@@ -244,7 +244,7 @@ export async function writeMealPlanNote(
 export async function insertMealPlanEntry(
 	app: App,
 	entry: MealPlanEntry,
-	settings: PantrySettings,
+	settings: MiseFlowSettings,
 ): Promise<void> {
 	const path = settings.mealPlanNotePath.trim() || "Meal Plan.md";
 	const file = app.vault.getAbstractFileByPath(entry.recipePath);
@@ -261,7 +261,7 @@ export async function insertMealPlanEntry(
 export async function removeMealPlanEntry(
 	app: App,
 	recipePath: string,
-	settings: PantrySettings,
+	settings: MiseFlowSettings,
 ): Promise<void> {
 	const path = settings.mealPlanNotePath.trim() || "Meal Plan.md";
 	const file = app.vault.getAbstractFileByPath(recipePath);
@@ -367,7 +367,7 @@ export interface GroceryContribution {
 export function mergeIntoGroceryText(
 	noteText: string,
 	contributions: Record<string, GroceryContribution>,
-	settings: PantrySettings,
+	settings: MiseFlowSettings,
 ): string {
 	const sections = parseGroceryNoteText(noteText);
 	const remaining = new Map(Object.entries(contributions));
@@ -420,7 +420,7 @@ export function mergeIntoGroceryText(
 export function removeFromGroceryText(
 	noteText: string,
 	contributions: Record<string, GroceryContribution>,
-	settings: PantrySettings,
+	settings: MiseFlowSettings,
 ): string {
 	const sections = parseGroceryNoteText(noteText);
 	const toRemove = new Map(Object.entries(contributions));
@@ -446,7 +446,7 @@ export function removeFromGroceryText(
 
 function renderGrocerySections(
 	sections: GroceryNoteSection[],
-	settings: PantrySettings,
+	settings: MiseFlowSettings,
 ): string {
 	// Sort sections: configured category order first, then alphabetically.
 	const order = settings.categoryOrder ?? [];
@@ -477,7 +477,7 @@ function renderGrocerySections(
 export async function addToGroceryNote(
 	app: App,
 	contributions: Record<string, GroceryContribution>,
-	settings: PantrySettings,
+	settings: MiseFlowSettings,
 ): Promise<void> {
 	if (Object.keys(contributions).length === 0) return;
 	const path = settings.groceryListNotePath.trim() || "Grocery List.md";
@@ -492,7 +492,7 @@ export async function addToGroceryNote(
 export async function removeFromGroceryNote(
 	app: App,
 	contributions: Record<string, GroceryContribution>,
-	settings: PantrySettings,
+	settings: MiseFlowSettings,
 ): Promise<void> {
 	if (Object.keys(contributions).length === 0) return;
 	const path = settings.groceryListNotePath.trim() || "Grocery List.md";
@@ -508,7 +508,7 @@ export async function removeFromGroceryNote(
  */
 export async function readGroceryNoteItems(
 	app: App,
-	settings: PantrySettings,
+	settings: MiseFlowSettings,
 ): Promise<Map<string, { name: string; unit: string; quantity: number | null; checked: boolean; category: string }>> {
 	const path = settings.groceryListNotePath.trim() || "Grocery List.md";
 	const text = await readNoteOrEmpty(app, path);
@@ -539,7 +539,7 @@ export async function toggleGroceryNoteItemChecked(
 	app: App,
 	key: string,
 	checked: boolean,
-	settings: PantrySettings,
+	settings: MiseFlowSettings,
 ): Promise<void> {
 	const path = settings.groceryListNotePath.trim() || "Grocery List.md";
 	const text = await readNoteOrEmpty(app, path);
@@ -566,7 +566,7 @@ export async function toggleGroceryNoteItemChecked(
  */
 export async function resetGroceryNoteChecks(
 	app: App,
-	settings: PantrySettings,
+	settings: MiseFlowSettings,
 ): Promise<void> {
 	const path = settings.groceryListNotePath.trim() || "Grocery List.md";
 	const text = await readNoteOrEmpty(app, path);

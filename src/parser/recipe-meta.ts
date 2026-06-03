@@ -2,7 +2,7 @@ import { CachedMetadata } from "obsidian";
 import { RECIPE_FRONTMATTER } from "../settings";
 
 /**
- * Helpers for reading the Pantry-specific frontmatter fields off a recipe
+ * Helpers for reading the MiseFlow-specific frontmatter fields off a recipe
  * note. All readers tolerate missing or malformed values - they return
  * sensible defaults rather than throwing - so callers can render even
  * partially-populated recipes without special casing.
@@ -192,7 +192,7 @@ export function matchingAllergens(
 }
 
 /**
- * Convenience: pull the relevant Pantry metadata in one shot, given an
+ * Convenience: pull the relevant MiseFlow metadata in one shot, given an
  * Obsidian metadata cache entry. Returns null if the file has no
  * frontmatter at all (in which case there's nothing useful to read).
  */

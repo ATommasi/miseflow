@@ -12,18 +12,18 @@ import { groupForDisplay } from "../grocery/aggregator";
 import { GroceryListManager } from "../grocery/manager";
 import { getOrCreateNote } from "../grocery/note-writer";
 import { formatQuantity } from "../parser/quantity";
-import { PantrySettings } from "../settings";
+import { MiseFlowSettings } from "../settings";
 import { GroceryItem, OneOffItem } from "../types";
 import { toTitleCase } from "../utils/text";
 import { AddOneOffModal } from "./add-item-modal";
 import { ConfirmModal } from "./confirm-modal";
 import { ExportListModal } from "./export-modal";
 
-export const VIEW_TYPE_GROCERY_LIST = "pantry-grocery-list";
+export const VIEW_TYPE_GROCERY_LIST = "mise-grocery-list";
 
 interface ViewDeps {
 	manager: GroceryListManager;
-	getSettings: () => PantrySettings;
+	getSettings: () => MiseFlowSettings;
 	saveSettings: () => Promise<void>;
 }
 
@@ -55,12 +55,12 @@ export class GroceryListView extends ItemView {
 		const root = this.containerEl.children[1];
 		if (!root) return;
 		root.empty();
-		root.addClass("pantry-view");
+		root.addClass("mise-view");
 
-		this.headerEl = root.createDiv({ cls: "pantry-header" });
-		this.summaryEl = root.createDiv({ cls: "pantry-summary" });
-		this.recipesEl = root.createDiv({ cls: "pantry-recipes" });
-		this.listEl = root.createDiv({ cls: "pantry-list" });
+		this.headerEl = root.createDiv({ cls: "mise-header" });
+		this.summaryEl = root.createDiv({ cls: "mise-summary" });
+		this.recipesEl = root.createDiv({ cls: "mise-recipes" });
+		this.listEl = root.createDiv({ cls: "mise-list" });
 
 		this.renderHeader();
 
@@ -83,10 +83,10 @@ export class GroceryListView extends ItemView {
 	private renderHeader(): void {
 		this.headerEl.empty();
 
-		const titleEl = this.headerEl.createDiv({ cls: "pantry-title" });
+		const titleEl = this.headerEl.createDiv({ cls: "mise-title" });
 		titleEl.createSpan({ text: "Shopping Assistant" });
 
-		const actionsEl = this.headerEl.createDiv({ cls: "pantry-actions" });
+		const actionsEl = this.headerEl.createDiv({ cls: "mise-actions" });
 
 		this.makeIconButton(actionsEl, "refresh-cw", "Sync from meal plan note", async () => {
 			await this.deps.manager.syncFromMealPlanNote();
@@ -115,7 +115,7 @@ export class GroceryListView extends ItemView {
 			.onClick(() => {
 				new AddOneOffModal(this.app, this.deps.manager).open();
 			});
-		addBtn.buttonEl.addClass("pantry-add");
+		addBtn.buttonEl.addClass("mise-add");
 
 		const clearBtn = new ButtonComponent(actionsEl)
 			.setButtonText("Clear all")
@@ -132,13 +132,13 @@ export class GroceryListView extends ItemView {
 					},
 				}).open();
 			});
-		clearBtn.buttonEl.addClass("pantry-clear");
+		clearBtn.buttonEl.addClass("mise-clear");
 	}
 
 	private openGroupingMenu(evt: MouseEvent | undefined): void {
 		const menu = new Menu();
 		const settings = this.deps.getSettings();
-		const options: Array<[PantrySettings["grouping"], string]> = [
+		const options: Array<[MiseFlowSettings["grouping"], string]> = [
 			["category", "By category"],
 			["recipe", "By recipe"],
 			["source", "By source (Meal Plan vs Manually Added)"],
@@ -193,12 +193,12 @@ export class GroceryListView extends ItemView {
 		this.renderSummary(items, entries);
 
 		if (items.length === 0) {
-			const empty = this.listEl.createDiv({ cls: "pantry-empty" });
+			const empty = this.listEl.createDiv({ cls: "mise-empty" });
 			empty.createEl("p", {
 				text: "Nothing on the grocery list yet.",
 			});
 			empty.createEl("p", {
-				cls: "pantry-hint",
+				cls: "mise-hint",
 				text: "Open the meal plan note to add recipes, then select the ingredients you need.",
 			});
 			return;
@@ -228,12 +228,12 @@ export class GroceryListView extends ItemView {
 		const totalCount = groupItems.length;
 		const allChecked = totalCount > 0 && checkedCount === totalCount;
 
-		const section = this.listEl.createDiv({ cls: "pantry-group" });
+		const section = this.listEl.createDiv({ cls: "mise-group" });
 		if (collapsed) section.addClass("is-collapsed");
 		if (allChecked) section.addClass("is-complete");
 
 		const header = section.createEl("button", {
-			cls: "pantry-group-header",
+			cls: "mise-group-header",
 		});
 		header.setAttribute("type", "button");
 		header.setAttribute("aria-expanded", collapsed ? "false" : "true");
@@ -242,16 +242,16 @@ export class GroceryListView extends ItemView {
 			`${collapsed ? "Expand" : "Collapse"} ${groupName}`,
 		);
 
-		const chevron = header.createSpan({ cls: "pantry-chevron" });
+		const chevron = header.createSpan({ cls: "mise-chevron" });
 		setIcon(chevron, "chevron-down");
 
 		header.createSpan({
-			cls: "pantry-group-title",
+			cls: "mise-group-title",
 			text: groupName,
 		});
 
 		header.createSpan({
-			cls: "pantry-group-count",
+			cls: "mise-group-count",
 			text: `${checkedCount}/${totalCount}`,
 		});
 
@@ -259,7 +259,7 @@ export class GroceryListView extends ItemView {
 			void this.deps.manager.setGroupCollapsed(groupName, !collapsed);
 		});
 
-		const ul = section.createEl("ul", { cls: "pantry-items" });
+		const ul = section.createEl("ul", { cls: "mise-items" });
 		for (const item of groupItems) {
 			this.renderItem(ul, item, oneOffs, groupName);
 		}
@@ -281,15 +281,15 @@ export class GroceryListView extends ItemView {
 		const settings = this.deps.getSettings();
 
 		// Compact meal plan summary row.
-		const planRow = this.summaryEl.createDiv({ cls: "pantry-summary-plan" });
+		const planRow = this.summaryEl.createDiv({ cls: "mise-summary-plan" });
 		const mealCount = entries.length;
 		const countText = mealCount === 0
 			? "No meals planned"
 			: `${mealCount} meal${mealCount === 1 ? "" : "s"} planned`;
-		planRow.createSpan({ cls: "pantry-summary-plan-count", text: countText });
+		planRow.createSpan({ cls: "mise-summary-plan-count", text: countText });
 
 		const planLink = planRow.createEl("a", {
-			cls: "pantry-summary-note-link",
+			cls: "mise-summary-note-link",
 			text: " View Meals →",
 			href: "#",
 		});
@@ -300,14 +300,14 @@ export class GroceryListView extends ItemView {
 
 		// Grocery summary row.
 		if (items.length > 0) {
-			const groceryRow = this.summaryEl.createDiv({ cls: "pantry-summary-grocery" });
+			const groceryRow = this.summaryEl.createDiv({ cls: "mise-summary-grocery" });
 			const checked = items.filter((i) => i.checked).length;
 			groceryRow.createSpan({
-				cls: "pantry-summary-grocery-count",
+				cls: "mise-summary-grocery-count",
 				text: `${checked}/${items.length} checked`,
 			});
 			const groceryLink = groceryRow.createEl("a", {
-				cls: "pantry-summary-note-link",
+				cls: "mise-summary-note-link",
 				text: " View Grocery List →",
 				href: "#",
 			});
@@ -344,11 +344,11 @@ export class GroceryListView extends ItemView {
 		oneOffs: OneOffItem[],
 		groupName = "",
 	): void {
-		const li = parent.createEl("li", { cls: "pantry-item" });
+		const li = parent.createEl("li", { cls: "mise-item" });
 		if (item.checked) li.addClass("is-checked");
 
 		const checkbox = li.createEl("input", {
-			cls: "pantry-checkbox",
+			cls: "mise-checkbox",
 			type: "checkbox",
 		});
 		checkbox.checked = item.checked;
@@ -356,11 +356,11 @@ export class GroceryListView extends ItemView {
 			void this.deps.manager.toggleChecked(item.key, checkbox.checked);
 		});
 
-		const body = li.createDiv({ cls: "pantry-item-body" });
+		const body = li.createDiv({ cls: "mise-item-body" });
 
-		const main = body.createDiv({ cls: "pantry-item-main" });
+		const main = body.createDiv({ cls: "mise-item-main" });
 		main.createSpan({
-			cls: "pantry-name",
+			cls: "mise-name",
 			text: toTitleCase(item.name),
 		});
 		const qtyAndUnit = [formatQuantity(item.quantity), item.unit]
@@ -368,12 +368,12 @@ export class GroceryListView extends ItemView {
 			.join(" ");
 		if (qtyAndUnit) {
 			main.createSpan({
-				cls: "pantry-qty",
+				cls: "mise-qty",
 				text: ` (${qtyAndUnit})`,
 			});
 		}
 
-		const meta = body.createDiv({ cls: "pantry-meta" });
+		const meta = body.createDiv({ cls: "mise-meta" });
 		const groupLower = groupName.toLowerCase();
 		const visibleSources = item.sources.filter((s) => {
 			if (s.label.toLowerCase() === groupLower) return false;
@@ -381,12 +381,12 @@ export class GroceryListView extends ItemView {
 			return true;
 		});
 		if (visibleSources.length > 0) {
-			const sourceEl = meta.createSpan({ cls: "pantry-source" });
+			const sourceEl = meta.createSpan({ cls: "mise-source" });
 			visibleSources.forEach((s, i) => {
 				if (i > 0) sourceEl.appendText(", ");
 				if (s.type === "recipe" && s.path) {
 					const link = sourceEl.createEl("a", {
-						cls: "pantry-source-link",
+						cls: "mise-source-link",
 						text: s.label,
 						href: "#",
 					});
@@ -411,7 +411,7 @@ export class GroceryListView extends ItemView {
 		);
 		if (matchingOneOff) {
 			const removeBtn = li.createEl("button", {
-				cls: "pantry-remove clickable-icon",
+				cls: "mise-remove clickable-icon",
 			});
 			removeBtn.setAttribute("aria-label", "Remove from manually added items");
 			removeBtn.setAttribute("type", "button");

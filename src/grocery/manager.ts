@@ -5,7 +5,7 @@ import {
 	parseIngredientLine,
 } from "../parser/ingredient";
 import { formatQuantity } from "../parser/quantity";
-import { PantrySettings } from "../settings";
+import { MiseFlowSettings } from "../settings";
 import { GroceryItem, MealPlanEntry, OneOffItem } from "../types";
 import { buildGroceryList, groupForDisplay } from "./aggregator";
 import {
@@ -21,7 +21,7 @@ import {
 } from "./note-writer";
 
 export interface SaveSink {
-	readonly settings: PantrySettings;
+	readonly settings: MiseFlowSettings;
 	save(): Promise<void>;
 }
 
@@ -211,7 +211,7 @@ export class GroceryListManager extends Events {
 			})
 			.catch((err) => {
 				this.rebuildPromise = null;
-				console.error("pantry: refresh failed", err);
+				console.error("miseflow: refresh failed", err);
 			});
 		return this.rebuildPromise;
 	}

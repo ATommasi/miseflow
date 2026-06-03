@@ -23,15 +23,15 @@ export class MarkCookedModal extends Modal {
 		});
 
 		const inputRow = contentEl.createDiv({
-			cls: "pantry-mark-cooked-date-row",
+			cls: "mise-mark-cooked-date-row",
 		});
 		inputRow.createEl("label", {
 			text: "Date",
-			attr: { for: "pantry-cooked-date" },
+			attr: { for: "mise-cooked-date" },
 		});
 		const input = inputRow.createEl("input", {
 			type: "date",
-			attr: { id: "pantry-cooked-date" },
+			attr: { id: "mise-cooked-date" },
 		});
 		input.value = todayLocalISO();
 
