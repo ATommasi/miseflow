@@ -44,17 +44,33 @@ export class PantrySettingsTab extends PluginSettingTab {
 			);
 
 		new Setting(containerEl)
-			.setName("Selection property")
+			.setName("Meal plan note")
 			.setDesc(
-				"Frontmatter property that marks a recipe as part of this week's grocery list (boolean).",
+				"Vault-relative path for the meal plan note (e.g. Meal Plan.md).",
 			)
 			.addText((text) =>
 				text
-					.setPlaceholder("Property name")
-					.setValue(this.host.settings.selectionProperty)
+					.setPlaceholder("Meal Plan.md")
+					.setValue(this.host.settings.mealPlanNotePath)
 					.onChange(async (value) => {
-						this.host.settings.selectionProperty =
-							value.trim() || "groceryList";
+						this.host.settings.mealPlanNotePath =
+							value.trim() || "Meal Plan.md";
+						await this.host.saveSettings();
+					}),
+			);
+
+		new Setting(containerEl)
+			.setName("Grocery list note")
+			.setDesc(
+				"Vault-relative path for the grocery list note (e.g. Grocery List.md).",
+			)
+			.addText((text) =>
+				text
+					.setPlaceholder("Grocery List.md")
+					.setValue(this.host.settings.groceryListNotePath)
+					.onChange(async (value) => {
+						this.host.settings.groceryListNotePath =
+							value.trim() || "Grocery List.md";
 						await this.host.saveSettings();
 					}),
 			);

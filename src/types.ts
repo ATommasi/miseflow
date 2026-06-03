@@ -47,9 +47,11 @@ export interface GroceryItemSource {
 	label: string;
 	/** Recipe file path, when type === "recipe". */
 	path?: string;
+	/** Quantity this specific source contributed (used for split-by-recipe display). */
+	quantity?: number | null;
 }
 
-export type GroupingMode = "category" | "recipe" | "none";
+export type GroupingMode = "category" | "recipe" | "source" | "none";
 
 /**
  * Where a grocery item's category comes from.
@@ -64,6 +66,31 @@ export interface CategoryOverride {
 	match: string;
 	/** Category to assign when matched. */
 	category: string;
+}
+
+/**
+ * A single entry in the meal plan — one recipe assigned to an optional day
+ * and meal slot, with the ingredient contributions recorded so the grocery
+ * note can be patched precisely when the entry is removed.
+ */
+export interface MealPlanEntry {
+	/** Vault-relative path to the recipe file. */
+	recipePath: string;
+	/** "Monday"–"Sunday", a YYYY-MM-DD date, or undefined = Unscheduled. */
+	day?: string;
+	/** "Breakfast", "Lunch", "Dinner", "Snack", or any custom string. */
+	mealType?: string;
+	/** ISO date (YYYY-MM-DD) when this entry was added via the UI. */
+	addedDate: string;
+	/**
+	 * Per-ingredient amounts this entry contributed to the grocery note.
+	 * Keyed by ingredientKey(name, unit). Used to reverse the contribution
+	 * on removal without embedding metadata in the note itself.
+	 */
+	contributions: Record<
+		string,
+		{ name: string; unit: string; quantity: number | null }
+	>;
 }
 
 /**

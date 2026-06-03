@@ -4,13 +4,21 @@ import {
 	normaliseName,
 	parseIngredientLine,
 } from "../parser/ingredient";
-import {
-	findSelectedRecipes,
-	parseRecipeFile,
-} from "../parser/recipe";
-import { IngredientSelectionMode, PantrySettings } from "../settings";
-import { GroceryItem, OneOffItem, RecipeIngredient } from "../types";
+import { formatQuantity } from "../parser/quantity";
+import { PantrySettings } from "../settings";
+import { GroceryItem, MealPlanEntry, OneOffItem } from "../types";
 import { buildGroceryList, groupForDisplay } from "./aggregator";
+import {
+	addToGroceryNote,
+	GroceryContribution,
+	insertMealPlanEntry,
+	parseMealPlanNote,
+	readGroceryNoteItems,
+	removeFromGroceryNote,
+	removeMealPlanEntry,
+	resetGroceryNoteChecks,
+	toggleGroceryNoteItemChecked,
+} from "./note-writer";
 
 export interface SaveSink {
 	readonly settings: PantrySettings;
@@ -18,14 +26,12 @@ export interface SaveSink {
 }
 
 /**
- * Owns the in-memory grocery list and broadcasts change events so views can
- * re-render. All persistence funnels through `sink.save()` which is expected
- * to write the plugin data file.
+ * Owns the in-memory grocery/meal-plan state and broadcasts change events so
+ * views can re-render. All persistence funnels through `sink.save()` (plugin
+ * data file) and the note-writer (vault notes).
  */
 export class GroceryListManager extends Events {
 	private items: GroceryItem[] = [];
-	private recipeIngredients: RecipeIngredient[] = [];
-	private selectedRecipes: TFile[] = [];
 	private rebuildPromise: Promise<void> | null = null;
 
 	constructor(
@@ -43,160 +49,247 @@ export class GroceryListManager extends Events {
 		return this.sink.settings.state.oneOffs;
 	}
 
-	/** Markdown files currently flagged with the selection property, sorted by name. */
-	getSelectedRecipes(): TFile[] {
-		return this.selectedRecipes;
+	getMealPlanEntries(): MealPlanEntry[] {
+		return this.sink.settings.state.mealPlanEntries ?? [];
 	}
 
-	/** Per-ingredient override map for a recipe (ingredientKey -> include/exclude). */
-	getIngredientSelections(
-		recipePath: string,
-	): Record<string, IngredientSelectionMode> {
-		const map = this.sink.settings.state.ingredientSelectionsByRecipe;
-		if (!map) return {};
-		const overrides = map[recipePath];
-		if (!overrides || typeof overrides !== "object") return {};
-		return { ...overrides };
-	}
+	// -------------------------------------------------------------------------
+	// Meal plan
+	// -------------------------------------------------------------------------
 
-	/** Persist the include/exclude/default state for one recipe ingredient key. */
-	async setIngredientSelection(
+	/**
+	 * Add a recipe to the meal plan with optional day/meal-type and a set of
+	 * selected ingredient contributions. Writes both notes and triggers a refresh.
+	 */
+	async addToMealPlan(
 		recipePath: string,
-		ingredient: string,
-		mode: IngredientSelectionMode | "default",
+		day: string | undefined,
+		mealType: string | undefined,
+		contributions: Record<string, GroceryContribution>,
 	): Promise<void> {
 		const path = recipePath.trim();
-		const key = ingredient.trim();
-		if (!path || !key) return;
+		if (!path) return;
 
-		const state = this.sink.settings.state;
-		state.ingredientSelectionsByRecipe ??= {};
-		const map = state.ingredientSelectionsByRecipe;
-		const current = { ...this.getIngredientSelections(path) };
+		const today = localDateISO();
+		const entry: MealPlanEntry = {
+			recipePath: path,
+			day: day?.trim() || undefined,
+			mealType: mealType?.trim() || undefined,
+			addedDate: today,
+			contributions,
+		};
 
-		if (mode === "default") {
-			delete current[key];
-		} else {
-			current[key] = mode;
+		const entries = this.sink.settings.state.mealPlanEntries ?? [];
+		// Replace existing entry for this recipe if it exists.
+		const idx = entries.findIndex((e) => e.recipePath === path);
+		if (idx !== -1) {
+			// Remove its old contributions from grocery note before replacing.
+			await removeFromGroceryNote(this.app, entries[idx]!.contributions, this.sink.settings);
+			entries.splice(idx, 1);
 		}
-
-		if (Object.keys(current).length === 0) {
-			delete map[path];
-		} else {
-			map[path] = current;
-		}
-
+		entries.push(entry);
+		this.sink.settings.state.mealPlanEntries = entries;
 		await this.sink.save();
-		await this.refresh();
+
+		await insertMealPlanEntry(this.app, entry, this.sink.settings);
+		await addToGroceryNote(this.app, contributions, this.sink.settings);
+
+		await this.rebuild();
+		this.trigger("changed");
+
+		const name = recipeBasename(this.app, path);
+		const parts = [entry.day, entry.mealType].filter(Boolean).join(" — ");
+		new Notice(
+			parts
+				? `${name} added to meal plan (${parts}).`
+				: `${name} added to meal plan.`,
+		);
 	}
 
 	/**
-	 * Rebuild the grocery list from selected recipes and one-off items.
-	 * Concurrent calls coalesce so spamming the refresh button is safe.
+	 * Remove a recipe from the meal plan, subtracting its ingredient
+	 * contributions from the grocery note.
+	 */
+	async removeFromMealPlan(recipePath: string): Promise<void> {
+		const path = recipePath.trim();
+		if (!path) return;
+
+		const entries = this.sink.settings.state.mealPlanEntries ?? [];
+		const idx = entries.findIndex((e) => e.recipePath === path);
+		if (idx === -1) return;
+
+		const entry = entries[idx]!;
+		entries.splice(idx, 1);
+		this.sink.settings.state.mealPlanEntries = entries;
+		await this.sink.save();
+
+		await removeMealPlanEntry(this.app, path, this.sink.settings);
+		await removeFromGroceryNote(this.app, entry.contributions, this.sink.settings);
+
+		await this.rebuild();
+		this.trigger("changed");
+
+		const name = recipeBasename(this.app, path);
+		new Notice(`${name} removed from meal plan.`);
+	}
+
+	/**
+	 * Read the meal plan note and reconcile with plugin state.
+	 * Adds entries for new [[wikilinks]] found in the note; removes entries
+	 * for lines that were deleted. Does not touch the grocery note (we can't
+	 * know what ingredients the user wants for manually-added entries).
+	 */
+	async syncFromMealPlanNote(): Promise<void> {
+		const path = this.sink.settings.mealPlanNotePath.trim() || "Meal Plan.md";
+		const file = this.app.vault.getAbstractFileByPath(path);
+		if (!(file instanceof TFile)) return;
+
+		const text = await this.app.vault.read(file);
+		const sections = parseMealPlanNote(text);
+
+		// Collect all wikilinks currently in the note.
+		const inNote = new Map<string, { day?: string; mealType?: string }>();
+		for (const section of sections) {
+			for (const line of section.lines) {
+				if (!line.wikilink) continue;
+				const resolved = this.app.metadataCache.getFirstLinkpathDest(
+					line.wikilink,
+					path,
+				);
+				const resolvedPath = resolved?.path ?? line.wikilink;
+				inNote.set(resolvedPath, { day: line.day, mealType: line.mealType });
+			}
+		}
+
+		const entries = this.sink.settings.state.mealPlanEntries ?? [];
+		let changed = false;
+
+		// Remove entries whose recipe is no longer in the note.
+		const toRemove = entries.filter((e) => !inNote.has(e.recipePath));
+		for (const entry of toRemove) {
+			const idx = entries.indexOf(entry);
+			if (idx !== -1) entries.splice(idx, 1);
+			changed = true;
+		}
+
+		// Add entries for new wikilinks not yet in state.
+		const knownPaths = new Set(entries.map((e) => e.recipePath));
+		for (const [resolvedPath, meta] of inNote) {
+			if (knownPaths.has(resolvedPath)) continue;
+			entries.push({
+				recipePath: resolvedPath,
+				day: meta.day,
+				mealType: meta.mealType,
+				addedDate: localDateISO(),
+				contributions: {}, // unknown — manually added
+			});
+			changed = true;
+		}
+
+		if (changed) {
+			this.sink.settings.state.mealPlanEntries = entries;
+			await this.sink.save();
+			await this.rebuild();
+			this.trigger("changed");
+		}
+	}
+
+	// -------------------------------------------------------------------------
+	// Grocery list state
+	// -------------------------------------------------------------------------
+
+	/**
+	 * Rebuild the in-memory item list from the grocery note + one-offs.
+	 * Coalesces concurrent calls.
 	 */
 	async refresh(): Promise<void> {
 		if (this.rebuildPromise) return this.rebuildPromise;
-		this.rebuildPromise = (async () => {
-			try {
-				const files = findSelectedRecipes(this.app, this.sink.settings);
-				const selectedPaths = new Set(files.map((file) => file.path));
-				const ingredientSelections =
-					this.sink.settings.state.ingredientSelectionsByRecipe ?? {};
-				const allIngredients: RecipeIngredient[] = [];
-				for (const file of files) {
-					try {
-						const parsed = await parseRecipeFile(
-							this.app,
-							file,
-							this.sink.settings,
-						);
-						const overrides = ingredientSelections[file.path] ?? {};
-						for (const ingredient of parsed) {
-							const key = ingredientKey(
-								ingredient.name,
-								ingredient.unit,
-							);
-							if (overrides[key] === "exclude") continue;
-							allIngredients.push(ingredient);
-						}
-					} catch (err) {
-						console.error(
-							`pantry: failed to parse ${file.path}`,
-							err,
-						);
-					}
-				}
-
-				for (const [path, selectedKeysRaw] of Object.entries(
-					ingredientSelections,
-				)) {
-					if (selectedPaths.has(path)) continue;
-					if (!selectedKeysRaw || typeof selectedKeysRaw !== "object") continue;
-					const includeKeys = new Set(
-						Object.keys(selectedKeysRaw).filter(
-							(key) => selectedKeysRaw[key] === "include",
-						),
-					);
-					if (includeKeys.size === 0) continue;
-
-					const abstract = this.app.vault.getAbstractFileByPath(path);
-					if (!(abstract instanceof TFile) || abstract.extension !== "md") {
-						continue;
-					}
-
-					try {
-						const parsed = await parseRecipeFile(
-							this.app,
-							abstract,
-							this.sink.settings,
-						);
-						for (const ingredient of parsed) {
-							const key = ingredientKey(
-								ingredient.name,
-								ingredient.unit,
-							);
-							if (includeKeys.has(key)) {
-								allIngredients.push(ingredient);
-							}
-						}
-					} catch (err) {
-						console.error(
-							`pantry: failed to parse ${path}`,
-							err,
-						);
-					}
-				}
-				this.recipeIngredients = allIngredients;
-				this.selectedRecipes = [...files].sort((a, b) =>
-					a.basename.localeCompare(b.basename, undefined, {
-						sensitivity: "base",
-					}),
-				);
-				this.rebuildItems();
-				await this.pruneMissingManualSelections();
-				await this.pruneStaleCheckedKeys();
-			} finally {
+		this.rebuildPromise = this.rebuild()
+			.then(() => {
 				this.rebuildPromise = null;
-			}
-			this.trigger("changed");
-		})();
+				this.trigger("changed");
+			})
+			.catch((err) => {
+				this.rebuildPromise = null;
+				console.error("pantry: refresh failed", err);
+			});
 		return this.rebuildPromise;
 	}
 
-	/** Flip the checked state of an item and persist it. */
-	async toggleChecked(key: string, checked: boolean): Promise<void> {
-		const map = this.sink.settings.state.checkedKeys;
-		if (checked) {
-			map[key] = true;
-		} else {
-			delete map[key];
+
+	/**
+	 * Rebuild in-memory items from the grocery note (source of truth).
+	 * One-offs are already in the note; plugin state's oneOffs array is
+	 * used only for source labelling (to know which items have a remove button).
+	 */
+	private async rebuild(): Promise<void> {
+		const noteItems = await readGroceryNoteItems(this.app, this.sink.settings);
+
+		// Build per-key recipe attribution: key → [{name, quantity}]
+		const recipeSourcesByKey = new Map<
+			string,
+			Array<{ name: string; path: string; quantity: number | null }>
+		>();
+		for (const entry of this.sink.settings.state.mealPlanEntries ?? []) {
+			const file = this.app.vault.getAbstractFileByPath(entry.recipePath);
+			const name =
+				file instanceof TFile
+					? file.basename
+					: entry.recipePath.split("/").pop()?.replace(/\.md$/i, "") ??
+					entry.recipePath;
+			for (const [key, contrib] of Object.entries(entry.contributions)) {
+				const existing = recipeSourcesByKey.get(key);
+				const src = { name, path: entry.recipePath, quantity: contrib.quantity };
+				if (existing) existing.push(src);
+				else recipeSourcesByKey.set(key, [src]);
+			}
 		}
+
+		const oneOffByKey = new Map<string, OneOffItem>(
+			this.sink.settings.state.oneOffs.map((o) => [
+				ingredientKey(o.name, o.unit),
+				o,
+			]),
+		);
+
+		const items: GroceryItem[] = [];
+		for (const [key, data] of noteItems) {
+			const recipeSources = recipeSourcesByKey.get(key);
+			const oneOff = oneOffByKey.get(key);
+			const sources = [];
+			if (recipeSources && recipeSources.length > 0) {
+				for (const { name, path, quantity } of recipeSources) {
+					sources.push({ type: "recipe" as const, label: name, path, quantity });
+				}
+			} else if (!oneOff) {
+				// Added directly to note — no source attribution in plugin state.
+				sources.push({ type: "one-off" as const, label: "Added manually", quantity: data.quantity });
+			}
+			if (oneOff) {
+				sources.push({ type: "one-off" as const, label: "Added manually", quantity: oneOff.quantity });
+			}
+			items.push({
+				key,
+				name: data.name,
+				unit: data.unit,
+				quantity: data.quantity,
+				category: data.category,
+				sources,
+				checked: data.checked,
+			});
+		}
+
+		this.items = items;
+	}
+
+	/** Flip the checked state of an item — writes directly to the grocery note. */
+	async toggleChecked(key: string, checked: boolean): Promise<void> {
+		await toggleGroceryNoteItemChecked(this.app, key, checked, this.sink.settings);
 		const item = this.items.find((i) => i.key === key);
 		if (item) item.checked = checked;
 		if (checked && this.sink.settings.autoCollapseCompleted) {
 			this.applyAutoCollapse(key);
 		}
-		await this.sink.save();
 		this.trigger("changed");
 	}
 
@@ -219,11 +312,6 @@ export class GroceryListManager extends Events {
 		this.trigger("changed");
 	}
 
-	/**
-	 * After checking an item, find every group it belongs to and collapse any
-	 * that are now fully checked. Only triggers on the transition to fully-checked
-	 * (because this only runs when an item flips from unchecked to checked).
-	 */
 	private applyAutoCollapse(toggledKey: string): void {
 		const groups = groupForDisplay(this.items, this.sink.settings);
 		const collapsed = this.sink.settings.state.collapsedGroups;
@@ -236,26 +324,35 @@ export class GroceryListManager extends Events {
 		}
 	}
 
-	/** Add a one-off item to the list and persist it. */
+	/** Add a one-off item — persists to plugin state AND writes to the grocery note. */
 	async addOneOff(item: Omit<OneOffItem, "id">): Promise<void> {
 		const trimmedName = item.name.trim();
 		if (!trimmedName) return;
-		const id = `${Date.now().toString(36)}-${Math.random()
-			.toString(36)
-			.slice(2, 8)}`;
-		this.sink.settings.state.oneOffs.push({
+		const unit = item.unit.trim();
+		const id = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+		const newItem: OneOffItem = {
 			id,
 			name: trimmedName,
 			quantity: item.quantity,
-			unit: item.unit.trim(),
+			unit,
 			category: item.category?.trim() || null,
-		});
+		};
+		this.sink.settings.state.oneOffs.push(newItem);
 		await this.sink.save();
-		this.rebuildItems();
+
+		const key = ingredientKey(trimmedName, unit);
+		await addToGroceryNote(
+			this.app,
+			{ [key]: { name: normaliseName(trimmedName), unit, quantity: item.quantity } },
+			this.sink.settings,
+		);
+
+		await this.rebuild();
 		this.trigger("changed");
+		new Notice(`${titleCase(trimmedName)} added to grocery list.`);
 	}
 
-	/** Update fields on an existing one-off item by id. Only provided fields change. */
+	/** Update a one-off — patches the grocery note to reflect the change. */
 	async updateOneOff(
 		id: string,
 		updates: {
@@ -267,29 +364,56 @@ export class GroceryListManager extends Events {
 	): Promise<void> {
 		const item = this.sink.settings.state.oneOffs.find((o) => o.id === id);
 		if (!item) return;
+
+		// Capture old contribution before mutating.
+		const oldKey = ingredientKey(item.name, item.unit);
+		const oldContrib = { name: normaliseName(item.name), unit: item.unit, quantity: item.quantity };
+
 		if (updates.name !== undefined) {
 			const trimmed = updates.name.trim();
 			if (trimmed) item.name = trimmed;
 		}
-		if (updates.quantity !== undefined) {
-			item.quantity = updates.quantity;
-		}
-		if (updates.unit !== undefined) {
-			item.unit = updates.unit.trim();
-		}
-		if (updates.category !== undefined) {
+		if (updates.quantity !== undefined) item.quantity = updates.quantity;
+		if (updates.unit !== undefined) item.unit = updates.unit.trim();
+		if (updates.category !== undefined)
 			item.category = updates.category?.trim() || null;
-		}
+
 		await this.sink.save();
-		this.rebuildItems();
-		await this.pruneStaleCheckedKeys();
+
+		// Remove old contribution and add new one.
+		await removeFromGroceryNote(this.app, { [oldKey]: oldContrib }, this.sink.settings);
+		const newKey = ingredientKey(item.name, item.unit);
+		await addToGroceryNote(
+			this.app,
+			{ [newKey]: { name: normaliseName(item.name), unit: item.unit, quantity: item.quantity } },
+			this.sink.settings,
+		);
+
+		await this.rebuild();
+		this.trigger("changed");
+	}
+
+	/** Remove a one-off — subtracts its contribution from the grocery note. */
+	async removeOneOff(id: string): Promise<void> {
+		const item = this.sink.settings.state.oneOffs.find((o) => o.id === id);
+		if (!item) return;
+
+		const key = ingredientKey(item.name, item.unit);
+		const contrib = { name: normaliseName(item.name), unit: item.unit, quantity: item.quantity };
+
+		this.sink.settings.state.oneOffs = this.sink.settings.state.oneOffs.filter(
+			(o) => o.id !== id,
+		);
+		await this.sink.save();
+
+		await removeFromGroceryNote(this.app, { [key]: contrib }, this.sink.settings);
+		await this.rebuild();
 		this.trigger("changed");
 	}
 
 	/**
-	 * Distinct categories currently known to the user: the configured
-	 * `categoryOrder` plus any extra categories actively assigned to items.
-	 * Sorted with the configured order first, then anything new alphabetically.
+	 * Distinct categories currently known: configured order plus any extras
+	 * from active items.
 	 */
 	getKnownCategories(): string[] {
 		const ordered = this.sink.settings.categoryOrder ?? [];
@@ -307,141 +431,61 @@ export class GroceryListManager extends Events {
 		return [...ordered, ...extra];
 	}
 
-	/** Remove a one-off item by id and persist. */
-	async removeOneOff(id: string): Promise<void> {
-		const before = this.sink.settings.state.oneOffs.length;
-		this.sink.settings.state.oneOffs =
-			this.sink.settings.state.oneOffs.filter((o) => o.id !== id);
-		if (this.sink.settings.state.oneOffs.length === before) return;
-		await this.sink.save();
-		this.rebuildItems();
-		this.trigger("changed");
-	}
-
 	/**
-	 * Clear the entire shopping list:
-	 *   - unset the selection property on every recipe currently flagged
-	 *   - drop all one-off items
-	 *   - drop all checked-off state
+	 * Clear everything: all meal plan entries, one-offs, checks, and both notes.
 	 */
 	async clearAll(): Promise<{ recipesCleared: number; oneOffsCleared: number }> {
-		const files = findSelectedRecipes(this.app, this.sink.settings);
-		let recipesCleared = 0;
-		for (const file of files) {
-			try {
-				await this.unsetSelectionProperty(file);
-				recipesCleared++;
-			} catch (err) {
-				console.error(
-					`pantry: failed to deselect ${file.path}`,
-					err,
-				);
-			}
-		}
-
+		const recipesCleared = (this.sink.settings.state.mealPlanEntries ?? []).length;
 		const oneOffsCleared = this.sink.settings.state.oneOffs.length;
+
+		this.sink.settings.state.mealPlanEntries = [];
 		this.sink.settings.state.oneOffs = [];
-		this.sink.settings.state.ingredientSelectionsByRecipe = {};
-		this.sink.settings.state.checkedKeys = {};
 		this.sink.settings.state.collapsedGroups = {};
 		await this.sink.save();
 
-		this.recipeIngredients = [];
-		this.selectedRecipes = [];
+		// Overwrite notes with empty content.
+		const { mealPlanNotePath, groceryListNotePath } = this.sink.settings;
+		await writeEmptyNote(this.app, mealPlanNotePath || "Meal Plan.md", "# Meal Plan\n");
+		await writeEmptyNote(this.app, groceryListNotePath || "Grocery List.md", "# Grocery List\n");
+
 		this.items = [];
 		this.trigger("changed");
 
 		new Notice(
-			`Grocery list cleared (${recipesCleared} recipe${recipesCleared === 1 ? "" : "s"}, ${oneOffsCleared} one-off${oneOffsCleared === 1 ? "" : "s"}).`,
+			`Meal plan cleared (${recipesCleared} recipe${recipesCleared === 1 ? "" : "s"}, ${oneOffsCleared} one-off${oneOffsCleared === 1 ? "" : "s"}).`,
 		);
 		return { recipesCleared, oneOffsCleared };
 	}
 
-	/** Reset only the checked state, keeping the list intact. */
+	/** Reset all checkboxes to unchecked — writes directly to the grocery note. */
 	async resetChecks(): Promise<void> {
-		this.sink.settings.state.checkedKeys = {};
+		await resetGroceryNoteChecks(this.app, this.sink.settings);
 		this.sink.settings.state.collapsedGroups = {};
-		for (const item of this.items) item.checked = false;
 		await this.sink.save();
+		await this.rebuild();
 		this.trigger("changed");
 	}
+}
 
-	private rebuildItems(): void {
-		this.items = buildGroceryList({
-			recipeIngredients: this.recipeIngredients,
-			oneOffs: this.sink.settings.state.oneOffs,
-			settings: this.sink.settings,
-			checkedKeys: this.sink.settings.state.checkedKeys,
-		});
-	}
+function localDateISO(): string {
+	const d = new Date();
+	const y = d.getFullYear();
+	const m = String(d.getMonth() + 1).padStart(2, "0");
+	const day = String(d.getDate()).padStart(2, "0");
+	return `${y}-${m}-${day}`;
+}
 
-	private async pruneStaleCheckedKeys(): Promise<void> {
-		const live = new Set(this.items.map((i) => i.key));
-		const map = this.sink.settings.state.checkedKeys;
-		let changed = false;
-		for (const key of Object.keys(map)) {
-			if (!live.has(key)) {
-				delete map[key];
-				changed = true;
-			}
-		}
-		if (changed) await this.sink.save();
-	}
-
-	private async pruneMissingManualSelections(): Promise<void> {
-		const map = this.sink.settings.state.ingredientSelectionsByRecipe;
-		if (!map) return;
-
-		let changed = false;
-		for (const [path, overrides] of Object.entries(map)) {
-			if (!overrides || typeof overrides !== "object") {
-				delete map[path];
-				changed = true;
-				continue;
-			}
-
-			let hasAny = false;
-			for (const key of Object.keys(overrides)) {
-				const mode = overrides[key];
-				if (mode === "include" || mode === "exclude") {
-					hasAny = true;
-					continue;
-				}
-				delete overrides[key];
-				changed = true;
-			}
-			if (!hasAny) {
-				delete map[path];
-				changed = true;
-				continue;
-			}
-
-			const abstract = this.app.vault.getAbstractFileByPath(path);
-			if (!(abstract instanceof TFile) || abstract.extension !== "md") {
-				delete map[path];
-				changed = true;
-			}
-		}
-
-		if (changed) await this.sink.save();
-	}
-
-	private async unsetSelectionProperty(file: TFile): Promise<void> {
-		const property = this.sink.settings.selectionProperty;
-		await this.app.fileManager.processFrontMatter(
-			file,
-			(fm: Record<string, unknown>) => {
-				if (fm[property] !== undefined) {
-					fm[property] = false;
-				}
-			},
-		);
+async function writeEmptyNote(app: App, path: string, content: string): Promise<void> {
+	const existing = app.vault.getAbstractFileByPath(path);
+	if (existing instanceof TFile) {
+		await app.vault.modify(existing, content);
+	} else {
+		await app.vault.create(path, content);
 	}
 }
 
 /**
- * Helper for parsing a free-form one-off entry like "2 cans black beans" so
- * the modal doesn't need to know about ingredient grammar.
+ * Helper for parsing a free-form one-off entry like "2 cans black beans".
  */
 export function parseOneOffEntry(
 	input: string,
@@ -450,12 +494,23 @@ export function parseOneOffEntry(
 	if (!trimmed) return null;
 	const parsed = parseIngredientLine(trimmed);
 	if (!parsed) return null;
-	return {
-		name: parsed.name,
-		quantity: parsed.quantity,
-		unit: parsed.unit,
-	};
+	return { name: parsed.name, quantity: parsed.quantity, unit: parsed.unit };
 }
 
 /** Re-exported for callers that want to compute a key directly. */
-export { ingredientKey, normaliseName };
+export { ingredientKey, normaliseName, formatQuantity };
+
+function recipeBasename(app: App, recipePath: string): string {
+	const file = app.vault.getAbstractFileByPath(recipePath);
+	if (file instanceof TFile) return file.basename;
+	const slash = recipePath.lastIndexOf("/");
+	const base = slash >= 0 ? recipePath.slice(slash + 1) : recipePath;
+	return base.replace(/\.md$/i, "");
+}
+
+function titleCase(name: string): string {
+	return name.replace(
+		/(^|[\s-])([a-z])/g,
+		(_match, sep: string, ch: string) => `${sep}${ch.toUpperCase()}`,
+	);
+}

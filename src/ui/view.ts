@@ -10,12 +10,8 @@ import {
 } from "obsidian";
 import { groupForDisplay } from "../grocery/aggregator";
 import { GroceryListManager } from "../grocery/manager";
+import { getOrCreateNote } from "../grocery/note-writer";
 import { formatQuantity } from "../parser/quantity";
-import { readRecipeMultiplier } from "../parser/recipe";
-import {
-	matchingAllergens,
-	readAllergens,
-} from "../parser/recipe-meta";
 import { PantrySettings } from "../settings";
 import { GroceryItem, OneOffItem } from "../types";
 import { toTitleCase } from "../utils/text";
@@ -52,7 +48,7 @@ export class GroceryListView extends ItemView {
 	}
 
 	getDisplayText(): string {
-		return "Grocery list";
+		return "Shopping Assistant";
 	}
 
 	async onOpen(): Promise<void> {
@@ -88,15 +84,14 @@ export class GroceryListView extends ItemView {
 		this.headerEl.empty();
 
 		const titleEl = this.headerEl.createDiv({ cls: "pantry-title" });
-		titleEl.createSpan({ text: "Grocery list" });
+		titleEl.createSpan({ text: "Shopping Assistant" });
 
-		const actionsEl = this.headerEl.createDiv({
-			cls: "pantry-actions",
-		});
+		const actionsEl = this.headerEl.createDiv({ cls: "pantry-actions" });
 
-		this.makeIconButton(actionsEl, "refresh-cw", "Refresh from recipes", async () => {
+		this.makeIconButton(actionsEl, "refresh-cw", "Sync from meal plan note", async () => {
+			await this.deps.manager.syncFromMealPlanNote();
 			await this.deps.manager.refresh();
-			new Notice("Grocery list refreshed.");
+			new Notice("Meal plan synced.");
 		});
 
 		this.makeIconButton(actionsEl, "settings-2", "Grouping", (evt) => {
@@ -110,6 +105,11 @@ export class GroceryListView extends ItemView {
 			}).open();
 		});
 
+		this.makeIconButton(actionsEl, "rotate-ccw", "Reset checks", async () => {
+			await this.deps.manager.resetChecks();
+			new Notice("Grocery checks reset.");
+		});
+
 		const addBtn = new ButtonComponent(actionsEl)
 			.setButtonText("Add item")
 			.onClick(() => {
@@ -118,14 +118,14 @@ export class GroceryListView extends ItemView {
 		addBtn.buttonEl.addClass("pantry-add");
 
 		const clearBtn = new ButtonComponent(actionsEl)
-			.setButtonText("Clear list")
+			.setButtonText("Clear all")
 			.setWarning()
 			.onClick(() => {
 				new ConfirmModal(this.app, {
-					title: "Clear list?",
+					title: "Clear meal plan and grocery list?",
 					message:
-						"This will deselect every recipe currently on the list, remove all one-off items, and reset all checks. This can't be undone.",
-					confirmText: "Clear list",
+						"This will clear all grocery list items, the meal plan and grocery notes will also be cleared. This can't be undone.",
+					confirmText: "Clear all",
 					destructive: true,
 					onConfirm: async () => {
 						await this.deps.manager.clearAll();
@@ -141,6 +141,7 @@ export class GroceryListView extends ItemView {
 		const options: Array<[PantrySettings["grouping"], string]> = [
 			["category", "By category"],
 			["recipe", "By recipe"],
+			["source", "By source (Meal Plan vs Manually Added)"],
 			["none", "Flat list"],
 		];
 		for (const [value, label] of options) {
@@ -178,23 +179,27 @@ export class GroceryListView extends ItemView {
 		});
 	}
 
+
+	/**
+	 * Creates the list of grocery items, grouped by category or recipe as appropriate. Also renders the summary info at the top.
+	 */
 	private renderList(): void {
 		this.listEl.empty();
+		this.recipesEl.empty();
 		const items = this.deps.manager.getItems();
 		const oneOffs = this.deps.manager.getOneOffs();
-		const recipes = this.deps.manager.getSelectedRecipes();
+		const entries = this.deps.manager.getMealPlanEntries();
 
-		this.renderSummary(items, oneOffs);
-		this.renderRecipes(recipes);
+		this.renderSummary(items, entries);
 
 		if (items.length === 0) {
 			const empty = this.listEl.createDiv({ cls: "pantry-empty" });
 			empty.createEl("p", {
-				text: "Nothing on the list yet.",
+				text: "Nothing on the grocery list yet.",
 			});
 			empty.createEl("p", {
 				cls: "pantry-hint",
-				text: "Mark a recipe note with the selection property and refresh, or add a one-off item.",
+				text: "Open the meal plan note to add recipes, then select the ingredients you need.",
 			});
 			return;
 		}
@@ -207,6 +212,12 @@ export class GroceryListView extends ItemView {
 		}
 	}
 
+	/** 
+	 * Renders a group of grocery items, either by category or by recipe depending on the current grouping setting.
+	 * @param groupName The name of the group.
+	 * @param groupItems The grocery items in this group.
+	 * @param oneOffs The list of one-off items, used to determine whether to show the "remove" button and category context menu for each item.
+	*/
 	private renderGroup(
 		groupName: string,
 		groupItems: GroceryItem[],
@@ -250,88 +261,88 @@ export class GroceryListView extends ItemView {
 
 		const ul = section.createEl("ul", { cls: "pantry-items" });
 		for (const item of groupItems) {
-			this.renderItem(ul, item, oneOffs);
+			this.renderItem(ul, item, oneOffs, groupName);
 		}
 	}
 
-	private renderSummary(items: GroceryItem[], oneOffs: OneOffItem[]): void {
-		this.summaryEl.empty();
-		if (items.length === 0) return;
-		const checked = items.filter((i) => i.checked).length;
-		const total = items.length;
-		this.summaryEl.createSpan({
-			text: `${checked}/${total} checked · ${oneOffs.length} one-off${
-				oneOffs.length === 1 ? "" : "s"
-			}`,
-		});
-	}
 
-	private renderRecipes(recipes: TFile[]): void {
-		this.recipesEl.empty();
-		if (recipes.length === 0) return;
+	/**
+	 * Renders the summary info at the top of the view, including the meal plan summary and grocery list summary.
+	 * The meal plan summary includes a link to open the meal plan note, and the grocery list summary includes a link to open the grocery list note.
+	 * @param items 
+	 * @param entries 
+	 */
+	private renderSummary(
+		items: GroceryItem[],
+		entries: import("../types").MealPlanEntry[],
+	): void {
+		this.summaryEl.empty();
 
 		const settings = this.deps.getSettings();
 
-		this.recipesEl.createDiv({
-			cls: "pantry-recipes-header",
-			text: `Recipes (${recipes.length})`,
+		// Compact meal plan summary row.
+		const planRow = this.summaryEl.createDiv({ cls: "pantry-summary-plan" });
+		const mealCount = entries.length;
+		const countText = mealCount === 0
+			? "No meals planned"
+			: `${mealCount} meal${mealCount === 1 ? "" : "s"} planned`;
+		planRow.createSpan({ cls: "pantry-summary-plan-count", text: countText });
+
+		const planLink = planRow.createEl("a", {
+			cls: "pantry-summary-note-link",
+			text: " View Meals →",
+			href: "#",
+		});
+		planLink.addEventListener("click", (evt) => {
+			evt.preventDefault();
+			void this.openNote(settings.mealPlanNotePath || "Meal Plan.md", "# Meal Plan\n");
 		});
 
-		const ul = this.recipesEl.createEl("ul", {
-			cls: "pantry-recipes-list",
-		});
-		for (const file of recipes) {
-			const li = ul.createEl("li", { cls: "pantry-recipe" });
-			const link = li.createEl("a", {
-				cls: "pantry-recipe-link",
-				text: file.basename,
+		// Grocery summary row.
+		if (items.length > 0) {
+			const groceryRow = this.summaryEl.createDiv({ cls: "pantry-summary-grocery" });
+			const checked = items.filter((i) => i.checked).length;
+			groceryRow.createSpan({
+				cls: "pantry-summary-grocery-count",
+				text: `${checked}/${items.length} checked`,
+			});
+			const groceryLink = groceryRow.createEl("a", {
+				cls: "pantry-summary-note-link",
+				text: " View Grocery List →",
 				href: "#",
 			});
-			link.setAttribute("aria-label", `Open ${file.basename}`);
-			link.addEventListener("click", (evt) => {
+			groceryLink.addEventListener("click", (evt) => {
 				evt.preventDefault();
-				const newLeaf = evt.metaKey || evt.ctrlKey;
-				void this.app.workspace
-					.getLeaf(newLeaf ? "tab" : false)
-					.openFile(file);
+				void this.openNote(settings.groceryListNotePath || "Grocery List.md", "# Grocery List\n");
 			});
-
-			const cache = this.app.metadataCache.getFileCache(file);
-			const fm = (cache?.frontmatter ?? {}) as Record<string, unknown>;
-			const recipeAllergens = readAllergens(fm);
-			const matches = matchingAllergens(
-				recipeAllergens,
-				settings.myAllergens,
-			);
-			if (matches.length > 0) {
-				const warn = li.createSpan({
-					cls: "pantry-recipe-allergen-icon",
-				});
-				setIcon(warn, "alert-triangle");
-				warn.setAttribute(
-					"title",
-					`Contains ${matches.join(", ")}`,
-				);
-				warn.setAttribute(
-					"aria-label",
-					`Allergen warning: contains ${matches.join(", ")}`,
-				);
-			}
-
-			const multiplier = readRecipeMultiplier(cache);
-			if (multiplier !== 1) {
-				li.createSpan({
-					cls: "pantry-recipe-multiplier",
-					text: `${formatMultiplier(multiplier)}×`,
-				});
-			}
 		}
 	}
 
+	/**
+	 * Opens a note in the workspace. 
+	 * The path is relative to the vault root. If the file doesn't exist, this does nothing.
+	 * @param path 
+	 */
+	private async openNote(path: string, initialContent = ""): Promise<void> {
+		const file = await getOrCreateNote(this.app, path, initialContent);
+		await this.app.workspace.getLeaf(false).openFile(file);
+	}
+
+
+	/**
+	 * Renders a grocery item as a row in the grocery list, including the checkbox, name, quantity/unit, sources, 
+	 * and "remove" button if it's linked to a one-off item. 	
+	 * Also wires up the checkbox and remove button to update state when clicked.
+	 * @param parent 
+	 * @param item 
+	 * @param oneOffs 
+	 * @param groupName
+	 */
 	private renderItem(
 		parent: HTMLElement,
 		item: GroceryItem,
 		oneOffs: OneOffItem[],
+		groupName = "",
 	): void {
 		const li = parent.createEl("li", { cls: "pantry-item" });
 		if (item.checked) li.addClass("is-checked");
@@ -363,11 +374,35 @@ export class GroceryListView extends ItemView {
 		}
 
 		const meta = body.createDiv({ cls: "pantry-meta" });
-		const sourceLabels = item.sources.map((s) => s.label).join(", ");
-		if (sourceLabels) {
-			meta.createSpan({
-				cls: "pantry-source",
-				text: sourceLabels,
+		const groupLower = groupName.toLowerCase();
+		const visibleSources = item.sources.filter((s) => {
+			if (s.label.toLowerCase() === groupLower) return false;
+			if (s.type === "one-off" && groupLower.includes("manually")) return false;
+			return true;
+		});
+		if (visibleSources.length > 0) {
+			const sourceEl = meta.createSpan({ cls: "pantry-source" });
+			visibleSources.forEach((s, i) => {
+				if (i > 0) sourceEl.appendText(", ");
+				if (s.type === "recipe" && s.path) {
+					const link = sourceEl.createEl("a", {
+						cls: "pantry-source-link",
+						text: s.label,
+						href: "#",
+					});
+					link.addEventListener("click", (evt) => {
+						evt.preventDefault();
+						evt.stopPropagation();
+						const file = this.app.vault.getAbstractFileByPath(s.path!);
+						if (file instanceof TFile) {
+							void this.app.workspace
+								.getLeaf(evt.metaKey || evt.ctrlKey ? "tab" : false)
+								.openFile(file);
+						}
+					});
+				} else {
+					sourceEl.appendText(s.label);
+				}
 			});
 		}
 
@@ -378,7 +413,7 @@ export class GroceryListView extends ItemView {
 			const removeBtn = li.createEl("button", {
 				cls: "pantry-remove clickable-icon",
 			});
-			removeBtn.setAttribute("aria-label", "Remove one-off item");
+			removeBtn.setAttribute("aria-label", "Remove from manually added items");
 			removeBtn.setAttribute("type", "button");
 			setIcon(removeBtn, "x");
 			removeBtn.addEventListener("click", () => {
@@ -537,9 +572,4 @@ export class GroceryListView extends ItemView {
 
 function normaliseEqual(a: string, b: string): boolean {
 	return a.trim().toLowerCase() === b.trim().toLowerCase();
-}
-
-function formatMultiplier(num: number): string {
-	if (Number.isInteger(num)) return String(num);
-	return String(Math.round(num * 100) / 100);
 }

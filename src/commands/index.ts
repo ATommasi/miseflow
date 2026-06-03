@@ -1,9 +1,8 @@
 import { Notice, Plugin, TFile } from "obsidian";
 import { GroceryListManager } from "../grocery/manager";
-import { setRecipeSelection } from "../grocery/selection";
-import { isRecipeSelected } from "../parser/recipe";
 import { PantrySettings } from "../settings";
 import { AddOneOffModal } from "../ui/add-item-modal";
+import { AddToMealPlanModal } from "../ui/add-to-meal-plan-modal";
 import { ExportListModal } from "../ui/export-modal";
 import { LeaderboardModal } from "../ui/leaderboard-modal";
 import { SuggestMealModal } from "../ui/suggest-modal";
@@ -23,7 +22,7 @@ export function registerCommands(host: CommandsHost): void {
 
 	plugin.addCommand({
 		id: "open-grocery-list",
-		name: "Open grocery list",
+		name: "Shopping Assistant",
 		callback: () => {
 			void host.openView();
 		},
@@ -31,16 +30,16 @@ export function registerCommands(host: CommandsHost): void {
 
 	plugin.addCommand({
 		id: "refresh-grocery-list",
-		name: "Refresh grocery list from recipes",
+		name: "Sync grocery list from meal plan note",
 		callback: async () => {
-			await manager.refresh();
-			new Notice("Grocery list refreshed.");
+			await manager.syncFromMealPlanNote();
+			new Notice("Meal plan synced.");
 		},
 	});
 
 	plugin.addCommand({
 		id: "clear-grocery-list",
-		name: "Clear grocery list",
+		name: "Clear meal plan and grocery list",
 		callback: async () => {
 			await manager.clearAll();
 		},
@@ -64,15 +63,35 @@ export function registerCommands(host: CommandsHost): void {
 	});
 
 	plugin.addCommand({
-		id: "toggle-recipe-selection",
-		name: "Toggle this recipe in the grocery list",
+		id: "toggle-meal-plan",
+		name: "Add/remove this recipe from meal plan",
 		checkCallback: (checking) => {
 			const file = plugin.app.workspace.getActiveFile();
 			if (!(file instanceof TFile) || file.extension !== "md") {
 				return false;
 			}
 			if (checking) return true;
-			void toggleRecipeSelection(host, file);
+			const isInPlan = manager
+				.getMealPlanEntries()
+				.some((e) => e.recipePath === file.path);
+			if (isInPlan) {
+				void manager.removeFromMealPlan(file.path).then(() => {
+					new Notice(`${file.basename} removed from meal plan.`);
+				});
+			} else {
+				new AddToMealPlanModal(plugin.app, file, {
+					getSettings: () => host.settings,
+					onConfirm: async (day, mealType, contributions) => {
+						await manager.addToMealPlan(
+							file.path,
+							day,
+							mealType,
+							contributions,
+						);
+						new Notice(`${file.basename} added to meal plan.`);
+					},
+				}).open();
+			}
 			return true;
 		},
 	});
@@ -136,21 +155,4 @@ export function registerCommands(host: CommandsHost): void {
 			}).open();
 		},
 	});
-}
-
-async function toggleRecipeSelection(
-	host: CommandsHost,
-	file: TFile,
-): Promise<void> {
-	const cache = host.plugin.app.metadataCache.getFileCache(file);
-	const currentlySelected = isRecipeSelected(
-		cache,
-		host.settings.selectionProperty,
-	);
-	const next = !currentlySelected;
-	await setRecipeSelection(host.plugin.app, file, next, host.settings);
-	new Notice(
-		`${file.basename} ${next ? "added to" : "removed from"} grocery list.`,
-	);
-	await host.manager.refresh();
 }

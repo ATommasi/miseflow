@@ -8,6 +8,7 @@ import {
 } from "obsidian";
 import { registerCommands } from "./commands";
 import { GroceryListManager, SaveSink } from "./grocery/manager";
+import { getOrCreateNote } from "./grocery/note-writer";
 import {
 	DEFAULT_CATEGORY_ORDER,
 	DEFAULT_SETTINGS,
@@ -48,26 +49,29 @@ export default class PantryPlugin extends Plugin {
 				new RecipeView(leaf, {
 					getSettings: () => this.settings,
 					openInMarkdown: (target) => this.openLeafInMarkdown(target),
-					getIngredientSelections: (recipePath) =>
-						this.manager.getIngredientSelections(recipePath),
-					setIngredientSelection: (
-						recipePath,
-						ingredientKey,
-						mode,
-					) =>
-						this.manager.setIngredientSelection(
-							recipePath,
-							ingredientKey,
-							mode,
-						),
-					onSelectionChanged: () => {
+					isInMealPlan: (recipePath) =>
+						this.manager
+							.getMealPlanEntries()
+							.some((e) => e.recipePath === recipePath),
+					addToMealPlan: (recipePath, day, mealType, contributions) =>
+						this.manager.addToMealPlan(recipePath, day, mealType, contributions),
+					removeFromMealPlan: (recipePath) =>
+						this.manager.removeFromMealPlan(recipePath),
+					onMealPlanChanged: () => {
 						void this.manager.refresh();
 					},
 				}),
 		);
 
-		this.addRibbonIcon("shopping-cart", "Open grocery list", () => {
+		this.addRibbonIcon("shopping-cart", "Open shopping assistant", () => {
 			void this.activateView();
+		});
+
+		this.addRibbonIcon("square-kanban", "Open meal plan", () => {
+			const path = this.settings.mealPlanNotePath || "Meal Plan.md";
+			void getOrCreateNote(this.app, path, "# Meal Plan\n").then((file) => {
+				void this.app.workspace.getLeaf(false).openFile(file);
+			});
 		});
 
 		registerCommands({
@@ -103,26 +107,37 @@ export default class PantryPlugin extends Plugin {
 			manager: this.manager,
 		}));
 
-		const refresh = debounce(
-			() => {
-				void this.manager.refresh();
-			},
+		// Watch both notes for manual edits.
+		const syncMealPlan = debounce(
+			() => { void this.manager.syncFromMealPlanNote(); },
 			500,
+			true,
+		);
+		const syncGrocery = debounce(
+			() => { void this.manager.refresh(); },
+			300,
 			true,
 		);
 
 		this.registerEvent(
-			this.app.metadataCache.on("changed", () => refresh()),
+			this.app.vault.on("modify", (file) => {
+				if (file.path === this.settings.mealPlanNotePath) syncMealPlan();
+				else if (file.path === this.settings.groceryListNotePath) syncGrocery();
+			}),
+		);
+
+		// Still refresh on vault structural changes so the view stays current.
+		this.registerEvent(
+			this.app.vault.on("delete", () => void this.manager.refresh()),
 		);
 		this.registerEvent(
-			this.app.vault.on("delete", () => refresh()),
-		);
-		this.registerEvent(
-			this.app.vault.on("rename", () => refresh()),
+			this.app.vault.on("rename", () => void this.manager.refresh()),
 		);
 
 		this.app.workspace.onLayoutReady(() => {
-			void this.manager.refresh();
+			void this.manager.syncFromMealPlanNote().then(() =>
+				this.manager.refresh(),
+			);
 		});
 	}
 
@@ -146,12 +161,8 @@ export default class PantryPlugin extends Plugin {
 		let leaf: WorkspaceLeaf | null = null;
 		const existing = workspace.getLeavesOfType(VIEW_TYPE_GROCERY_LIST);
 		if (existing.length > 0) {
-			// Reuse an existing grocery list view - bringing back a buried
-			// tab is friendlier than spawning a duplicate every invocation.
 			leaf = existing[0] ?? null;
 		} else {
-			// Open in a main-area tab so the list reads horizontally and
-			// behaves like any other note.
 			leaf = workspace.getLeaf("tab");
 			await leaf.setViewState({
 				type: VIEW_TYPE_GROCERY_LIST,
@@ -163,10 +174,6 @@ export default class PantryPlugin extends Plugin {
 		}
 	}
 
-	/**
-	 * Switch the active leaf to the recipe view, if it currently holds a
-	 * markdown file. No-op when the active item isn't a markdown file.
-	 */
 	async openCurrentAsRecipe(): Promise<void> {
 		const leaf = this.app.workspace.getMostRecentLeaf();
 		if (!leaf) return;
@@ -179,7 +186,6 @@ export default class PantryPlugin extends Plugin {
 		});
 	}
 
-	/** Switch the active leaf back to the standard markdown view. */
 	async openCurrentAsMarkdown(): Promise<void> {
 		const leaf = this.app.workspace.getMostRecentLeaf();
 		if (!leaf) return;
@@ -200,12 +206,6 @@ export default class PantryPlugin extends Plugin {
 		});
 	}
 
-	/**
-	 * Adds a "Recipe mode" entry to the pane's 3-dot menu when the active
-	 * file is a markdown note that isn't already in the recipe view. The
-	 * item sits in the same "pane" section as the built-in source/reading
-	 * mode toggles.
-	 */
 	private maybeAddRecipeModeMenuItem(
 		menu: Menu,
 		file: TAbstractFile,
@@ -274,57 +274,28 @@ function mergeSettings(
 		categoryOverrides: [],
 		recipeFolders: [],
 		state: {
+			mealPlanEntries: [],
 			oneOffs: [],
-			ingredientSelectionsByRecipe: {},
-			checkedKeys: {},
 			collapsedGroups: {},
 		},
 	};
 	if (!raw) return base;
 
-	const ingredientSelectionsByRecipe: Record<
-		string,
-		Record<string, "include" | "exclude">
-	> = {};
-	const rawSelections = raw.state?.ingredientSelectionsByRecipe;
-	if (rawSelections && typeof rawSelections === "object") {
-		for (const path in rawSelections as Record<string, unknown>) {
-			const overrides = (rawSelections as Record<string, unknown>)[path];
-			if (!overrides || typeof overrides !== "object") continue;
-			const cleaned: Record<string, "include" | "exclude"> = {};
-			for (const key in overrides as Record<string, unknown>) {
-				const mode = (overrides as Record<string, unknown>)[key];
-				if (mode === "include" || mode === "exclude") {
-					cleaned[key] = mode;
-				}
-			}
-			if (Object.keys(cleaned).length > 0) {
-				ingredientSelectionsByRecipe[path] = cleaned;
-			}
-		}
-	}
-
-	// Backward-compat: previous state stored include-only arrays.
-	const legacySelected = (raw.state as Record<string, unknown> | undefined)
-		?.selectedIngredientsByRecipe;
-	if (legacySelected && typeof legacySelected === "object") {
-		for (const path in legacySelected as Record<string, unknown>) {
-			const keys = (legacySelected as Record<string, unknown>)[path];
-			if (!Array.isArray(keys)) continue;
-			ingredientSelectionsByRecipe[path] ??= {};
-			for (const key of keys) {
-				if (typeof key !== "string") continue;
-				ingredientSelectionsByRecipe[path][key] = "include";
-			}
-		}
-	}
-
 	const merged: PantrySettings = {
 		...base,
 		...raw,
+		mealPlanNotePath:
+			typeof raw.mealPlanNotePath === "string" && raw.mealPlanNotePath.trim()
+				? raw.mealPlanNotePath.trim()
+				: base.mealPlanNotePath,
+		groceryListNotePath:
+			typeof raw.groceryListNotePath === "string" && raw.groceryListNotePath.trim()
+				? raw.groceryListNotePath.trim()
+				: base.groceryListNotePath,
 		grouping:
 			raw.grouping === "category" ||
 				raw.grouping === "recipe" ||
+				raw.grouping === "source" ||
 				raw.grouping === "none"
 				? raw.grouping
 				: base.grouping,
@@ -365,14 +336,12 @@ function mergeSettings(
 				? raw.markCookedAskDate
 				: base.markCookedAskDate,
 		state: {
+			mealPlanEntries: Array.isArray(raw.state?.mealPlanEntries)
+				? (raw.state?.mealPlanEntries ?? [])
+				: [],
 			oneOffs: Array.isArray(raw.state?.oneOffs)
 				? (raw.state?.oneOffs ?? [])
 				: [],
-			ingredientSelectionsByRecipe,
-			checkedKeys:
-				raw.state?.checkedKeys && typeof raw.state.checkedKeys === "object"
-					? { ...raw.state.checkedKeys }
-					: {},
 			collapsedGroups:
 				raw.state?.collapsedGroups &&
 					typeof raw.state.collapsedGroups === "object"

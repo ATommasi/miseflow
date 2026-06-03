@@ -152,20 +152,94 @@ export function groupForDisplay(
 		return [["All items", sortedItems]];
 	}
 
+	// "By source": split by source type. Recipe contributions → Meal Plan (quantities
+	// summed across all recipes). One-off contributions → One-off items. An item with
+	// both sources appears in both groups with its source-specific quantity.
+	if (grouping === "source") {
+		const mealPlan: GroceryItem[] = [];
+		const oneOffs: GroceryItem[] = [];
+		for (const item of sortedItems) {
+			const recipeSources = item.sources.filter((s) => s.type === "recipe");
+			const oneOffSource = item.sources.find((s) => s.type === "one-off");
+
+			if (recipeSources.length > 0) {
+				// Sum quantities across all recipe sources for this item.
+				let recipeQty: number | null = null;
+				for (const src of recipeSources) {
+					if (src.quantity != null) {
+						recipeQty = (recipeQty ?? 0) + src.quantity;
+					}
+				}
+				mealPlan.push({
+					...item,
+					quantity: recipeQty ?? item.quantity,
+					sources: recipeSources,
+				});
+			}
+
+			if (oneOffSource) {
+				oneOffs.push({
+					...item,
+					quantity: oneOffSource.quantity ?? item.quantity,
+					sources: [oneOffSource],
+				});
+			}
+
+			// Purely manual item with no source annotation.
+			if (recipeSources.length === 0 && !oneOffSource) {
+				oneOffs.push(item);
+			}
+		}
+		const result: Array<[string, GroceryItem[]]> = [];
+		if (mealPlan.length > 0) result.push(["From Meal Plan", mealPlan]);
+		if (oneOffs.length > 0) result.push(["Manually added items", oneOffs]);
+		return result;
+	}
+
+	// "By recipe": split by source so each group shows only its own quantities.
+	// Ground Beef (1 lb from Bolognese + 1 lb manual) → Bolognese: 1 lb, One-off: 1 lb.
+	// Items spanning multiple recipes appear in each with their recipe-specific quantity.
 	if (grouping === "recipe") {
 		const groups = new Map<string, GroceryItem[]>();
 		for (const item of sortedItems) {
-			const labels = item.sources.map((s) =>
-				s.type === "recipe" ? s.label : "One-off items",
-			);
-			const seen = new Set<string>();
-			for (const label of labels) {
-				if (seen.has(label)) continue;
-				seen.add(label);
-				pushTo(groups, label, item);
+			const recipeSources = item.sources.filter((s) => s.type === "recipe");
+			const oneOffSource = item.sources.find((s) => s.type === "one-off");
+
+			// Add to each recipe group with that recipe's quantity.
+			const seenRecipes = new Set<string>();
+			for (const source of recipeSources) {
+				if (seenRecipes.has(source.label)) continue;
+				seenRecipes.add(source.label);
+				const splitItem: GroceryItem = {
+					...item,
+					quantity: source.quantity ?? item.quantity,
+					sources: [source],
+				};
+				pushTo(groups, source.label, splitItem);
+			}
+
+			// If there's a one-off contribution, also add it to "Manually added items"
+			// with just the manually-added quantity.
+			if (oneOffSource) {
+				const splitItem: GroceryItem = {
+					...item,
+					quantity: oneOffSource.quantity ?? item.quantity,
+					sources: [oneOffSource],
+				};
+				pushTo(groups, "Manually added items", splitItem);
+			}
+
+			// Purely manual item (no recipe source).
+			if (recipeSources.length === 0 && !oneOffSource) {
+				pushTo(groups, "Manually added items", item);
 			}
 		}
-		return [...groups.entries()].sort(([a], [b]) => a.localeCompare(b));
+		const entries = [...groups.entries()];
+		const manuallyAddedEntry = entries.find(([k]) => k === "Manually added items");
+		const recipeEntries = entries
+			.filter(([k]) => k !== "Manually added items")
+			.sort(([a], [b]) => a.localeCompare(b));
+		return manuallyAddedEntry ? [...recipeEntries, manuallyAddedEntry] : recipeEntries;
 	}
 
 	// Default: category grouping.

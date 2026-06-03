@@ -3,14 +3,17 @@ import {
 	CategoryOverride,
 	CategorySource,
 	GroupingMode,
+	MealPlanEntry,
 	OneOffItem,
 } from "./types";
 
 export interface PantrySettings {
 	/** Folder paths (vault-relative) to scan for recipes. Empty array = entire vault. */
 	recipeFolders: string[];
-	/** Frontmatter property name that marks a recipe as selected for the week. */
-	selectionProperty: string;
+	/** Vault-relative path for the meal plan note. */
+	mealPlanNotePath: string;
+	/** Vault-relative path for the grocery list note. */
+	groceryListNotePath: string;
 	/** Heading whose bullet list contains the recipe's ingredients. */
 	ingredientsHeading: string;
 	/** Heading whose ordered list contains the recipe's cooking steps. */
@@ -59,24 +62,12 @@ export interface PantrySettings {
 
 export type NutritionDisplay = "per-serving" | "total";
 export type NutritionSource = "recipe-total" | "per-serving";
-export type IngredientSelectionMode = "include" | "exclude";
 
 export interface PantrySavedState {
+	/** Planned meals — each recipe with optional day, meal type, and ingredient contributions. */
+	mealPlanEntries: MealPlanEntry[];
 	/** One-off shopping items the user has added manually. */
 	oneOffs: OneOffItem[];
-	/**
-	 * Per-recipe ingredient overrides from recipe view.
-	 * Keyed by source file path, then ingredient key -> include/exclude.
-	 */
-	ingredientSelectionsByRecipe: Record<
-		string,
-		Record<string, IngredientSelectionMode>
-	>;
-	/**
-	 * Map from item key to checked status. Survives refreshes so that recomputing
-	 * the list from recipes doesn't lose the user's progress while shopping.
-	 */
-	checkedKeys: Record<string, boolean>;
 	/**
 	 * Map from grouping section name to whether the user has it collapsed.
 	 * Missing entries default to expanded.
@@ -115,7 +106,8 @@ export const DEFAULT_CATEGORY_ORDER = [
 
 export const DEFAULT_SETTINGS: PantrySettings = {
 	recipeFolders: [],
-	selectionProperty: "groceryList",
+	mealPlanNotePath: "Meal Plan.md",
+	groceryListNotePath: "Grocery List.md",
 	ingredientsHeading: "Ingredients",
 	instructionsHeading: "Instructions",
 	grouping: "category",
@@ -138,9 +130,8 @@ export const DEFAULT_SETTINGS: PantrySettings = {
 	diabeticMode: false,
 	giDictionary: DEFAULT_GI_DICTIONARY,
 	state: {
+		mealPlanEntries: [],
 		oneOffs: [],
-		ingredientSelectionsByRecipe: {},
-		checkedKeys: {},
 		collapsedGroups: {},
 	},
 };

@@ -1,4 +1,4 @@
-import { App, Modal, Notice, Setting, TFile, setIcon } from "obsidian";
+import { App, Modal, Notice, Setting, setIcon } from "obsidian";
 import { GroceryListManager } from "../grocery/manager";
 import {
 	listRecipeLibrary,
@@ -6,7 +6,7 @@ import {
 	suggestMeals,
 	SuggestionFilters,
 } from "../grocery/library";
-import { setRecipeSelection } from "../grocery/selection";
+import { AddToMealPlanModal } from "./add-to-meal-plan-modal";
 import { daysSince, formatMinutes } from "../parser/recipe-meta";
 import { PantrySettings } from "../settings";
 
@@ -177,21 +177,25 @@ export class SuggestMealModal extends Modal {
 		const actions = card.createDiv({ cls: "pantry-suggest-card-actions" });
 		const addBtn = actions.createEl("button", {
 			cls: "mod-cta",
-			text: "Add to list",
+			text: "Add to meal plan",
 			attr: { type: "button" },
 		});
 		addBtn.addEventListener("click", () => {
-			void this.addToList(file).then(() => {
-				addBtn.disabled = true;
-				addBtn.setText("Added");
-			});
+			new AddToMealPlanModal(this.app, file, {
+				getSettings: this.deps.getSettings,
+				onConfirm: async (day, mealType, contributions) => {
+					await this.deps.manager.addToMealPlan(
+						file.path,
+						day,
+						mealType,
+						contributions,
+					);
+					addBtn.disabled = true;
+					addBtn.setText("Added");
+					new Notice(`Added "${file.basename}" to meal plan.`);
+				},
+			}).open();
 		});
-	}
-
-	private async addToList(file: TFile): Promise<void> {
-		await setRecipeSelection(this.app, file, true, this.deps.getSettings());
-		await this.deps.manager.refresh();
-		new Notice(`Added "${file.basename}" to grocery list.`);
 	}
 
 	private emptyMessage(

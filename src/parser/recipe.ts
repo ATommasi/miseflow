@@ -35,21 +35,6 @@ export function isRecipeSelected(
 	return false;
 }
 
-/** Find all markdown files in the configured recipe folders that are flagged for the week. */
-export function findSelectedRecipes(
-	app: App,
-	settings: PantrySettings,
-): TFile[] {
-	const selected: TFile[] = [];
-	for (const file of listMarkdownFilesInRecipeFolders(app, settings)) {
-		if (!fileInRecipeFolders(file, settings.recipeFolders)) continue;
-		const cache = app.metadataCache.getFileCache(file);
-		if (isRecipeSelected(cache, settings.selectionProperty)) {
-			selected.push(file);
-		}
-	}
-	return selected;
-}
 
 /**
  * Extract ingredient lines from a recipe file's body.

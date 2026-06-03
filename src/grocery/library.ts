@@ -1,5 +1,5 @@
 import { App, TFile } from "obsidian";
-import { fileInRecipeFolders, isRecipeSelected } from "../parser/recipe";
+import { fileInRecipeFolders } from "../parser/recipe";
 import {
 	frontmatterTypeMatches,
 	listMarkdownFilesInRecipeFolders,
@@ -40,7 +40,9 @@ export function listRecipeLibrary(
 		out.push({
 			file,
 			meta: readRecipeMeta(cache, settings.lastMadeProperty),
-			selected: isRecipeSelected(cache, settings.selectionProperty),
+			selected: (settings.state.mealPlanEntries ?? []).some(
+			(e) => e.recipePath === file.path,
+		),
 		});
 	}
 	return out;
