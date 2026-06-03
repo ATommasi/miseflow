@@ -1,3 +1,5 @@
+![logo.png]
+
 # MiseFlow
 
 > *Mise en place* — the culinary practice of preparing everything before you cook.
@@ -9,6 +11,7 @@ MiseFlow is an [Obsidian](https://obsidian.md) plugin that turns your recipe not
 ## Features
 
 ### Meal Planning
+<img width="562" height="622" alt="image" src="https://github.com/user-attachments/assets/f6e8f65f-7029-4d74-935b-041968de6c42" />
 
 - **Meal plan note** — Your meal plan lives in a real vault note (configurable path). The plugin reads and writes it automatically; you can also edit it by hand and the plugin picks up the changes.
 - **Add recipes to your plan** with an optional day (Mon–Sun) and meal type (Breakfast, Lunch, Dinner, Snack). Pick exactly the ingredients you need at add-time — nothing is added blindly.
@@ -23,6 +26,7 @@ MiseFlow is an [Obsidian](https://obsidian.md) plugin that turns your recipe not
 - **Export** — Copy the grocery list as plain text, a Markdown checklist, or grouped by category.
 
 ### Shopping Assistant
+<img width="844" height="600" alt="image" src="https://github.com/user-attachments/assets/486f04ac-171e-4aa0-91c2-c169356ef034" />
 
 Open the **Shopping Assistant** panel (ribbon icon or command) to:
 
@@ -32,6 +36,7 @@ Open the **Shopping Assistant** panel (ribbon icon or command) to:
 - Add one-off items and remove them with a right-click or long-press
 
 ### Recipe View
+<img width="830" height="834" alt="image" src="https://github.com/user-attachments/assets/8261ff5a-22e9-4ab7-9289-b901267bd5ac" />
 
 Open any recipe note in the **Recipe View** for a clean cooking experience:
 
@@ -130,4 +135,4 @@ Check items off while shopping. The Shopping Assistant panel mirrors the note's 
 
 ## Credits
 
-MiseFlow is a fork of [Pantry](https://github.com/TheEkrizdis/obsidian-pantry) by TheEkrizdis, significantly extended and rewritten by [Adam Tommasi](https://github.com/ATommasi).
+MiseFlow is a fork of [Pantry](https://github.com/Ekrizdis367/obsidian-pantry) by TheEkrizdis, significantly extended and rewritten by [Adam Tommasi](https://github.com/ATommasi).
