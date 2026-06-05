@@ -151,6 +151,56 @@ export function stripFrontmatter(contents: string): string {
 }
 
 /**
+ * Strip a leading H1 that duplicates the note title, and/or inline images
+ * that duplicate the frontmatter hero image, from the recipe body.
+ */
+export function stripRedundantBodyContent(
+	body: string,
+	opts: {
+		title: string | null;
+		imageValue: string | null;
+		stripTitle: boolean;
+		stripImage: boolean;
+	},
+): string {
+	let result = body;
+
+	if (opts.stripTitle && opts.title) {
+		const normalised = opts.title.trim().toLowerCase();
+		result = result.replace(/^([ \t]*#[ \t]+(.+?)[ \t]*\n?)/, (_match, full, text: string) => {
+			return text.trim().toLowerCase() === normalised ? "" : full;
+		});
+	}
+
+	if (opts.stripImage && opts.imageValue) {
+		const target = extractImageTarget(opts.imageValue);
+		if (target) {
+			const escaped = target.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+			// ![[path]], ![[path|alias]], ![[path#anchor]]
+			result = result.replace(
+				new RegExp(`!\\[\\[${escaped}(?:[#|][^\\]]*)?\\]\\]`, "gi"),
+				"",
+			);
+			// ![alt](path) or ![alt](path "title")
+			result = result.replace(
+				new RegExp(`!\\[[^\\]]*\\]\\(${escaped}(?:\\s+"[^"]*")?\\)`, "gi"),
+				"",
+			);
+		}
+	}
+
+	// Collapse runs of blank lines introduced by removal.
+	return result.replace(/\n{3,}/g, "\n\n").trimStart();
+}
+
+function extractImageTarget(value: string): string {
+	const trimmed = value.trim();
+	// Wikilink: [[path]] or ![[path]] with optional alias/anchor
+	const wikilink = trimmed.match(/^!?\[\[([^\]|#]+)(?:[#|][^\]]*)?\]\]$/);
+	return wikilink ? (wikilink[1] ?? trimmed).trim() : trimmed;
+}
+
+/**
  * Split a recipe body into the markdown that comes before the
  * ingredients section, grouped ingredient lines, and the markdown that
  * comes after. Subheadings within the ingredients section (e.g.

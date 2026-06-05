@@ -1531,7 +1531,7 @@
 	font-size: var(--font-ui-small);
 }
 
-.mise-modal-ingredient-item + .mise-modal-ingredient-item {
+.mise-modal-ingredient-item+.mise-modal-ingredient-item {
 	border-top: 1px solid var(--background-modifier-border);
 }
 
@@ -1558,4 +1558,253 @@
 	justify-content: flex-end;
 	padding-top: var(--size-2-3);
 	border-top: 1px solid var(--background-modifier-border);
+}
+
+/* ----------------------------------------------------------------------
+ * Step timers
+ * --------------------------------------------------------------------*/
+
+.mise-timer-btn {
+	display: inline-flex;
+	align-items: center;
+	padding: 0 2px 4px 2px;
+	background-color: transparent !important;
+	/* border: 1px solid color-mix(in srgb, var(--interactive-accent) 35%, transparent) !important; */
+	border: none !important;
+	color: var(--link-color, var(--text-accent)) !important;
+	font-size: inherit;
+	font-weight: var(--font-medium);
+	height: max-content;
+	line-height: inherit;
+	vertical-align: middle;
+	white-space: nowrap;
+	cursor: pointer;
+	box-shadow: none !important;
+	transition: background-color 80ms ease-in-out, border-color 80ms ease-in-out;
+}
+
+.mise-timer-btn:hover,
+.mise-timer-btn:focus-visible {
+	background-color: color-mix(in srgb, var(--interactive-accent) 22%, var(--background-secondary)) !important;
+	border-color: var(--interactive-accent) !important;
+}
+
+.mise-timer-btn.is-active {
+	/* background-color: color-mix(in srgb, var(--interactive-accent) 25%, var(--background-secondary)); */
+}
+
+.mise-timer-tray {
+	position: fixed;
+	bottom: var(--size-4-4);
+	right: var(--size-4-4);
+	z-index: 100;
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-2-3);
+	pointer-events: none;
+}
+
+.mise-timer-widget {
+	pointer-events: all;
+	z-index: 100;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: var(--size-2-2);
+	padding: var(--size-4-2) var(--size-4-3);
+	background: var(--background-primary);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-l);
+	box-shadow: var(--shadow-l);
+	min-width: 148px;
+	user-select: none;
+}
+
+.mise-timer-handle {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: var(--size-2-1);
+	width: 100%;
+	cursor: grab;
+}
+
+.mise-timer-handle.is-dragging {
+	cursor: grabbing;
+}
+
+.mise-timer-recipe-link {
+	font-size: var(--font-ui-smaller);
+	color: var(--text-accent) !important;
+	background: none !important;
+	border: none !important;
+	padding: 0;
+	box-shadow: none !important;
+	cursor: pointer;
+	max-width: 160px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	text-decoration: none;
+}
+
+.mise-timer-recipe-link:hover {
+	text-decoration: underline;
+}
+
+.mise-timer-label {
+	font-size: var(--font-ui-smaller);
+	font-weight: var(--font-semibold);
+	text-transform: uppercase;
+	letter-spacing: 0.06em;
+	color: var(--text-muted);
+	text-align: center;
+	max-width: 160px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.mise-timer-time-row {
+	display: flex;
+	align-items: center;
+	gap: var(--size-2-2);
+}
+
+.mise-timer-display {
+	font-size: 2rem;
+	font-weight: var(--font-bold);
+	font-variant-numeric: tabular-nums;
+	color: var(--text-normal);
+	line-height: 1;
+	letter-spacing: 0.04em;
+	cursor: pointer;
+	border-radius: var(--radius-s);
+	padding: 0 2px;
+	transition: background-color 80ms ease-in-out;
+}
+
+.mise-timer-display:hover {
+	background: var(--background-modifier-hover);
+}
+
+.mise-timer-display-edit {
+	font-size: 2rem;
+	font-weight: var(--font-bold);
+	font-variant-numeric: tabular-nums;
+	color: var(--text-normal);
+	line-height: 1;
+	letter-spacing: 0.04em;
+	background: var(--background-modifier-form-field);
+	border: 1px solid var(--interactive-accent);
+	border-radius: var(--radius-s);
+	text-align: center;
+	width: 5ch;
+	padding: 0 2px;
+	box-shadow: none;
+	outline: none;
+}
+
+.mise-timer-steppers {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+
+.mise-timer-step {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 20px;
+	height: 20px;
+	padding: 0;
+	border-radius: var(--radius-s);
+	background: transparent;
+	border: 1px solid var(--background-modifier-border);
+	color: var(--text-muted);
+	cursor: pointer;
+	box-shadow: none;
+	transition: background-color 80ms ease-in-out, color 80ms ease-in-out;
+}
+
+.mise-timer-step:hover,
+.mise-timer-step:focus-visible {
+	background: var(--background-modifier-hover);
+	color: var(--text-normal);
+}
+
+.mise-timer-step .svg-icon {
+	width: 12px;
+	height: 12px;
+}
+
+.mise-timer-widget.is-done .mise-timer-display {
+	color: var(--color-red, #e5484d);
+}
+
+/* Compact mode — hide decorative elements, shrink display */
+.mise-timer-widget.is-compact {
+	padding: var(--size-2-3) var(--size-4-2);
+	min-width: 0;
+}
+
+.mise-timer-widget.is-compact .mise-timer-recipe-link,
+.mise-timer-widget.is-compact .mise-timer-label,
+.mise-timer-widget.is-compact .mise-timer-steppers,
+.mise-timer-widget.is-compact .mise-timer-reset {
+	display: none;
+}
+
+.mise-timer-widget.is-compact .mise-timer-display {
+	font-size: 1.25rem;
+}
+
+.mise-timer-controls {
+	display: flex;
+	align-items: center;
+	gap: var(--size-2-2);
+}
+
+.mise-timer-play,
+.mise-timer-reset,
+.mise-timer-compact,
+.mise-timer-close {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 28px;
+	height: 28px;
+	padding: 0;
+	border-radius: var(--radius-s);
+	background: transparent;
+	border: 1px solid var(--background-modifier-border);
+	color: var(--text-muted);
+	cursor: pointer;
+	box-shadow: none;
+	transition: background-color 80ms ease-in-out, color 80ms ease-in-out;
+}
+
+.mise-timer-play:hover,
+.mise-timer-play:focus-visible,
+.mise-timer-reset:hover,
+.mise-timer-reset:focus-visible,
+.mise-timer-compact:hover,
+.mise-timer-compact:focus-visible,
+.mise-timer-close:hover,
+.mise-timer-close:focus-visible {
+	background: var(--background-modifier-hover);
+	color: var(--text-normal);
+}
+
+.mise-timer-play .svg-icon,
+.mise-timer-reset .svg-icon,
+.mise-timer-compact .svg-icon,
+.mise-timer-close .svg-icon {
+	width: 14px;
+	height: 14px;
+}
+
+.mise-timer-play {
+	background-color: var(--color-green, #1a5522);
+	color: var(--color-base-00, #00000);
 }

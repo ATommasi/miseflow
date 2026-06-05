@@ -62,6 +62,20 @@ export interface MiseFlowSettings {
 	diabeticMode: boolean;
 	/** User-editable high-GI dictionary as raw text. One regex per line, `#` comments. */
 	giDictionary: string;
+	/** Strip a leading H1 from the recipe body if it matches the note title. */
+	stripBodyTitle: boolean;
+	/** Strip inline images from the recipe body if they match the frontmatter image. */
+	stripBodyHeroImage: boolean;
+	/** Detect duration phrases in cooking steps and show clickable timer buttons. */
+	enableTimers: boolean;
+	/** Start the timer countdown immediately when a timer button is clicked. */
+	timerAutoStart: boolean;
+	/** Show timers in compact mode (time only) by default. */
+	timerDefaultCompact: boolean;
+	/** Whether to use the max or min of a time range (e.g. "10–15 minutes"). */
+	timerRangeDefault: "max" | "min";
+	/** How many minutes to increment/decrement when using the stepper buttons. */
+	timerIncrementMinutes: number;
 	/** Persisted state - kept in the same data file so a single saveData() round-trip is enough. */
 	state: MiseFlowSavedState;
 }
@@ -138,6 +152,13 @@ export const DEFAULT_SETTINGS: MiseFlowSettings = {
 	suggestionCount: 5,
 	diabeticMode: false,
 	giDictionary: DEFAULT_GI_DICTIONARY,
+	stripBodyTitle: true,
+	stripBodyHeroImage: true,
+	enableTimers: true,
+	timerAutoStart: false,
+	timerDefaultCompact: false,
+	timerRangeDefault: "max",
+	timerIncrementMinutes: 1,
 	state: {
 		mealPlanEntries: [],
 		oneOffs: [],

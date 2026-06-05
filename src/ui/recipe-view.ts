@@ -18,7 +18,9 @@ import {
 	splitBodyAroundIngredients,
 	splitBodyAroundInstructions,
 	stripFrontmatter,
+	stripRedundantBodyContent,
 } from "../parser/recipe";
+import { clearAllTimers, processTimerButtons, TimerOptions } from "./timer";
 import {
 	formatMinutes,
 	matchingAllergens,
@@ -145,6 +147,7 @@ export class RecipeView extends TextFileView {
 	}
 
 	private render(): void {
+		clearAllTimers();
 		const root = this.contentEl;
 		root.empty();
 		root.addClass("mise-recipe-view");
@@ -166,7 +169,14 @@ export class RecipeView extends TextFileView {
 		const servings = readNumericFromKeys(frontmatter, SERVINGS_KEYS);
 		const isInPlan = this.deps.isInMealPlan(file.path);
 
-		const body = stripFrontmatter(this.data);
+		const rawBody = stripFrontmatter(this.data);
+		const imageValue = readStringFromKeys(frontmatter, IMAGE_KEYS) ?? null;
+		const body = stripRedundantBodyContent(rawBody, {
+			title: file.basename,
+			imageValue,
+			stripTitle: settings.stripBodyTitle,
+			stripImage: settings.stripBodyHeroImage,
+		});
 		const split = splitBodyAroundIngredients(
 			body,
 			settings.ingredientsHeading,
@@ -219,11 +229,29 @@ export class RecipeView extends TextFileView {
 
 		this.renderImageCard(bodyRow, file, frontmatter);
 
+		const timerOptions: TimerOptions | null = settings.enableTimers
+			? {
+					autoStart: settings.timerAutoStart,
+					compact: settings.timerDefaultCompact,
+					rangeDefault: settings.timerRangeDefault,
+					incrementSeconds: Math.round(settings.timerIncrementMinutes * 60),
+					recipeName: file.basename,
+					onOpenRecipe: () => {
+						void this.app.workspace.openLinkText(
+							file.basename,
+							file.path,
+							false,
+						);
+					},
+				}
+			: null;
+
 		this.renderAfterIngredients(
 			root,
 			split.after,
 			file.path,
 			settings.instructionsHeading,
+			timerOptions,
 		);
 	}
 
@@ -232,6 +260,7 @@ export class RecipeView extends TextFileView {
 		afterMarkdown: string,
 		sourcePath: string,
 		instructionsHeading: string,
+		timerOptions: TimerOptions | null,
 	): void {
 		if (!afterMarkdown.trim()) return;
 
@@ -249,11 +278,12 @@ export class RecipeView extends TextFileView {
 			void this.renderMarkdown(root, split.before, sourcePath);
 		}
 
-		this.renderInstructions(
+		void this.renderInstructions(
 			root,
 			split.groups,
 			sourcePath,
 			instructionsHeading,
+			timerOptions,
 		);
 
 		if (split.after.trim()) {
@@ -261,12 +291,13 @@ export class RecipeView extends TextFileView {
 		}
 	}
 
-	private renderInstructions(
+	private async renderInstructions(
 		root: HTMLElement,
 		groups: InstructionGroup[],
 		sourcePath: string,
 		title: string,
-	): void {
+		timerOptions: TimerOptions | null,
+	): Promise<void> {
 		const wrap = root.createDiv({
 			cls: "mise-recipe-instructions",
 		});
@@ -316,13 +347,16 @@ export class RecipeView extends TextFileView {
 					const body = li.createDiv({
 						cls: "mise-recipe-instruction-body",
 					});
-					void MarkdownRenderer.render(
+					await MarkdownRenderer.render(
 						this.app,
 						step,
 						body,
 						sourcePath,
 						this,
 					);
+					if (timerOptions) {
+						processTimerButtons(body, timerOptions);
+					}
 				}
 			}
 		}

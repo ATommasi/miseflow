@@ -1,12 +1,10 @@
 import {
 	AbstractInputSuggest,
 	App,
-	FileSystemAdapter,
 	Plugin,
 	PluginSettingTab,
 	Setting,
 	TFolder,
-	normalizePath,
 } from "obsidian";
 import { GroceryListManager } from "../grocery/manager";
 import {
@@ -60,7 +58,7 @@ class FolderSuggest extends AbstractInputSuggest<TFolder> {
 
 export class MiseFlowSettingsTab extends PluginSettingTab {
 	constructor(
-		private readonly plugin: Plugin,
+		plugin: Plugin,
 		private readonly host: SettingsHost,
 	) {
 		super(plugin.app, plugin);
@@ -73,17 +71,13 @@ export class MiseFlowSettingsTab extends PluginSettingTab {
 		// ── Header: logo + buy me a coffee ───────────────────────────────
 		const header = containerEl.createDiv({ cls: "mise-settings-header" });
 
-		const { adapter } = this.app.vault;
-		if (adapter instanceof FileSystemAdapter) {
-			const logoPath = normalizePath(
-				`${this.app.vault.configDir}/plugins/${this.plugin.manifest.id}/logo.png`,
-			);
-			const logoSrc = adapter.getResourcePath(logoPath);
-			header.createEl("img", {
-				cls: "mise-settings-logo",
-				attr: { src: logoSrc, alt: "MiseFlow" },
-			});
-		}
+		header.createEl("img", {
+			cls: "mise-settings-logo",
+			attr: {
+				src: "https://github.com/user-attachments/assets/1bd14075-406d-42af-b005-9a245a714811",
+				alt: "MiseFlow",
+			},
+		});
 
 		header.createEl("a", {
 			cls: "mise-settings-bmc",
@@ -163,6 +157,10 @@ export class MiseFlowSettingsTab extends PluginSettingTab {
 					}),
 			);
 
+
+		// ── Recipe View ─────────────────────────────────────────────────
+		new Setting(containerEl).setName("Recipe View").setHeading();
+
 		new Setting(containerEl)
 			.setName("Auto-open recipe view")
 			.setDesc(
@@ -206,6 +204,107 @@ export class MiseFlowSettingsTab extends PluginSettingTab {
 						this.host.settings.instructionsHeading =
 							value.trim() || "Instructions";
 						await this.host.saveSettings();
+					}),
+			);
+
+		new Setting(containerEl)
+			.setName("Remove duplicate title")
+			.setDesc(
+				"Strip the leading H1 from a recipe note's body if it matches the note title, since the recipe view already shows the title above.",
+			)
+			.addToggle((toggle) =>
+				toggle
+					.setValue(this.host.settings.stripBodyTitle)
+					.onChange(async (value) => {
+						this.host.settings.stripBodyTitle = value;
+						await this.host.saveSettings();
+					}),
+			);
+
+		new Setting(containerEl)
+			.setName("Remove duplicate hero image")
+			.setDesc(
+				"Strip inline images from a recipe note's body if they match the frontmatter image, since the recipe view already shows it as a hero image.",
+			)
+			.addToggle((toggle) =>
+				toggle
+					.setValue(this.host.settings.stripBodyHeroImage)
+					.onChange(async (value) => {
+						this.host.settings.stripBodyHeroImage = value;
+						await this.host.saveSettings();
+					}),
+			);
+
+		new Setting(containerEl)
+			.setName("Step timers")
+			.setDesc(
+				'Detect duration phrases in cooking steps (e.g. "bake for 30 minutes") and show a clickable timer button.',
+			)
+			.addToggle((toggle) =>
+				toggle
+					.setValue(this.host.settings.enableTimers)
+					.onChange(async (value) => {
+						this.host.settings.enableTimers = value;
+						await this.host.saveSettings();
+					}),
+			);
+
+		new Setting(containerEl)
+			.setName("Auto-start timers")
+			.setDesc(
+				"Start counting down immediately when a timer button is clicked.",
+			)
+			.addToggle((toggle) =>
+				toggle
+					.setValue(this.host.settings.timerAutoStart)
+					.onChange(async (value) => {
+						this.host.settings.timerAutoStart = value;
+						await this.host.saveSettings();
+					}),
+			);
+
+		new Setting(containerEl)
+			.setName("Compact timers by default")
+			.setDesc(
+				"Show timers in compact mode (time only) instead of the full widget. You can toggle per-timer using the resize button.",
+			)
+			.addToggle((toggle) =>
+				toggle
+					.setValue(this.host.settings.timerDefaultCompact)
+					.onChange(async (value) => {
+						this.host.settings.timerDefaultCompact = value;
+						await this.host.saveSettings();
+					}),
+			);
+
+		new Setting(containerEl)
+			.setName("Time range default")
+			.setDesc(
+				'When a step says "10–15 minutes", which end of the range to use as the timer default.',
+			)
+			.addDropdown((dd) =>
+				dd
+					.addOptions({ max: "Max (15 minutes)", min: "Min (10 minutes)" })
+					.setValue(this.host.settings.timerRangeDefault)
+					.onChange(async (value) => {
+						this.host.settings.timerRangeDefault = value as "max" | "min";
+						await this.host.saveSettings();
+					}),
+			);
+
+		new Setting(containerEl)
+			.setName("Timer increment")
+			.setDesc("How many minutes the ▲/▼ stepper buttons add or subtract.")
+			.addText((text) =>
+				text
+					.setPlaceholder("1")
+					.setValue(String(this.host.settings.timerIncrementMinutes))
+					.onChange(async (value) => {
+						const n = parseFloat(value);
+						if (isFinite(n) && n > 0) {
+							this.host.settings.timerIncrementMinutes = n;
+							await this.host.saveSettings();
+						}
 					}),
 			);
 
