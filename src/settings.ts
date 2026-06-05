@@ -54,6 +54,16 @@ export interface MiseFlowSettings {
 	myAllergens: string[];
 	/** Show unsafe internal temperature warnings on meat ingredients in the recipe view. */
 	showMeatTempWarnings: boolean;
+	/** Frontmatter property name used to store a recipe rating (1–5). */
+	ratingProperty: string;
+	/** Frontmatter property name for the calories value. */
+	caloriesProperty: string;
+	/** Frontmatter property name for the protein value (grams). */
+	proteinProperty: string;
+	/** Frontmatter property name for the fat value (grams). */
+	fatProperty: string;
+	/** Frontmatter property name for the carbs value (grams). */
+	carbsProperty: string;
 	/** Recipes cooked within this many days are excluded from the meal recommender. */
 	suggestionDayWindow: number;
 	/** Default number of suggestions the recommender surfaces. */
@@ -148,6 +158,11 @@ export const DEFAULT_SETTINGS: MiseFlowSettings = {
 	allergensProperty: "allergens",
 	myAllergens: [],
 	showMeatTempWarnings: true,
+	ratingProperty: "rating",
+	caloriesProperty: "calories",
+	proteinProperty: "protein",
+	fatProperty: "fat",
+	carbsProperty: "carbs",
 	suggestionDayWindow: 14,
 	suggestionCount: 5,
 	diabeticMode: false,

@@ -167,9 +167,10 @@ export function stripRedundantBodyContent(
 
 	if (opts.stripTitle && opts.title) {
 		const normalised = opts.title.trim().toLowerCase();
-		result = result.replace(/^([ \t]*#[ \t]+(.+?)[ \t]*\n?)/, (_match, full, text: string) => {
-			return text.trim().toLowerCase() === normalised ? "" : full;
-		});
+		const firstH1Match = result.match(/^[ \t]*#[ \t]+(.+)$/m);
+		if (firstH1Match && firstH1Match[1]?.trim().toLowerCase() === normalised) {
+			result = result.replace(firstH1Match[0], "");
+		}
 	}
 
 	if (opts.stripImage && opts.imageValue) {

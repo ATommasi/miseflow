@@ -60,6 +60,26 @@ export default class MiseFlowPlugin extends Plugin {
 					onMealPlanChanged: () => {
 						void this.manager.refresh();
 					},
+					addToGroceryOnly: (contributions) =>
+						this.manager.addToGroceryOnly(contributions),
+					getGroceryItems: () => this.manager.getItems(),
+					onGroceryChanged: (cb) => this.manager.on("changed", cb),
+					navigateToGroceryCategory: async (category) => {
+						const path =
+							this.settings.groceryListNotePath || "Grocery List.md";
+						const file = await getOrCreateNote(
+							this.app,
+							path,
+							"# Grocery List\n",
+						);
+						await this.app.workspace.openLinkText(
+							`${file.basename}#${category}`,
+							file.path,
+							false,
+						);
+					},
+					removeFromGroceryByKey: (key) =>
+						this.manager.removeFromGroceryByKey(key),
 				}),
 		);
 

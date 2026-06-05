@@ -295,6 +295,10 @@
 	gap: var(--size-4-2);
 }
 
+.is-mobile .mise-recipe-view {
+	padding-bottom: calc(var(--size-4-16) + var(--safe-area-inset-bottom, 0px));
+}
+
 .mise-recipe-title-block {
 	display: flex;
 	flex-direction: column;
@@ -304,6 +308,13 @@
 .mise-recipe-title {
 	margin: 0;
 	font-size: var(--font-ui-larger);
+}
+
+.mise-recipe-hero-rating {
+	display: flex;
+	align-items: center;
+	gap: var(--size-2-2);
+	flex-wrap: nowrap;
 }
 
 .mise-recipe-badges {
@@ -415,12 +426,15 @@
 	flex-shrink: 0;
 }
 
-.mise-recipe-favorite-toggle {
+/* Shared base for all recipe action buttons */
+.mise-recipe-favorite-toggle,
+.mise-recipe-mark-cooked-button,
+.mise-recipe-meal-plan-toggle {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
-	width: 32px;
-	height: 32px;
+	width: 36px;
+	height: 36px;
 	padding: 0;
 	border-radius: var(--radius-m);
 	background-color: transparent;
@@ -435,7 +449,11 @@
 }
 
 .mise-recipe-favorite-toggle:hover,
-.mise-recipe-favorite-toggle:focus-visible {
+.mise-recipe-favorite-toggle:focus-visible,
+.mise-recipe-mark-cooked-button:hover,
+.mise-recipe-mark-cooked-button:focus-visible,
+.mise-recipe-meal-plan-toggle:hover,
+.mise-recipe-meal-plan-toggle:focus-visible {
 	color: var(--text-normal);
 	border-color: var(--background-modifier-border-hover, var(--background-modifier-border));
 	background-color: var(--background-modifier-hover);
@@ -451,9 +469,17 @@
 	fill: currentColor;
 }
 
-.mise-recipe-favorite-toggle .svg-icon {
+.mise-recipe-favorite-toggle .svg-icon,
+.mise-recipe-mark-cooked-button .svg-icon,
+.mise-recipe-meal-plan-toggle .svg-icon {
 	width: 18px;
 	height: 18px;
+}
+
+.mise-recipe-meal-plan-toggle.is-planned {
+	color: var(--interactive-accent);
+	border-color: color-mix(in srgb, var(--interactive-accent) 60%, transparent);
+	background-color: color-mix(in srgb, var(--interactive-accent) 15%, var(--background-secondary));
 }
 
 .mise-recipe-body {
@@ -618,9 +644,13 @@
 	width: max-content;
 	background-color: var(--background-primary);
 	border: 1px solid var(--background-modifier-border);
-	border-radius: var(--radius-m);
+	border-radius: var(--radius-s);
 	overflow: hidden;
 	height: 30px;
+}
+
+.is-mobile .mise-recipe-stepper {
+	height: 36px;
 }
 
 .mise-recipe-stepper-button {
@@ -629,7 +659,7 @@
 	justify-content: center;
 	width: 28px;
 	height: 100%;
-	border-radius: 0;
+	border-radius: 0 !important;
 	background-color: transparent;
 	border: none;
 	box-shadow: none;
@@ -650,10 +680,13 @@
 }
 
 .mise-recipe-stepper-input {
-	width: 44px;
+	width: 64px;
 	height: 100%;
 	min-height: 0;
+	display: flex;
+	align-items: center;
 	text-align: center;
+	line-height: 1;
 	font-variant-numeric: tabular-nums;
 	font-weight: var(--font-semibold);
 	font-size: var(--font-ui-small);
@@ -663,10 +696,11 @@
 	border-right: 1px solid var(--background-modifier-border);
 	padding: 0;
 	box-shadow: none;
-	border-radius: 0;
+	border-radius: 0 !important;
 	-webkit-appearance: none;
 	appearance: none;
 	color: var(--text-normal);
+	vertical-align: middle;
 }
 
 .mise-recipe-stepper-input:focus,
@@ -681,6 +715,14 @@
 .mise-recipe-stepper-input::-webkit-outer-spin-button {
 	-webkit-appearance: none;
 	margin: 0;
+}
+
+/* Mobile browsers add internal padding that shifts text down — override it */
+.is-mobile .mise-recipe-stepper-input {
+	padding: 0 !important;
+	line-height: 1 !important;
+	height: 100% !important;
+	display: block !important;
 }
 
 .mise-recipe-meta-value {
@@ -735,6 +777,25 @@
 	color: var(--text-faint);
 }
 
+.mise-recipe-add-to-grocery-link {
+	margin-left: auto;
+	padding: 2px 4px;
+	border-radius: var(--radius-s);
+	font-size: var(--font-ui-smaller);
+	font-weight: var(--font-medium);
+	color: var(--text-accent);
+	background: transparent;
+	border: 1px solid transparent;
+	cursor: pointer;
+}
+
+.mise-recipe-add-to-grocery-link:hover,
+.mise-recipe-add-to-grocery-link:focus-visible {
+	background: var(--background-modifier-hover);
+	border-color: var(--background-modifier-border);
+	color: var(--text-accent);
+}
+
 .mise-recipe-ingredients-icon {
 	display: inline-flex;
 	align-items: center;
@@ -767,10 +828,10 @@
 }
 
 .mise-recipe-ingredient {
-	display: grid;
-	grid-template-columns: minmax(72px, max-content) 1fr auto auto;
-	gap: var(--size-4-2);
-	align-items: baseline;
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	gap: var(--size-2-3);
 	padding: var(--size-2-3) var(--size-4-2);
 	font-size: var(--font-ui-medium);
 	transition: background-color 80ms ease-in-out;
@@ -835,6 +896,8 @@
 	color: var(--text-accent);
 	text-align: right;
 	white-space: nowrap;
+	flex-shrink: 0;
+	min-width: 52px;
 }
 
 .mise-recipe-ingredient-qty.is-empty::before {
@@ -845,6 +908,7 @@
 .mise-recipe-ingredient-name {
 	color: var(--text-normal);
 	min-width: 0;
+	flex: 1;
 	word-break: break-word;
 }
 
@@ -864,6 +928,8 @@
 	color: var(--color-orange, var(--text-warning, #b88500));
 	font-variant-numeric: tabular-nums;
 	align-self: center;
+	flex-shrink: 0;
+	margin-left: auto;
 }
 
 .mise-recipe-ingredient-temp-icon {
@@ -892,6 +958,8 @@
 	color: var(--color-orange, #d97706);
 	letter-spacing: 0.04em;
 	align-self: center;
+	flex-shrink: 0;
+	margin-left: auto;
 }
 
 .mise-recipe-ingredient-gi-icon {
@@ -902,6 +970,45 @@
 .mise-recipe-ingredient-gi-icon .svg-icon {
 	width: 12px;
 	height: 12px;
+}
+
+.mise-recipe-ingredient-cart {
+	display: inline-flex;
+	align-items: center;
+	padding: 0px;
+	border-radius: var(--radius-s);
+	border: none;
+	background: transparent;
+	cursor: default;
+	color: var(--color-green, #16a34a);
+	opacity: 0.35;
+	align-self: center;
+	flex-shrink: 0;
+	margin-left: auto;
+}
+
+.mise-recipe-ingredient-cart.is-on-list {
+	opacity: 1;
+	cursor: pointer;
+	background: none;
+	height: max-content;
+	padding: 0;
+
+}
+
+.mise-recipe-ingredient-cart.is-on-list:hover,
+.mise-recipe-ingredient-cart.is-on-list:focus-visible {
+	background: color-mix(in srgb, var(--color-green, #16a34a) 12%, transparent);
+}
+
+.mise-recipe-ingredient-cart-icon {
+	display: inline-flex;
+	align-items: center;
+}
+
+.mise-recipe-ingredient-cart-icon .svg-icon {
+	width: 13px;
+	height: 13px;
 }
 
 .mise-recipe-ingredient-gi-text {
@@ -1219,6 +1326,290 @@
 
 .mise-recipe-markdown {
 	color: var(--text-normal);
+}
+
+/* ----------------------------------------------------------------------
+ * Mobile tab view
+ * --------------------------------------------------------------------*/
+
+/* ── Hero section ── */
+.mise-recipe-mobile-hero {
+	display: grid;
+	grid-template-columns: 1fr auto;
+	gap: var(--size-4-2);
+	align-items: stretch;
+}
+
+.mise-recipe-mobile-hero .mise-recipe-image-card {
+	/* let image fill the left column naturally */
+	aspect-ratio: 4 / 3;
+	min-width: 0;
+	border-radius: var(--radius-l);
+}
+
+.mise-recipe-mobile-hero-meta {
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-2-2);
+	background: var(--background-secondary);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-l);
+	padding: var(--size-2-3) var(--size-2-3);
+	min-width: 110px;
+	max-width: 140px;
+	flex-shrink: 0;
+}
+
+.mise-recipe-mobile-hero-rating {
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-2-1);
+}
+
+.mise-recipe-mobile-stars {
+	display: flex;
+	gap: 2px;
+	flex-wrap: nowrap;
+}
+
+.mise-recipe-mobile-star {
+	font-size: 18px;
+	cursor: pointer;
+	color: var(--text-faint);
+	line-height: 1;
+	transition: color 80ms ease-in-out, transform 80ms ease-in-out;
+	user-select: none;
+}
+
+.mise-recipe-mobile-star.is-filled {
+	color: var(--color-yellow, #f1c40f);
+}
+
+.mise-recipe-mobile-star:hover {
+	transform: scale(1.15);
+}
+
+.mise-recipe-mobile-hero-divider {
+	height: 1px;
+	background: var(--background-modifier-border);
+	margin: var(--size-2-1) 0;
+}
+
+.mise-recipe-mobile-hero-stats {
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-2-2);
+}
+
+.mise-recipe-mobile-hero-stat {
+	display: flex;
+	flex-direction: column;
+	gap: 1px;
+}
+
+.mise-recipe-mobile-hero-stat-value {
+	font-size: var(--font-ui-small);
+	font-weight: var(--font-semibold);
+	color: var(--text-accent);
+	font-variant-numeric: tabular-nums;
+	line-height: 1.2;
+}
+
+.mise-recipe-tabs {
+	display: flex;
+	flex-direction: column;
+	gap: 0;
+}
+
+.mise-recipe-tab-bar {
+	display: flex;
+	border-bottom: 1px solid var(--background-modifier-border);
+	flex-shrink: 0;
+}
+
+.mise-recipe-tab {
+	flex: 1;
+	padding: var(--size-2-3) var(--size-2-2);
+	background: transparent;
+	border: none;
+	border-radius: 0;
+	border-bottom: 2px solid transparent;
+	margin-bottom: -1px;
+	color: var(--text-muted);
+	font-size: var(--font-ui-small);
+	font-weight: var(--font-medium);
+	cursor: pointer;
+	box-shadow: none;
+	white-space: nowrap;
+	transition: color 80ms ease-in-out, border-color 80ms ease-in-out;
+}
+
+.mise-recipe-tab.is-active {
+	color: var(--text-accent);
+	border-bottom-color: var(--text-accent);
+}
+
+.mise-recipe-tab-content-area {
+	min-height: 0;
+}
+
+.mise-recipe-tab-panel {
+	display: none;
+}
+
+.mise-recipe-tab-panel.is-active {
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-4-2);
+}
+
+/* Scale + servings header in Ingredients tab */
+.mise-recipe-mobile-scale-header {
+	display: flex;
+	background: var(--background-secondary);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-l);
+	overflow: hidden;
+	flex-shrink: 0;
+}
+
+.mise-recipe-mobile-scale-cell,
+.mise-recipe-mobile-servings-cell {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: var(--size-2-2);
+	padding: var(--size-4-2) var(--size-4-3);
+}
+
+.mise-recipe-mobile-scale-cell {
+	border-right: 1px solid var(--background-modifier-border);
+}
+
+.mise-recipe-mobile-meta-label {
+	font-size: var(--font-ui-smaller);
+	font-weight: var(--font-semibold);
+	color: var(--text-muted);
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+}
+
+/* Prep + cook times header in Steps tab */
+.mise-recipe-mobile-times-header {
+	display: flex;
+	background: var(--background-secondary);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-l);
+	overflow: hidden;
+	flex-shrink: 0;
+}
+
+.mise-recipe-mobile-time-cell {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: var(--size-2-2);
+	padding: var(--size-4-2) var(--size-4-3);
+}
+
+.mise-recipe-mobile-time-cell+.mise-recipe-mobile-time-cell {
+	border-left: 1px solid var(--background-modifier-border);
+}
+
+.mise-recipe-mobile-time-value {
+	font-size: var(--font-ui-medium);
+	font-weight: var(--font-semibold);
+	color: var(--text-accent);
+	font-variant-numeric: tabular-nums;
+}
+
+/* Source / rating rows in Info tab */
+.mise-recipe-mobile-info-row {
+	display: flex;
+	align-items: center;
+	gap: var(--size-2-3);
+	padding: var(--size-2-3) var(--size-4-2);
+	background: var(--background-secondary);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-l);
+	min-width: 0;
+}
+
+.mise-recipe-mobile-info-icon {
+	display: inline-flex;
+	align-items: center;
+	color: var(--text-muted);
+	flex-shrink: 0;
+}
+
+.mise-recipe-mobile-info-icon .svg-icon {
+	width: 16px;
+	height: 16px;
+}
+
+.mise-recipe-mobile-info-value {
+	color: var(--text-normal);
+	font-size: var(--font-ui-small);
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.mise-recipe-mobile-info-link {
+	color: var(--text-accent);
+	font-size: var(--font-ui-small);
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	text-decoration: none;
+}
+
+.mise-recipe-mobile-info-link:hover {
+	text-decoration: underline;
+}
+
+/* Nutrition grid in the Recipe Info tab (mobile) */
+.mise-recipe-mobile-info-nutrition {
+	background: var(--background-secondary);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-l);
+	padding: var(--size-4-2);
+}
+
+.mise-recipe-mobile-info-nutrition-grid {
+	display: grid;
+	grid-template-columns: repeat(4, 1fr);
+	gap: var(--size-4-2);
+}
+
+.mise-recipe-mobile-info-nutrition-cell {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: var(--size-2-1);
+}
+
+.mise-recipe-mobile-info-nutrition-value {
+	font-size: var(--font-ui-medium);
+	font-weight: var(--font-semibold);
+	color: var(--text-accent);
+	font-variant-numeric: tabular-nums;
+}
+
+.mise-recipe-mobile-info-nutrition-value.is-empty {
+	color: var(--text-faint);
+	font-weight: var(--font-normal);
+}
+
+.mise-recipe-empty-tab {
+	padding: var(--size-4-4);
+	color: var(--text-muted);
+	text-align: center;
+	font-size: var(--font-ui-small);
 }
 
 /* ----------------------------------------------------------------------
@@ -1627,6 +2018,7 @@
 	gap: var(--size-2-1);
 	width: 100%;
 	cursor: grab;
+	touch-action: none;
 }
 
 .mise-timer-handle.is-dragging {

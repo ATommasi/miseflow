@@ -284,10 +284,11 @@ class TimerWidget {
 		let startClientY = 0;
 		let startLeft = 0;
 		let startTop = 0;
+		let activePointerId: number | null = null;
 
-		const onDown = (e: MouseEvent) => {
+		const onDown = (e: PointerEvent) => {
 			if ((e.target as HTMLElement).closest("button, input")) return;
-			if (e.button !== 0) return;
+			if (e.pointerType === "mouse" && e.button !== 0) return;
 			e.preventDefault();
 
 			const rect = this.el.getBoundingClientRect();
@@ -305,28 +306,35 @@ class TimerWidget {
 			startClientX = e.clientX;
 			startClientY = e.clientY;
 			dragging = true;
+			activePointerId = e.pointerId;
+			handle.setPointerCapture(e.pointerId);
 			handle.addClass("is-dragging");
 		};
 
-		const onMove = (e: MouseEvent) => {
+		const onMove = (e: PointerEvent) => {
 			if (!dragging) return;
+			if (activePointerId !== null && e.pointerId !== activePointerId) return;
 			this.el.style.left = `${startLeft + (e.clientX - startClientX)}px`;
 			this.el.style.top = `${startTop + (e.clientY - startClientY)}px`;
 		};
 
-		const onUp = () => {
+		const onUp = (e: PointerEvent) => {
 			if (!dragging) return;
+			if (activePointerId !== null && e.pointerId !== activePointerId) return;
 			dragging = false;
+			activePointerId = null;
 			handle.removeClass("is-dragging");
 		};
 
-		handle.addEventListener("mousedown", onDown);
-		document.addEventListener("mousemove", onMove);
-		document.addEventListener("mouseup", onUp);
+		handle.addEventListener("pointerdown", onDown);
+		handle.addEventListener("pointermove", onMove);
+		handle.addEventListener("pointerup", onUp);
+		handle.addEventListener("pointercancel", onUp);
 		this.cleanupFns.push(() => {
-			handle.removeEventListener("mousedown", onDown);
-			document.removeEventListener("mousemove", onMove);
-			document.removeEventListener("mouseup", onUp);
+			handle.removeEventListener("pointerdown", onDown);
+			handle.removeEventListener("pointermove", onMove);
+			handle.removeEventListener("pointerup", onUp);
+			handle.removeEventListener("pointercancel", onUp);
 		});
 	}
 

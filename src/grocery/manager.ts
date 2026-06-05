@@ -107,6 +107,25 @@ export class GroceryListManager extends Events {
 	}
 
 	/**
+	 * Add ingredients directly to the grocery list without creating a meal plan entry.
+	 * Items will appear as "manually added" in the grocery list.
+	 */
+	async addToGroceryOnly(
+		contributions: Record<string, GroceryContribution>,
+	): Promise<void> {
+		if (Object.keys(contributions).length === 0) return;
+
+		await addToGroceryNote(this.app, contributions, this.sink.settings);
+		await this.rebuild();
+		this.trigger("changed");
+
+		const count = Object.keys(contributions).length;
+		new Notice(
+			`${count} ingredient${count === 1 ? "" : "s"} added to grocery list.`,
+		);
+	}
+
+	/**
 	 * Remove a recipe from the meal plan, subtracting its ingredient
 	 * contributions from the grocery note.
 	 */
@@ -409,6 +428,24 @@ export class GroceryListManager extends Events {
 		await removeFromGroceryNote(this.app, { [key]: contrib }, this.sink.settings);
 		await this.rebuild();
 		this.trigger("changed");
+	}
+
+	/** Remove an ingredient from the grocery note by its key. */
+	async removeFromGroceryByKey(key: string): Promise<void> {
+		const item = this.items.find((i) => i.key === key);
+		if (!item) return;
+
+		const contrib = {
+			name: normaliseName(item.name),
+			unit: item.unit,
+			quantity: item.quantity,
+		};
+
+		await removeFromGroceryNote(this.app, { [key]: contrib }, this.sink.settings);
+		await this.rebuild();
+		this.trigger("changed");
+
+		new Notice(`${titleCase(item.name)} removed from grocery list.`);
 	}
 
 	/**

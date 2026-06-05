@@ -236,6 +236,24 @@ export class MiseFlowSettingsTab extends PluginSettingTab {
 			);
 
 		new Setting(containerEl)
+			.setName("Rating property")
+			.setDesc(
+				"Frontmatter property name used to store a recipe's star rating (1–5). Shown as interactive stars in the mobile recipe header.",
+			)
+			.addText((text) =>
+				text
+					.setPlaceholder("rating")
+					.setValue(this.host.settings.ratingProperty)
+					.onChange(async (value) => {
+						this.host.settings.ratingProperty = value.trim() || "rating";
+						await this.host.saveSettings();
+					}),
+			);
+
+
+		new Setting(containerEl).setName("Recipe Timers").setHeading();
+
+		new Setting(containerEl)
 			.setName("Step timers")
 			.setDesc(
 				'Detect duration phrases in cooking steps (e.g. "bake for 30 minutes") and show a clickable timer button.',
@@ -284,7 +302,7 @@ export class MiseFlowSettingsTab extends PluginSettingTab {
 			)
 			.addDropdown((dd) =>
 				dd
-					.addOptions({ max: "Max (15 minutes)", min: "Min (10 minutes)" })
+					.addOptions({ max: "Max", min: "Min" })
 					.setValue(this.host.settings.timerRangeDefault)
 					.onChange(async (value) => {
 						this.host.settings.timerRangeDefault = value as "max" | "min";
@@ -559,6 +577,58 @@ export class MiseFlowSettingsTab extends PluginSettingTab {
 					}),
 			);
 
+		new Setting(containerEl)
+			.setName("Calories property")
+			.setDesc("Frontmatter property name for the calories value.")
+			.addText((text) =>
+				text
+					.setPlaceholder("calories")
+					.setValue(this.host.settings.caloriesProperty)
+					.onChange(async (value) => {
+						this.host.settings.caloriesProperty = value.trim() || "calories";
+						await this.host.saveSettings();
+					}),
+			);
+
+		new Setting(containerEl)
+			.setName("Protein property")
+			.setDesc("Frontmatter property name for the protein value (grams).")
+			.addText((text) =>
+				text
+					.setPlaceholder("protein")
+					.setValue(this.host.settings.proteinProperty)
+					.onChange(async (value) => {
+						this.host.settings.proteinProperty = value.trim() || "protein";
+						await this.host.saveSettings();
+					}),
+			);
+
+		new Setting(containerEl)
+			.setName("Fat property")
+			.setDesc("Frontmatter property name for the fat value (grams).")
+			.addText((text) =>
+				text
+					.setPlaceholder("fat")
+					.setValue(this.host.settings.fatProperty)
+					.onChange(async (value) => {
+						this.host.settings.fatProperty = value.trim() || "fat";
+						await this.host.saveSettings();
+					}),
+			);
+
+		new Setting(containerEl)
+			.setName("Carbs property")
+			.setDesc("Frontmatter property name for the carbs value (grams).")
+			.addText((text) =>
+				text
+					.setPlaceholder("carbs")
+					.setValue(this.host.settings.carbsProperty)
+					.onChange(async (value) => {
+						this.host.settings.carbsProperty = value.trim() || "carbs";
+						await this.host.saveSettings();
+					}),
+			);
+
 		// ── Meal Suggestions ─────────────────────────────────────────────
 		new Setting(containerEl).setName("Meal suggestions").setHeading();
 
@@ -650,6 +720,8 @@ export class MiseFlowSettingsTab extends PluginSettingTab {
 						await this.host.saveSettings();
 					}),
 			);
+
+
 
 		new Setting(containerEl)
 			.setName("High glycemic index warnings")

@@ -1,16 +1,19 @@
 import {
 	MarkdownRenderer,
 	Notice,
+	Platform,
 	TextFileView,
 	TFile,
 	WorkspaceLeaf,
 	setIcon,
+	EventRef,
 } from "obsidian";
 import { stampRecipeCooked } from "../grocery/selection";
 import { GroceryContribution } from "../grocery/note-writer";
 import { isHighGi, parseGiDictionary } from "../parser/glycemic";
 import {
 	parseIngredientLine,
+	ingredientKey,
 } from "../parser/ingredient";
 import { detectMeatTemp, MeatTemp } from "../parser/meat";
 import { formatQuantity } from "../parser/quantity";
@@ -34,6 +37,7 @@ import {
 import {
 	IngredientGroup,
 	InstructionGroup,
+	GroceryItem,
 } from "../types";
 import {
 	MiseFlowSettings,
@@ -41,6 +45,7 @@ import {
 } from "../settings";
 import { MarkCookedModal } from "./mark-cooked-modal";
 import { AddToMealPlanModal } from "./add-to-meal-plan-modal";
+import { AddToGroceryModal } from "./add-to-grocery-modal";
 
 export const VIEW_TYPE_RECIPE = "mise-recipe";
 
@@ -56,32 +61,46 @@ interface RecipeViewDeps {
 	) => Promise<void>;
 	removeFromMealPlan: (recipePath: string) => Promise<void>;
 	onMealPlanChanged: () => void;
+	addToGroceryOnly: (
+		contributions: Record<string, GroceryContribution>,
+	) => Promise<void>;
+	getGroceryItems: () => GroceryItem[];
+	onGroceryChanged: (callback: () => void) => EventRef;
+	navigateToGroceryCategory: (category: string) => Promise<void>;
+	removeFromGroceryByKey: (key: string) => Promise<void>;
 }
 
 interface NutritionField {
-	key: keyof typeof RECIPE_FRONTMATTER;
+	/** Frontmatter property name (user-configurable). */
+	key: string;
 	label: string;
+	/** Display unit suffix (e.g. "g"). Absent for calories. */
+	unit?: string;
 	aliases: readonly string[];
 }
 
-const NUTRITION_FIELDS: NutritionField[] = [
-	{
-		key: "calories",
-		label: "Cal",
-		aliases: ["kcal", "calorie", "energy"],
-	},
-	{ key: "protein", label: "Protein", aliases: ["proteins"] },
-	{
-		key: "fat",
-		label: "Fat",
-		aliases: ["fats", "total fat", "totalfat", "total_fat"],
-	},
-	{
-		key: "carbs",
-		label: "Carbs",
-		aliases: ["carb", "carbohydrate", "carbohydrates", "net carbs"],
-	},
-];
+function buildNutritionFields(settings: MiseFlowSettings): NutritionField[] {
+	return [
+		{
+			key: settings.caloriesProperty,
+			label: "Cal",
+			aliases: ["kcal", "calorie", "energy"],
+		},
+		{ key: settings.proteinProperty, label: "Protein", unit: "g", aliases: ["proteins"] },
+		{
+			key: settings.fatProperty,
+			label: "Fat",
+			unit: "g",
+			aliases: ["fats", "total fat", "totalfat", "total_fat"],
+		},
+		{
+			key: settings.carbsProperty,
+			label: "Carbs",
+			unit: "g",
+			aliases: ["carb", "carbohydrate", "carbohydrates", "net carbs"],
+		},
+	];
+}
 
 const SERVINGS_KEYS = [
 	RECIPE_FRONTMATTER.servings,
@@ -144,6 +163,11 @@ export class RecipeView extends TextFileView {
 				}
 			}),
 		);
+		this.registerEvent(
+			this.deps.onGroceryChanged(() => {
+				this.render();
+			}),
+		);
 	}
 
 	private render(): void {
@@ -192,67 +216,399 @@ export class RecipeView extends TextFileView {
 			settings.myAllergens,
 		);
 
-		this.renderTitle(root, file, diet, times, lastMade);
+		const timerOptions: TimerOptions | null = settings.enableTimers
+			? {
+				autoStart: settings.timerAutoStart,
+				compact: settings.timerDefaultCompact,
+				rangeDefault: settings.timerRangeDefault,
+				incrementSeconds: Math.round(settings.timerIncrementMinutes * 60),
+				recipeName: file.basename,
+				onOpenRecipe: () => {
+					void this.app.workspace.openLinkText(
+						file.basename,
+						file.path,
+						false,
+					);
+				},
+			}
+			: null;
+
+		this.renderTitle(root, file, diet, times, lastMade, frontmatter, settings);
 		if (allergenWarnings.length > 0) {
 			this.renderAllergenWarning(root, allergenWarnings);
 		}
-		this.renderMetaBanner(
-			root,
-			file,
-			frontmatter,
-			multiplier,
-			servings,
-			isInPlan,
-			isFavorite,
-			settings,
-		);
 
-		if (split.before.trim()) {
-			void this.renderMarkdown(root, split.before, file.path);
-		}
-
-		const bodyRow = root.createDiv({
-			cls: "mise-recipe-body",
-		});
-
-		const ingredientsCol = bodyRow.createDiv({
-			cls: "mise-recipe-body-main",
-		});
-		if (split.ingredientGroups.length > 0) {
-			this.renderIngredients(
-				ingredientsCol,
-				split.ingredientGroups,
+		if (Platform.isMobile) {
+			this.renderMobileLayout(
+				root, file, frontmatter, split,
+				multiplier, servings, isInPlan, isFavorite,
+				times, settings, timerOptions,
+			);
+		} else {
+			this.renderMetaBanner(
+				root,
+				file,
+				frontmatter,
 				multiplier,
+				servings,
+				isInPlan,
+				isFavorite,
 				settings,
 			);
+
+			if (split.before.trim()) {
+				void this.renderMarkdown(root, split.before, file.path);
+			}
+
+			const bodyRow = root.createDiv({ cls: "mise-recipe-body" });
+			const ingredientsCol = bodyRow.createDiv({ cls: "mise-recipe-body-main" });
+			if (split.ingredientGroups.length > 0) {
+				this.renderIngredients(ingredientsCol, file, split.ingredientGroups, multiplier, settings);
+			}
+			this.renderImageCard(bodyRow, file, frontmatter);
+			this.renderAfterIngredients(root, split.after, file.path, settings.instructionsHeading, timerOptions);
+		}
+	}
+
+	private renderMobileLayout(
+		root: HTMLElement,
+		file: TFile,
+		frontmatter: Record<string, unknown>,
+		split: { before: string; ingredientGroups: IngredientGroup[]; after: string },
+		multiplier: number,
+		servings: number | null,
+		isInPlan: boolean,
+		isFavorite: boolean,
+		times: RecipeTimes,
+		settings: MiseFlowSettings,
+		timerOptions: TimerOptions | null,
+	): void {
+		// ── Hero row: image (left) + rating/stats card (right) ──────────
+		this.renderMobileHero(root, file, frontmatter, times, servings, multiplier, settings);
+
+		// ── Actions row (favorite, mark cooked, meal plan) ───────────────
+		const actions = root.createDiv({ cls: "mise-recipe-meta-actions" });
+		this.renderFavoriteToggle(actions, file, isFavorite);
+		if (settings.showMarkCookedButton) {
+			this.renderMarkCookedButton(actions, file, settings);
+		}
+		this.renderMealPlanButton(actions, file, isInPlan, settings);
+
+		// Tab container
+		const tabsEl = root.createDiv({ cls: "mise-recipe-tabs" });
+		const tabBar = tabsEl.createDiv({ cls: "mise-recipe-tab-bar" });
+
+		type TabId = "ingredients" | "steps" | "info";
+		const TAB_IDS: TabId[] = ["ingredients", "steps", "info"];
+		const TAB_LABELS: Record<TabId, string> = {
+			ingredients: "Ingredients",
+			steps: "Steps",
+			info: "Recipe Info",
+		};
+
+		let activeTab: TabId = "ingredients";
+		const tabButtons = new Map<TabId, HTMLButtonElement>();
+		const tabPanels = new Map<TabId, HTMLElement>();
+
+		for (const id of TAB_IDS) {
+			const btn = tabBar.createEl("button", {
+				cls: "mise-recipe-tab" + (id === activeTab ? " is-active" : ""),
+				text: TAB_LABELS[id],
+				attr: { type: "button", "data-tab": id },
+			});
+			tabButtons.set(id, btn);
 		}
 
-		this.renderImageCard(bodyRow, file, frontmatter);
+		const contentArea = tabsEl.createDiv({ cls: "mise-recipe-tab-content-area" });
 
-		const timerOptions: TimerOptions | null = settings.enableTimers
-			? {
-					autoStart: settings.timerAutoStart,
-					compact: settings.timerDefaultCompact,
-					rangeDefault: settings.timerRangeDefault,
-					incrementSeconds: Math.round(settings.timerIncrementMinutes * 60),
-					recipeName: file.basename,
-					onOpenRecipe: () => {
-						void this.app.workspace.openLinkText(
-							file.basename,
-							file.path,
-							false,
-						);
-					},
-				}
-			: null;
+		for (const id of TAB_IDS) {
+			const panel = contentArea.createDiv({
+				cls: "mise-recipe-tab-panel" + (id === activeTab ? " is-active" : ""),
+				attr: { "data-tab": id },
+			});
+			tabPanels.set(id, panel);
+		}
 
-		this.renderAfterIngredients(
-			root,
-			split.after,
-			file.path,
-			settings.instructionsHeading,
-			timerOptions,
+		const switchTab = (id: TabId): void => {
+			activeTab = id;
+			for (const [t, btn] of tabButtons) btn.toggleClass("is-active", t === id);
+			for (const [t, panel] of tabPanels) panel.toggleClass("is-active", t === id);
+		};
+
+		for (const [id, btn] of tabButtons) {
+			btn.addEventListener("click", () => switchTab(id));
+		}
+
+		// Render panel contents
+		this.renderMobileIngredientsTab(
+			tabPanels.get("ingredients")!,
+			file, split.ingredientGroups, multiplier, servings, settings,
 		);
+		this.renderMobileStepsTab(
+			tabPanels.get("steps")!,
+			split.after, file.path, settings.instructionsHeading, timerOptions, times,
+		);
+		void this.renderMobileInfoTab(
+			tabPanels.get("info")!,
+			file, frontmatter, split.before, split.after, settings.instructionsHeading,
+			settings, servings,
+		);
+	}
+
+	private renderMobileHero(
+		root: HTMLElement,
+		file: TFile,
+		frontmatter: Record<string, unknown>,
+		times: RecipeTimes,
+		servings: number | null,
+		multiplier: number,
+		settings: MiseFlowSettings,
+	): void {
+		// Image + rating card side by side
+		const heroRow = root.createDiv({ cls: "mise-recipe-mobile-hero" });
+
+		// Left: recipe image
+		this.renderImageCard(heroRow, file, frontmatter);
+
+		// Right: rating stars + time/servings labels
+		const heroMeta = heroRow.createDiv({ cls: "mise-recipe-mobile-hero-meta" });
+
+		// Star rating
+		const ratingProp = settings.ratingProperty || "rating";
+		const ratingRaw = frontmatter[ratingProp];
+		const currentRating = typeof ratingRaw === "number"
+			? Math.min(5, Math.max(0, Math.round(ratingRaw)))
+			: typeof ratingRaw === "string"
+				? Math.min(5, Math.max(0, Math.round(Number(ratingRaw) || 0)))
+				: 0;
+
+		const ratingBlock = heroMeta.createDiv({ cls: "mise-recipe-mobile-hero-rating" });
+		ratingBlock.createDiv({ cls: "mise-recipe-mobile-meta-label", text: "Rating" });
+		const starsRow = ratingBlock.createDiv({ cls: "mise-recipe-mobile-stars" });
+
+		const renderStars = (value: number): void => {
+			starsRow.empty();
+			for (let i = 1; i <= 5; i++) {
+				const star = starsRow.createSpan({
+					cls: "mise-recipe-mobile-star" + (i <= value ? " is-filled" : ""),
+					text: "★",
+					attr: { "data-value": String(i), role: "button", "aria-label": `Rate ${i} stars` },
+				});
+				star.addEventListener("click", () => {
+					const next = i === value ? 0 : i;
+					void this.setRating(file, next, ratingProp).then(() => renderStars(next));
+				});
+			}
+		};
+		renderStars(currentRating);
+
+		// Divider
+		heroMeta.createDiv({ cls: "mise-recipe-mobile-hero-divider" });
+
+		// Time / servings mini-stats
+		const statsBlock = heroMeta.createDiv({ cls: "mise-recipe-mobile-hero-stats" });
+
+		if (times.prep !== null) {
+			const cell = statsBlock.createDiv({ cls: "mise-recipe-mobile-hero-stat" });
+			cell.createDiv({ cls: "mise-recipe-mobile-meta-label", text: "Prep" });
+			cell.createDiv({ cls: "mise-recipe-mobile-hero-stat-value", text: formatMinutes(times.prep) });
+		}
+		if (times.cook !== null) {
+			const cell = statsBlock.createDiv({ cls: "mise-recipe-mobile-hero-stat" });
+			cell.createDiv({ cls: "mise-recipe-mobile-meta-label", text: "Cook" });
+			cell.createDiv({ cls: "mise-recipe-mobile-hero-stat-value", text: formatMinutes(times.cook) });
+		}
+		if (times.prep === null && times.cook === null && times.total !== null) {
+			const cell = statsBlock.createDiv({ cls: "mise-recipe-mobile-hero-stat" });
+			cell.createDiv({ cls: "mise-recipe-mobile-meta-label", text: "Total" });
+			cell.createDiv({ cls: "mise-recipe-mobile-hero-stat-value", text: formatMinutes(times.total) });
+		}
+		if (servings !== null) {
+			const total = servings * multiplier;
+			const cell = statsBlock.createDiv({ cls: "mise-recipe-mobile-hero-stat" });
+			cell.createDiv({ cls: "mise-recipe-mobile-meta-label", text: "Serves" });
+			cell.createDiv({ cls: "mise-recipe-mobile-hero-stat-value", text: formatNumberValue(total) });
+		}
+	}
+
+	private async setRating(file: TFile, value: number, property: string): Promise<void> {
+		await this.app.fileManager.processFrontMatter(
+			file,
+			(fm: Record<string, unknown>) => {
+				if (value === 0) {
+					delete fm[property];
+				} else {
+					fm[property] = value;
+				}
+			},
+		);
+	}
+
+	private renderMobileIngredientsTab(
+		root: HTMLElement,
+		file: TFile,
+		ingredientGroups: IngredientGroup[],
+		multiplier: number,
+		servings: number | null,
+		settings: MiseFlowSettings,
+	): void {
+		const scaleHeader = root.createDiv({ cls: "mise-recipe-mobile-scale-header" });
+
+		// Scale cell with stepper
+		const scaleCell = scaleHeader.createDiv({ cls: "mise-recipe-mobile-scale-cell" });
+		scaleCell.createDiv({ cls: "mise-recipe-mobile-meta-label", text: "Scale" });
+		const stepper = scaleCell.createDiv({
+			cls: "mise-recipe-stepper",
+			attr: { "aria-label": "Recipe multiplier" },
+		});
+		const minus = stepper.createEl("button", {
+			cls: "mise-recipe-stepper-button",
+			text: "\u2212",
+			attr: { type: "button", "aria-label": "Decrease multiplier" },
+		});
+		minus.addEventListener("click", () => void this.updateMultiplier(file, multiplier - 0.5));
+		const input = stepper.createEl("input", { cls: "mise-recipe-stepper-input", type: "number" });
+		input.value = formatNumberValue(multiplier);
+		input.step = "0.5";
+		input.min = "0.5";
+		input.addEventListener("change", () => {
+			const next = Number(input.value);
+			if (Number.isFinite(next) && next > 0) void this.updateMultiplier(file, next);
+			else input.value = formatNumberValue(multiplier);
+		});
+		const plus = stepper.createEl("button", {
+			cls: "mise-recipe-stepper-button",
+			text: "+",
+			attr: { type: "button", "aria-label": "Increase multiplier" },
+		});
+		plus.addEventListener("click", () => void this.updateMultiplier(file, multiplier + 0.5));
+
+		// Servings cell
+		const servingsCell = scaleHeader.createDiv({ cls: "mise-recipe-mobile-servings-cell" });
+		servingsCell.createDiv({ cls: "mise-recipe-mobile-meta-label", text: "Servings" });
+		const total = servings === null ? null : servings * multiplier;
+		const servingsValue = servingsCell.createDiv({
+			cls: "mise-recipe-meta-value",
+			text: total === null ? "\u2014" : formatNumberValue(total),
+		});
+		if (total === null) servingsValue.addClass("is-empty");
+
+		// Ingredient list
+		if (ingredientGroups.length > 0) {
+			this.renderIngredients(root, file, ingredientGroups, multiplier, settings);
+		} else {
+			root.createDiv({ cls: "mise-recipe-empty-tab", text: "No ingredients found." });
+		}
+	}
+
+	private renderMobileStepsTab(
+		root: HTMLElement,
+		afterMarkdown: string,
+		sourcePath: string,
+		instructionsHeading: string,
+		timerOptions: TimerOptions | null,
+		times: RecipeTimes,
+	): void {
+		const hasPrep = times.prep !== null;
+		const hasCook = times.cook !== null;
+		const hasTotal = times.total !== null && !hasPrep && !hasCook;
+
+		if (hasPrep || hasCook || hasTotal) {
+			const timesHeader = root.createDiv({ cls: "mise-recipe-mobile-times-header" });
+			if (hasPrep) {
+				const cell = timesHeader.createDiv({ cls: "mise-recipe-mobile-time-cell" });
+				cell.createDiv({ cls: "mise-recipe-mobile-meta-label", text: "Prep" });
+				cell.createDiv({ cls: "mise-recipe-mobile-time-value", text: formatMinutes(times.prep!) });
+			}
+			if (hasCook) {
+				const cell = timesHeader.createDiv({ cls: "mise-recipe-mobile-time-cell" });
+				cell.createDiv({ cls: "mise-recipe-mobile-meta-label", text: "Cook" });
+				cell.createDiv({ cls: "mise-recipe-mobile-time-value", text: formatMinutes(times.cook!) });
+			}
+			if (hasTotal) {
+				const cell = timesHeader.createDiv({ cls: "mise-recipe-mobile-time-cell" });
+				cell.createDiv({ cls: "mise-recipe-mobile-meta-label", text: "Total" });
+				cell.createDiv({ cls: "mise-recipe-mobile-time-value", text: formatMinutes(times.total!) });
+			}
+		}
+
+		this.renderAfterIngredients(root, afterMarkdown, sourcePath, instructionsHeading, timerOptions);
+	}
+
+	private async renderMobileInfoTab(
+		root: HTMLElement,
+		file: TFile,
+		frontmatter: Record<string, unknown>,
+		bodyBefore: string,
+		bodyAfter: string,
+		instructionsHeading: string,
+		settings: MiseFlowSettings,
+		servings: number | null,
+	): Promise<void> {
+		// Source URL / link
+		const sourceUrl = readStringFromKeys(frontmatter, SOURCE_URL_KEYS);
+		if (sourceUrl) {
+			const row = root.createDiv({ cls: "mise-recipe-mobile-info-row" });
+			const iconEl = row.createSpan({ cls: "mise-recipe-mobile-info-icon" });
+			setIcon(iconEl, "link");
+			if (/^https?:/i.test(sourceUrl)) {
+				row.createEl("a", {
+					cls: "mise-recipe-mobile-info-link",
+					text: sourceUrl,
+					attr: { href: sourceUrl, target: "_blank", rel: "noopener noreferrer" },
+				});
+			} else {
+				row.createSpan({ cls: "mise-recipe-mobile-info-value", text: sourceUrl });
+			}
+		}
+
+		// Nutrition section — only shown if at least one value is available
+		const nutritionFields = buildNutritionFields(settings);
+		const anyNutrition = nutritionFields.some(
+			(f) => readNutritionValue(frontmatter, f) !== null,
+		);
+		if (anyNutrition) {
+			const section = root.createDiv({
+				cls: "mise-recipe-mobile-info-nutrition",
+			});
+			const grid = section.createDiv({
+				cls: "mise-recipe-mobile-info-nutrition-grid",
+			});
+			for (const field of nutritionFields) {
+				const baseValue = readNutritionValue(frontmatter, field);
+				const displayValue = resolveNutritionDisplayValue(
+					baseValue,
+					servings,
+					settings.nutritionSource,
+					settings.nutritionDisplay,
+				);
+				const cell = grid.createDiv({
+					cls: "mise-recipe-mobile-info-nutrition-cell",
+				});
+				cell.createDiv({
+					cls: "mise-recipe-mobile-meta-label",
+					text: field.label,
+				});
+				const valueText =
+					displayValue === null
+						? "—"
+						: roundForDisplay(displayValue) + (field.unit ?? "");
+				const valEl = cell.createDiv({
+					cls: "mise-recipe-mobile-info-nutrition-value",
+					text: valueText,
+				});
+				if (displayValue === null) valEl.addClass("is-empty");
+			}
+		}
+
+		// Full markdown body minus the ingredients section and instructions section
+		const instSplit = splitBodyAroundInstructions(bodyAfter, instructionsHeading);
+		const infoBody = [bodyBefore, instSplit.before, instSplit.after]
+			.filter((s) => s.trim())
+			.join("\n\n");
+		if (infoBody.trim()) {
+			await this.renderMarkdown(root, infoBody, file.path);
+		}
 	}
 
 	private renderAfterIngredients(
@@ -430,13 +786,49 @@ export class RecipeView extends TextFileView {
 	}
 
 	private renderTitle(
-		root: HTMLElement, file: TFile, diet: readonly string[], times: RecipeTimes, lastMade: string | null,
+		root: HTMLElement,
+		file: TFile,
+		diet: readonly string[],
+		times: RecipeTimes,
+		lastMade: string | null,
+		frontmatter: Record<string, unknown>,
+		settings: MiseFlowSettings,
 	): void {
 		const header = root.createDiv({ cls: "mise-recipe-title-block" });
 		header.createEl("h1", {
 			cls: "mise-recipe-title",
 			text: file.basename,
 		});
+
+
+		// Star rating
+		const ratingProp = settings.ratingProperty || "rating";
+		const ratingRaw = frontmatter[ratingProp];
+		const currentRating = typeof ratingRaw === "number"
+			? Math.min(5, Math.max(0, Math.round(ratingRaw)))
+			: typeof ratingRaw === "string"
+				? Math.min(5, Math.max(0, Math.round(Number(ratingRaw) || 0)))
+				: 0;
+
+		const ratingBlock = header.createDiv({ cls: "mise-recipe-hero-rating" });
+		ratingBlock.createSpan({ cls: "mise-recipe-hero-meta-label", text: "Rating: " });
+		const starsRow = ratingBlock.createSpan({ cls: "mise-recipe-mobile-stars" });
+
+		const renderStars = (value: number): void => {
+			starsRow.empty();
+			for (let i = 1; i <= 5; i++) {
+				const star = starsRow.createSpan({
+					cls: "mise-recipe-mobile-star" + (i <= value ? " is-filled" : ""),
+					text: "★",
+					attr: { "data-value": String(i), role: "button", "aria-label": `Rate ${i} stars` },
+				});
+				star.addEventListener("click", () => {
+					const next = i === value ? 0 : i;
+					void this.setRating(file, next, ratingProp).then(() => renderStars(next));
+				});
+			}
+		};
+		renderStars(currentRating);
 
 		const hasBadges =
 			diet.length > 0 ||
@@ -556,7 +948,7 @@ export class RecipeView extends TextFileView {
 
 		this.renderMultiplierCell(cells, file, multiplier);
 		this.renderServingsCell(cells, servings, multiplier);
-		for (const field of NUTRITION_FIELDS) {
+		for (const field of buildNutritionFields(settings)) {
 			this.renderNutritionCell(
 				cells,
 				field,
@@ -820,13 +1212,14 @@ export class RecipeView extends TextFileView {
 
 		const valueEl = main.createDiv({
 			cls: "mise-recipe-nutrition-value",
-			text: displayValue === null ? "—" : roundForDisplay(displayValue),
+			text: displayValue === null ? "—" : roundForDisplay(displayValue) + (field.unit ?? ""),
 		});
 		if (displayValue === null) valueEl.addClass("is-empty");
 	}
 
 	private renderIngredients(
 		root: HTMLElement,
+		file: TFile,
 		ingredientGroups: IngredientGroup[],
 		multiplier: number,
 		settings: MiseFlowSettings,
@@ -838,6 +1231,7 @@ export class RecipeView extends TextFileView {
 		const header = wrap.createDiv({
 			cls: "mise-recipe-ingredients-header",
 		});
+
 		const headerIcon = header.createSpan({
 			cls: "mise-recipe-ingredients-icon",
 		});
@@ -847,9 +1241,32 @@ export class RecipeView extends TextFileView {
 			text: settings.ingredientsHeading,
 		});
 
+		const addBtn = header.createEl("button", {
+			cls: "mise-recipe-add-to-grocery-link",
+			text: "",
+			attr: { type: "button", title: "Add ingredients to grocery list" },
+		});
+		const icon = addBtn.createSpan({
+			cls: "mise-recipe-ingredient-gi-icon",
+		});
+		setIcon(icon, "shopping-cart");
+
+		addBtn.addEventListener("click", () => {
+			new AddToGroceryModal(this.app, file, {
+				getSettings: this.deps.getSettings,
+				getGroceryItems: this.deps.getGroceryItems,
+				onConfirm: (contributions) =>
+					this.deps.addToGroceryOnly(contributions),
+				removeFromGroceryByKey: (key) =>
+					this.deps.removeFromGroceryByKey(key),
+			}).open();
+		});
+
 		const giDictionary = settings.diabeticMode
 			? parseGiDictionary(settings.giDictionary)
 			: [];
+
+		const groceryItems = this.deps.getGroceryItems();
 
 		for (const group of ingredientGroups) {
 			if (group.heading) {
@@ -872,6 +1289,8 @@ export class RecipeView extends TextFileView {
 				const li = ul.createEl("li", {
 					cls: "mise-recipe-ingredient",
 				});
+
+
 
 				const scaledQty =
 					parsed.quantity === null
@@ -902,6 +1321,27 @@ export class RecipeView extends TextFileView {
 
 				if (settings.diabeticMode && isHighGi(parsed.name, giDictionary)) {
 					this.renderHighGiBadge(li);
+				}
+
+				// Remove from list icon if ingredient is on grocery list
+				const key = ingredientKey(parsed.name, parsed.unit);
+				const groceryItem = groceryItems.find((i) => i.key === key) ?? null;
+				if (groceryItem) {
+					const cartBtn = li.createEl("button", {
+						cls: "mise-recipe-ingredient-cart is-on-list",
+						attr: {
+							type: "button",
+							"aria-label": `Remove from grocery list`,
+							title: `Remove from grocery list`,
+						},
+					});
+					cartBtn.addEventListener("click", () => {
+						void this.deps.removeFromGroceryByKey(key);
+					});
+					const cartIconEl = cartBtn.createSpan({
+						cls: "mise-recipe-ingredient-cart-icon",
+					});
+					setIcon(cartIconEl, "list-x");
 				}
 			}
 		}
@@ -962,6 +1402,8 @@ export class RecipeView extends TextFileView {
 
 const IMAGE_KEYS = [RECIPE_FRONTMATTER.image] as const;
 
+const SOURCE_URL_KEYS = ["source", "url", "link", "website", "recipe_url"] as const;
+
 /**
  * Looks up a string value in a frontmatter object trying several keys
  * case-insensitively. Returns the trimmed string, or null if no key
@@ -1018,7 +1460,7 @@ function readNumericFromKeys(
 }
 
 /**
- * Read a nutrition value, looking at the canonical key plus a few common
+ * Read a nutrition value, looking at the configured key plus a few common
  * aliases ("fats" for fat, "carbohydrates" for carbs, etc.) and also
  * inside a nested `nutrition: { ... }` block.
  */
@@ -1026,7 +1468,7 @@ function readNutritionValue(
 	fm: Record<string, unknown>,
 	field: NutritionField,
 ): number | null {
-	const keys = [RECIPE_FRONTMATTER[field.key], ...field.aliases];
+	const keys = [field.key, ...field.aliases];
 	const flat = readNumericFromKeys(fm, keys);
 	if (flat !== null) return flat;
 	const nested = fm.nutrition;

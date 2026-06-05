@@ -2,6 +2,7 @@ import { App, Modal, TFile } from "obsidian";
 import { formatQuantity } from "../parser/quantity";
 import { MiseFlowSettings } from "../settings";
 import { GroceryContribution } from "../grocery/note-writer";
+import { GroceryItem } from "../types";
 import {
 	type SelectedIngredient,
 	loadRecipeIngredients,
@@ -9,35 +10,21 @@ import {
 	titleCase,
 } from "./modal-ingredient-helpers";
 
-const DAYS = [
-	"Unscheduled",
-	"Monday",
-	"Tuesday",
-	"Wednesday",
-	"Thursday",
-	"Friday",
-	"Saturday",
-	"Sunday",
-];
-
-const MEAL_TYPES = ["Breakfast", "Lunch", "Dinner", "Snack"];
-
-interface AddToMealPlanDeps {
+interface AddToGroceryDeps {
 	getSettings: () => MiseFlowSettings;
-	onConfirm: (
-		day: string | undefined,
-		mealType: string | undefined,
-		contributions: Record<string, GroceryContribution>,
-	) => Promise<void>;
+	getGroceryItems: () => GroceryItem[];
+	onConfirm: (contributions: Record<string, GroceryContribution>) => Promise<void>;
+	removeFromGroceryByKey: (key: string) => Promise<void>;
 }
 
-export class AddToMealPlanModal extends Modal {
+export class AddToGroceryModal extends Modal {
 	private file: TFile;
-	private deps: AddToMealPlanDeps;
+	private deps: AddToGroceryDeps;
 	private selectedKeys = new Set<string>();
+	private initiallyOnList = new Set<string>();
 	private allIngredients: SelectedIngredient[] = [];
 
-	constructor(app: App, file: TFile, deps: AddToMealPlanDeps) {
+	constructor(app: App, file: TFile, deps: AddToGroceryDeps) {
 		super(app);
 		this.file = file;
 		this.deps = deps;
@@ -46,44 +33,30 @@ export class AddToMealPlanModal extends Modal {
 	async onOpen(): Promise<void> {
 		const { contentEl } = this;
 		contentEl.empty();
-		contentEl.addClass("mise-meal-plan-modal");
+		contentEl.addClass("mise-grocery-modal");
 
-		contentEl.createEl("h2", { text: `Add to meal plan` });
+		contentEl.createEl("h2", { text: `Manage grocery list` });
 		contentEl.createEl("p", {
 			cls: "mise-meal-plan-modal-recipe",
 			text: this.file.basename,
 		});
 
-		// --- Day picker ---
-		const dayRow = contentEl.createDiv({ cls: "mise-modal-row" });
-		dayRow.createEl("label", { text: "Day", cls: "mise-modal-label" });
-		const daySelect = dayRow.createEl("select", { cls: "mise-modal-select" });
-		for (const day of DAYS) {
-			const opt = daySelect.createEl("option", { text: day, value: day });
-			if (day === "Unscheduled") opt.selected = true;
-		}
-
-		// --- Meal type ---
-		const typeRow = contentEl.createDiv({ cls: "mise-modal-row" });
-		typeRow.createEl("label", { text: "Meal", cls: "mise-modal-label" });
-		const typeInput = typeRow.createEl("input", {
-			cls: "mise-modal-input",
-			type: "text",
-			placeholder: "Breakfast, Lunch, Dinner, Snack…",
-			attr: { list: "mise-meal-types" },
-		});
-		const datalist = typeRow.createEl("datalist");
-		datalist.id = "mise-meal-types";
-		for (const mt of MEAL_TYPES) {
-			datalist.createEl("option", { value: mt });
-		}
-
 		// --- Ingredient list ---
 		const settings = this.deps.getSettings();
 		await this.loadIngredients(settings);
 
+		// Check which ingredients are already on the grocery list
+		const groceryItems = this.deps.getGroceryItems();
+		const groceryKeys = new Set(groceryItems.map((item) => item.key));
+		for (const ing of this.allIngredients) {
+			if (groceryKeys.has(ing.key)) {
+				this.initiallyOnList.add(ing.key);
+				this.selectedKeys.add(ing.key);
+			}
+		}
+
 		const ingSection = contentEl.createDiv({ cls: "mise-modal-ingredients" });
-		ingSection.createEl("h3", { text: "Ingredients to buy" });
+		ingSection.createEl("h3", { text: "Ingredients" });
 
 		const controls = ingSection.createDiv({ cls: "mise-modal-ingredient-controls" });
 		const selectAll = controls.createEl("button", {
@@ -104,6 +77,7 @@ export class AddToMealPlanModal extends Modal {
 			const li = listEl.createEl("li", { cls: "mise-modal-ingredient-item" });
 			const cb = li.createEl("input", { type: "checkbox" });
 			cb.dataset.key = ing.key;
+			cb.checked = this.selectedKeys.has(ing.key);
 			cb.addEventListener("change", () => {
 				if (cb.checked) this.selectedKeys.add(ing.key);
 				else this.selectedKeys.delete(ing.key);
@@ -149,18 +123,14 @@ export class AddToMealPlanModal extends Modal {
 		cancelBtn.addEventListener("click", () => this.close());
 
 		const confirmBtn = actions.createEl("button", {
-			text: "Add to plan",
+			text: "Save changes",
 			cls: "mise-modal-confirm mod-cta",
 			attr: { type: "button" },
 		});
 		confirmBtn.addEventListener("click", async () => {
-			const day =
-				daySelect.value === "Unscheduled" ? undefined : daySelect.value;
-			const mealType = typeInput.value.trim() || undefined;
-			const contributions = this.buildContributions();
 			confirmBtn.disabled = true;
 			try {
-				await this.deps.onConfirm(day, mealType, contributions);
+				await this.applyChanges();
 			} finally {
 				this.close();
 			}
@@ -179,7 +149,35 @@ export class AddToMealPlanModal extends Modal {
 		);
 	}
 
-	private buildContributions(): Record<string, GroceryContribution> {
-		return buildContributions(this.allIngredients, this.selectedKeys);
+	private async applyChanges(): Promise<void> {
+		// Find items to add (now selected, but weren't initially on list)
+		const toAdd = new Set<string>();
+		for (const key of this.selectedKeys) {
+			if (!this.initiallyOnList.has(key)) {
+				toAdd.add(key);
+			}
+		}
+
+		// Find items to remove (were on list, but now unselected)
+		const toRemove = new Set<string>();
+		for (const key of this.initiallyOnList) {
+			if (!this.selectedKeys.has(key)) {
+				toRemove.add(key);
+			}
+		}
+
+		// Add new items
+		if (toAdd.size > 0) {
+			const contributions = buildContributions(
+				this.allIngredients.filter((ing) => toAdd.has(ing.key)),
+				toAdd,
+			);
+			await this.deps.onConfirm(contributions);
+		}
+
+		// Remove unchecked items
+		for (const key of toRemove) {
+			await this.deps.removeFromGroceryByKey(key);
+		}
 	}
 }
