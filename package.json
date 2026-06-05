@@ -1,6 +1,6 @@
 {
 	"name": "miseflow",
-	"version": "1.0.5",
+	"version": "1.0.6",
 	"description": "Plan meals, generate grocery lists, and view recipe notes as interactive cards.",
 	"main": "main.js",
 	"type": "module",
