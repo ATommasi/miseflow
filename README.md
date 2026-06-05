@@ -1,140 +1,216 @@
-![logo.png]
+<p align="center">
+	<img align="center" width="250" alt="miseflow-final" src="https://github.com/user-attachments/assets/1bd14075-406d-42af-b005-9a245a714811" />
+</p>
 
-> **Early release** — This is the initial public release of MiseFlow. If you run into any bugs or unexpected behaviour, please [open an issue](https://github.com/ATommasi/miseflow/issues).
+> **Early Release**
+> MiseFlow is fresh out of the oven. Expect a few rough edges while the recipe develops. If you find a bug or have an idea, please open an issue.
 
-# MiseFlow
+# MiseFlow 🍳
 
-> *Mise en place* — the culinary practice of preparing everything before you cook.
+> *Mise en place* - the culinary practice of preparing everything before you cook.
 
-MiseFlow is an [Obsidian](https://obsidian.md) plugin that turns your recipe notes into a full meal planning and shopping system. Plan your week, build your grocery list from only the ingredients you actually need, and view your recipes as interactive cards while you cook.
+MiseFlow transforms Obsidian into a complete meal planning, grocery shopping, and recipe management system.
 
----
+Plan your week, generate grocery lists from only the ingredients you actually need, track your cooking history, and view recipes in a clean cooking interface designed for real kitchens.
 
-## Features
+Everything stays in your vault.
 
-### Meal Planning
-<img width="562" height="622" alt="image" src="https://github.com/user-attachments/assets/f6e8f65f-7029-4d74-935b-041968de6c42" />
+Everything stays in Markdown.
 
-- **Meal plan note** — Your meal plan lives in a real vault note (configurable path). The plugin reads and writes it automatically; you can also edit it by hand and the plugin picks up the changes.
-- **Add recipes to your plan** with an optional day (Mon–Sun) and meal type (Breakfast, Lunch, Dinner, Snack). Pick exactly the ingredients you need at add-time — nothing is added blindly.
-- **Ingredient selection** — When adding a recipe, a modal shows the full ingredient list with checkboxes. Nothing is selected by default; tick only what you need to buy.
+No subscriptions. No cloud lock-in. No exporting your data someday.
 
-### Grocery List
-
-- **Note-backed** — Your grocery list is stored as a readable Markdown note (`# Grocery List`, sections per category, `- [ ]` checkboxes). Edit it directly or let the plugin manage it.
-- **Smart merging** — Ingredients from multiple recipes (and one-off items) are merged by name + unit. `1 lb beef` from Bolognese + `1 lb beef` added manually = `2 lb beef`.
-- **Grouping modes** — Switch between *By category*, *By recipe* (split per-recipe quantities), *By source* (Meal Plan vs Manually Added), and *Flat list* at any time.
-- **One-off items** — Add anything not tied to a recipe via *Add item*. One-offs are written to the grocery note and merged correctly with recipe quantities.
-- **Export** — Copy the grocery list as plain text, a Markdown checklist, or grouped by category.
-
-### Shopping Assistant
-<img width="844" height="600" alt="image" src="https://github.com/user-attachments/assets/486f04ac-171e-4aa0-91c2-c169356ef034" />
-
-Open the **Shopping Assistant** panel (ribbon icon or command) to:
-
-- See how many meals are planned this week with a link to open the meal plan note
-- Check off grocery items as you shop — checkbox state is stored in the note (`- [x]`)
-- Reset checks between shopping trips
-- Add one-off items and remove them with a right-click or long-press
-
-### Recipe View
-<img width="830" height="834" alt="image" src="https://github.com/user-attachments/assets/8261ff5a-22e9-4ab7-9289-b901267bd5ac" />
-
-Open any recipe note in the **Recipe View** for a clean cooking experience:
-
-- **Hero image** — Set `image:` frontmatter to a vault file or URL
-- **Portion multiplier** — Scale the recipe up or down; quantities update in the recipe view and in the grocery list
-- **Nutrition panel** — Calories, protein, fat, and carbs from frontmatter. Configure whether your values are per-serving or recipe totals
-- **Timing badges** — `prepTime`, `cookTime` shown as at-a-glance badges
-- **Diet tags** — `diet: vegan` or `diet: [vegan, gluten-free]` displayed as badges
-- **Last made date** — Stamped automatically when you add a recipe to your meal plan
-- **Allergen warning** — Red banner if the recipe's allergens overlap with your personal list
-- **Meat temperature badges** — Safe internal temperature guidance on meat ingredients (toggleable)
-- **High-GI badges** — Optional warning badges on high glycemic index ingredients (configurable dictionary)
-- **Mark as cooked** — Record a cook with today's date (or a custom date) from the recipe view
-- **Add to meal plan** — Add the recipe to your plan directly from the recipe view
-
-### Recipe Library
-
-- **Meal suggester** — Surfaces recipes you haven't cooked recently, with optional filters for favourites and allergens
-- **Cooking stats** — Leaderboard of your most-cooked recipes
-- **Favourites** — Star a recipe with one click; `favorite: true` is written to frontmatter
+Just recipes, notes, and food.
 
 ---
 
-## Frontmatter Reference
+## Why MiseFlow?
+
+Most recipe apps want to own your recipes.
+
+MiseFlow doesn't.
+
+Your meal plan is a note.
+
+Your grocery list is a note.
+
+Your recipes are notes.
+
+The plugin simply connects everything together and handles the tedious parts for you.
+
+If you're already storing recipes in Obsidian, MiseFlow helps turn them into a complete cooking workflow.
+
+---
+
+# 🗓️ Plan Your Meals
+
+Build your weekly meal plan directly from your recipe collection.
+
+<img width="562" alt="Meal Planning" src="https://github.com/user-attachments/assets/f6e8f65f-7029-4d74-935b-041968de6c42" />
+
+### Features
+
+* Schedule meals by day of the week
+* Organize by Breakfast, Lunch, Dinner, or Snack
+* Choose exactly which ingredients you need
+* Automatically track recipes you've cooked
+* Edit your meal plan manually or through the plugin
+* Store everything in a normal Markdown note
+
+No hidden database. No proprietary format.
+
+---
+
+# 🛒 Build Smarter Grocery Lists
+
+Turn your meal plan into a grocery list in seconds.
+
+### Grocery List Features
+
+* Automatically combine duplicate ingredients
+* Merge quantities across recipes
+* Add one-off shopping items
+* Organize by category, recipe, source, or flat list
+* Export as plain text or Markdown
+* Edit directly inside the grocery list note
+
+For example:
+
+* 1 lb ground beef
+* 1 lb ground beef
+
+Becomes:
+
+* 2 lb ground beef
+
+Because nobody needs duplicate grocery list clutter.
+
+---
+
+# 🛍️ Shop Without the Chaos
+
+The Shopping Assistant keeps your grocery trip organized.
+
+<img width="844" alt="Shopping Assistant" src="https://github.com/user-attachments/assets/486f04ac-171e-4aa0-91c2-c169356ef034" />
+
+### Shopping Assistant Features
+
+* Check items off while shopping
+* Automatically sync checkbox state back to your note
+* Add one-off items on the fly
+* Reset completed lists for your next trip
+* Jump directly to your meal plan
+
+Everything remains synced with your Markdown grocery list.
+
+---
+
+# 👨‍🍳 Cook Without Scrolling Through Notes
+
+When it's time to cook, open a recipe in the dedicated Recipe View.
+
+<img width="830" alt="Recipe View" src="https://github.com/user-attachments/assets/8261ff5a-22e9-4ab7-9289-b901267bd5ac" />
+
+### Recipe View Features
+
+* Beautiful hero images
+* Ingredient lists optimized for cooking
+* Portion scaling and quantity adjustment
+* Nutrition information
+* Prep and cook time badges
+* Diet labels
+* Allergen warnings
+* Safe meat temperature guidance
+* High-GI ingredient warnings
+* One-click meal planning
+* Cooking history tracking
+
+Designed to be readable from across the kitchen instead of forcing you to bounce around a giant note.
+
+---
+
+# 📚 Build Your Personal Cookbook
+
+MiseFlow helps you maintain a living recipe collection.
+
+### Library Features
+
+* Favorite recipes
+* Most-cooked statistics
+* Last-made tracking
+* Meal suggestions
+* Recently neglected recipes
+* Allergen-aware recommendations
+
+Over time your vault becomes more than a recipe folder. It becomes a cooking history.
+
+---
+
+# ✨ Everything Lives In Markdown
+
+MiseFlow uses regular Obsidian notes.
+
+That means:
+
+* Your data remains future-proof
+* Your recipes are searchable
+* Your recipes work with Dataview
+* Your recipes work with backlinks
+* Your recipes work with your existing vault structure
+* You can always access your data without the plugin
+
+Your recipes belong to you.
+
+---
+
+# 🚀 Who Is MiseFlow For?
+
+MiseFlow is a great fit if:
+
+* You already keep recipes in Obsidian
+* You meal plan regularly
+* You make grocery lists every week
+* You want ownership of your recipe data
+* You prefer Markdown over cloud services
+
+MiseFlow may not be the right fit if:
+
+* You want a hosted recipe service
+* You don't use Obsidian
+* You prefer fully managed meal-planning platforms
+
+---
+
+# Installation
+
+1. Open Obsidian Settings
+2. Navigate to Community Plugins
+3. Browse for "MiseFlow"
+4. Install and enable the plugin
+5. Configure your recipe folders and note locations
+
+You're ready to cook.
+
+---
+
+# Frontmatter Reference
 
 | Property | Description |
 |----------|-------------|
 | `type` | Set to your configured recipe type value (default `recipe`) to enable recipe view auto-open |
-| `image` | Hero image — vault file path, wikilink, or URL |
+| `image` | Hero image - vault file path, wikilink, or URL |
 | `multiplier` | Portion scale factor (default `1`) |
 | `servings` | Number of servings |
 | `calories` / `protein` / `fat` / `carbs` | Nutrition values |
 | `prepTime` / `cookTime` / `totalTime` | Times in minutes |
-| `diet` | Diet tags — string or list (e.g. `vegan`, `[vegan, gluten-free]`) |
-| `allergens` | Allergen list — CSV text or YAML list (property name configurable in settings) |
+| `diet` | Diet tags - string or list (e.g. `vegan`, `[vegan, gluten-free]`) |
+| `allergens` | Allergen list - CSV text or YAML list (property name configurable in settings) |
 | `favorite` | `true` to mark as favourite |
 | `lastMade` | Auto-stamped date (YYYY-MM-DD) when added to meal plan |
 | `cookedCount` | Auto-incremented cook count |
-
 ---
 
-## Settings Overview
 
-| Section | Key settings |
-|---------|-------------|
-| **Notes & Storage** | Meal plan note path, grocery list note path |
-| **Recipe Library** | Recipe folders (vault folder autocomplete), recipe type value, ingredients/instructions heading |
-| **Shopping** | Default grouping, auto-collapse completed sections |
-| **Categories** | Category source, alphabetical vs custom order, category overrides |
-| **Cooking & Tracking** | Mark as cooked button, last made tracking, cooked count |
-| **Nutrition** | Display mode (per serving / total), source mode |
-| **Meal Suggestions** | Day window, suggestion count |
-| **Health & Safety** | Allergens property name, my allergens list, meat temp warnings, high-GI warnings |
-
----
-
-## Meal Plan Note Format
-
-```markdown
-# Meal Plan
-
-## Unscheduled
-- [ ] [[Chicken Soup]]
-
-## Monday
-- [ ] [[Oatmeal]] — Breakfast
-- [ ] [[Bolognese]] — Dinner
-
-## Wednesday
-- [ ] [[Chicken Tikka Masala]] — Dinner
-```
-
-Items can be checked off (`- [x]`) to mark them as cooked. Add recipes manually to any day section and the plugin will sync them into its state.
-
----
-
-## Grocery List Note Format
-
-```markdown
-# Grocery List
-
-## Meat
-- [ ] 2 lb ground beef
-
-## Canned
-- [ ] 1 can crushed tomatoes
-
-## Produce
-- [ ] 1 onion
-- [ ] 3 cloves garlic
-```
-
-Check items off while shopping. The Shopping Assistant panel mirrors the note's checked state in real time.
-
----
-
-## Credits
+# Credits
 
 MiseFlow is a fork of [Pantry](https://github.com/Ekrizdis367/obsidian-pantry) by TheEkrizdis, significantly extended and rewritten by [Adam Tommasi](https://github.com/ATommasi).
+
