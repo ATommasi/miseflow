@@ -293,16 +293,18 @@ class TimerWidget {
 
 			const rect = this.el.getBoundingClientRect();
 			if (this.el.parentElement !== document.body) {
-				this.el.style.position = "fixed";
-				this.el.style.left = `${rect.left}px`;
-				this.el.style.top = `${rect.top}px`;
-				this.el.style.bottom = "";
-				this.el.style.right = "";
+				this.el.setCssProps({
+					position: "fixed",
+					left: `${rect.left}px`,
+					top: `${rect.top}px`,
+					bottom: "",
+					right: "",
+				});
 				document.body.appendChild(this.el);
 				maybeRemoveTray();
 			}
-			startLeft = parseFloat(this.el.style.left);
-			startTop = parseFloat(this.el.style.top);
+			startLeft = rect.left;
+			startTop = rect.top;
 			startClientX = e.clientX;
 			startClientY = e.clientY;
 			dragging = true;
@@ -314,8 +316,10 @@ class TimerWidget {
 		const onMove = (e: PointerEvent) => {
 			if (!dragging) return;
 			if (activePointerId !== null && e.pointerId !== activePointerId) return;
-			this.el.style.left = `${startLeft + (e.clientX - startClientX)}px`;
-			this.el.style.top = `${startTop + (e.clientY - startClientY)}px`;
+			this.el.setCssProps({
+				left: `${startLeft + (e.clientX - startClientX)}px`,
+				top: `${startTop + (e.clientY - startClientY)}px`,
+			});
 		};
 
 		const onUp = (e: PointerEvent) => {
