@@ -7,7 +7,7 @@ import {
 import { formatQuantity } from "../parser/quantity";
 import { MiseFlowSettings } from "../settings";
 import { GroceryItem, MealPlanEntry, OneOffItem } from "../types";
-import { buildGroceryList, groupForDisplay } from "./aggregator";
+import { groupForDisplay } from "./aggregator";
 import {
 	addToGroceryNote,
 	GroceryContribution,

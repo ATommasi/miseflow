@@ -76,10 +76,10 @@ const activeWidgets = new Set<TimerWidget>();
 let tray: HTMLElement | null = null;
 
 function getTray(): HTMLElement {
-	if (!tray || !document.body.contains(tray)) {
-		tray = document.createElement("div");
+	if (!tray || !activeDocument.body.contains(tray)) {
+		tray = activeDocument.createElement("div");
 		tray.className = "mise-timer-tray";
-		document.body.appendChild(tray);
+		activeDocument.body.appendChild(tray);
 	}
 	return tray;
 }
@@ -141,7 +141,7 @@ class TimerWidget {
 	}
 
 	private build(): HTMLElement {
-		const el = document.createElement("div");
+		const el = activeDocument.createElement("div");
 		el.className = "mise-timer-widget";
 		if (this.isCompact) el.addClass("is-compact");
 
@@ -232,7 +232,7 @@ class TimerWidget {
 		const wasRunning = this.running;
 		if (wasRunning) this.pause();
 
-		const input = document.createElement("input");
+		const input = activeDocument.createElement("input");
 		input.type = "text";
 		input.className = "mise-timer-display mise-timer-display-edit";
 		input.value = formatTime(this.remaining);
@@ -292,7 +292,7 @@ class TimerWidget {
 			e.preventDefault();
 
 			const rect = this.el.getBoundingClientRect();
-			if (this.el.parentElement !== document.body) {
+			if (this.el.parentElement !== activeDocument.body) {
 				this.el.setCssProps({
 					position: "fixed",
 					left: `${rect.left}px`,
@@ -300,7 +300,7 @@ class TimerWidget {
 					bottom: "",
 					right: "",
 				});
-				document.body.appendChild(this.el);
+				activeDocument.body.appendChild(this.el);
 				maybeRemoveTray();
 			}
 			startLeft = rect.left;
@@ -438,7 +438,7 @@ export function processTimerButtons(
 	container: HTMLElement,
 	options: TimerOptions,
 ): void {
-	const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT);
+	const walker = activeDocument.createTreeWalker(container, NodeFilter.SHOW_TEXT);
 	const textNodes: Text[] = [];
 	let node: Node | null;
 	while ((node = walker.nextNode())) textNodes.push(node as Text);
@@ -452,23 +452,23 @@ export function processTimerButtons(
 		const parent = textNode.parentNode;
 		if (!parent) continue;
 
-		const fragment = document.createDocumentFragment();
+		const fragment = activeDocument.createDocumentFragment();
 		let cursor = 0;
 		let match: RegExpExecArray | null;
 
 		while ((match = DURATION_RE.exec(text)) !== null) {
 			if (match.index > cursor)
 				fragment.appendChild(
-					document.createTextNode(text.slice(cursor, match.index)),
+					activeDocument.createTextNode(text.slice(cursor, match.index)),
 				);
 
 			const seconds = matchToSeconds(match, options.rangeDefault);
 			const label = match[0];
-			const btn = document.createElement("button");
+			const btn = activeDocument.createElement("button");
 			btn.className = "mise-timer-btn";
 			btn.type = "button";
 			setIcon(btn, "timer");
-			btn.append(document.createTextNode(" " + label));
+			btn.append(activeDocument.createTextNode(" " + label));
 			btn.dataset.seconds = String(seconds);
 			btn.setAttribute("aria-label", `Start timer: ${label}`);
 			btn.addEventListener("click", () => {
@@ -480,7 +480,7 @@ export function processTimerButtons(
 		}
 
 		if (cursor < text.length)
-			fragment.appendChild(document.createTextNode(text.slice(cursor)));
+			fragment.appendChild(activeDocument.createTextNode(text.slice(cursor)));
 
 		parent.replaceChild(fragment, textNode);
 	}

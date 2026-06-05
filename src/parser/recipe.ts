@@ -1,6 +1,5 @@
 import { App, CachedMetadata, TFile } from "obsidian";
 import { MiseFlowSettings, RECIPE_FRONTMATTER } from "../settings";
-import { listMarkdownFilesInRecipeFolders } from "../utils/vault-files";
 import { IngredientGroup, InstructionGroup, RecipeIngredient } from "../types";
 import { hasIgnoreTag, parseIngredientLine } from "./ingredient";
 

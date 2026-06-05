@@ -153,17 +153,19 @@ export class AddToMealPlanModal extends Modal {
 			cls: "mise-modal-confirm mod-cta",
 			attr: { type: "button" },
 		});
-		confirmBtn.addEventListener("click", async () => {
+		confirmBtn.addEventListener("click", () => {
 			const day =
 				daySelect.value === "Unscheduled" ? undefined : daySelect.value;
 			const mealType = typeInput.value.trim() || undefined;
 			const contributions = this.buildContributions();
 			confirmBtn.disabled = true;
-			try {
-				await this.deps.onConfirm(day, mealType, contributions);
-			} finally {
-				this.close();
-			}
+			void (async () => {
+				try {
+					await this.deps.onConfirm(day, mealType, contributions);
+				} finally {
+					this.close();
+				}
+			})();
 		});
 	}
 

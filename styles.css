@@ -653,13 +653,13 @@
 	height: 36px;
 }
 
-.mise-recipe-stepper-button {
+.mise-recipe-stepper .mise-recipe-stepper-button {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
 	width: 28px;
 	height: 100%;
-	border-radius: 0 !important;
+	border-radius: 0;
 	background-color: transparent;
 	border: none;
 	box-shadow: none;
@@ -672,14 +672,14 @@
 	padding: 0;
 }
 
-.mise-recipe-stepper-button:hover,
-.mise-recipe-stepper-button:focus-visible {
+.mise-recipe-stepper .mise-recipe-stepper-button:hover,
+.mise-recipe-stepper .mise-recipe-stepper-button:focus-visible {
 	background-color: var(--background-modifier-hover);
 	color: var(--text-normal);
 	box-shadow: none;
 }
 
-.mise-recipe-stepper-input {
+.mise-recipe-stepper .mise-recipe-stepper-input {
 	width: 64px;
 	height: 100%;
 	min-height: 0;
@@ -696,33 +696,33 @@
 	border-right: 1px solid var(--background-modifier-border);
 	padding: 0;
 	box-shadow: none;
-	border-radius: 0 !important;
+	border-radius: 0;
 	-webkit-appearance: none;
 	appearance: none;
 	color: var(--text-normal);
 	vertical-align: middle;
 }
 
-.mise-recipe-stepper-input:focus,
-.mise-recipe-stepper-input:focus-visible {
+.mise-recipe-stepper .mise-recipe-stepper-input:focus,
+.mise-recipe-stepper .mise-recipe-stepper-input:focus-visible {
 	outline: none;
 	box-shadow: none;
 	background-color: var(--background-modifier-hover);
 }
 
 /* Hide native number input spin buttons inside the stepper */
-.mise-recipe-stepper-input::-webkit-inner-spin-button,
-.mise-recipe-stepper-input::-webkit-outer-spin-button {
+.mise-recipe-stepper .mise-recipe-stepper-input::-webkit-inner-spin-button,
+.mise-recipe-stepper .mise-recipe-stepper-input::-webkit-outer-spin-button {
 	-webkit-appearance: none;
 	margin: 0;
 }
 
 /* Mobile browsers add internal padding that shifts text down — override it */
-.is-mobile .mise-recipe-stepper-input {
-	padding: 0 !important;
-	line-height: 1 !important;
-	height: 100% !important;
-	display: block !important;
+.is-mobile .mise-recipe-stepper .mise-recipe-stepper-input {
+	padding: 0;
+	line-height: 1;
+	height: 100%;
+	display: block;
 }
 
 .mise-recipe-meta-value {
@@ -1955,14 +1955,14 @@
  * Step timers
  * --------------------------------------------------------------------*/
 
-.mise-timer-btn {
+.markdown-rendered .mise-timer-btn {
 	display: inline-flex;
 	align-items: center;
 	padding: 0 2px 4px 2px;
-	background-color: transparent !important;
+	background-color: transparent;
 	/* border: 1px solid color-mix(in srgb, var(--interactive-accent) 35%, transparent) !important; */
-	border: none !important;
-	color: var(--link-color, var(--text-accent)) !important;
+	border: none;
+	color: var(--link-color, var(--text-accent));
 	font-size: inherit;
 	font-weight: var(--font-medium);
 	height: max-content;
@@ -1970,22 +1970,17 @@
 	vertical-align: middle;
 	white-space: nowrap;
 	cursor: pointer;
-	box-shadow: none !important;
+	box-shadow: none;
 	transition: background-color 80ms ease-in-out, border-color 80ms ease-in-out;
 }
 
-.mise-timer-btn:hover,
-.mise-timer-btn:focus-visible {
-	background-color: color-mix(in srgb, var(--interactive-accent) 22%, var(--background-secondary)) !important;
-	border-color: var(--interactive-accent) !important;
-}
-
-.mise-timer-btn.is-active {
-	/* background-color: color-mix(in srgb, var(--interactive-accent) 25%, var(--background-secondary)); */
+.markdown-rendered .mise-timer-btn:hover,
+.markdown-rendered .mise-timer-btn:focus-visible {
+	background-color: color-mix(in srgb, var(--interactive-accent) 22%, var(--background-secondary));
+	border-color: var(--interactive-accent);
 }
 
 .mise-timer-tray {
-	position: fixed;
 	bottom: var(--size-4-4);
 	right: var(--size-4-4);
 	z-index: 100;
@@ -2025,13 +2020,13 @@
 	cursor: grabbing;
 }
 
-.mise-timer-recipe-link {
+.mise-timer-widget .mise-timer-recipe-link {
 	font-size: var(--font-ui-smaller);
-	color: var(--text-accent) !important;
-	background: none !important;
-	border: none !important;
+	color: var(--text-accent);
+	background: none;
+	border: none;
 	padding: 0;
-	box-shadow: none !important;
+	box-shadow: none;
 	cursor: pointer;
 	max-width: 160px;
 	overflow: hidden;
@@ -2040,7 +2035,7 @@
 	text-decoration: none;
 }
 
-.mise-timer-recipe-link:hover {
+.mise-timer-widget .mise-timer-recipe-link:hover {
 	text-decoration: underline;
 }
 

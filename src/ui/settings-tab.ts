@@ -65,6 +65,10 @@ export class MiseFlowSettingsTab extends PluginSettingTab {
 	}
 
 	display(): void {
+		this.renderSettings();
+	}
+
+	private renderSettings(): void {
 		const { containerEl } = this;
 		containerEl.empty();
 
@@ -401,7 +405,7 @@ export class MiseFlowSettingsTab extends PluginSettingTab {
 						this.host.settings.categoryAutoSort = value;
 						await this.host.saveSettings();
 						this.host.manager.trigger("changed");
-						this.display();
+						this.renderSettings();
 					}),
 			);
 
@@ -453,7 +457,7 @@ export class MiseFlowSettingsTab extends PluginSettingTab {
 					this.host.settings.categoryOrder = [...DEFAULT_CATEGORY_ORDER];
 					this.host.settings.categoryOverrides = [];
 					await this.host.saveSettings();
-					this.display();
+					this.renderSettings();
 					this.host.manager.trigger("changed");
 				}),
 			);
@@ -500,7 +504,7 @@ export class MiseFlowSettingsTab extends PluginSettingTab {
 					.onChange(async (value) => {
 						this.host.settings.trackLastMade = value;
 						await this.host.saveSettings();
-						this.display();
+						this.renderSettings();
 					}),
 			);
 
@@ -734,7 +738,7 @@ export class MiseFlowSettingsTab extends PluginSettingTab {
 					.onChange(async (value) => {
 						this.host.settings.diabeticMode = value;
 						await this.host.saveSettings();
-						this.display();
+						this.renderSettings();
 					}),
 			);
 
@@ -786,9 +790,9 @@ export class MiseFlowSettingsTab extends PluginSettingTab {
 					new FolderSuggest(this.app, input);
 				}
 
-				input.addEventListener("change", async () => {
+				input.addEventListener("change", () => {
 					current[i] = input.value.trim();
-					await onChange(current.filter(Boolean));
+					void onChange(current.filter(Boolean));
 				});
 
 				const removeBtn = row.createEl("button", {
@@ -796,9 +800,9 @@ export class MiseFlowSettingsTab extends PluginSettingTab {
 					attr: { type: "button", "aria-label": "Remove" },
 				});
 				removeBtn.setText("×");
-				removeBtn.addEventListener("click", async () => {
+				removeBtn.addEventListener("click", () => {
 					current.splice(i, 1);
-					await onChange([...current]);
+					void onChange([...current]);
 					renderRows();
 				});
 			}
@@ -895,9 +899,9 @@ export class MiseFlowSettingsTab extends PluginSettingTab {
 					attr: { type: "button", "aria-label": "Remove override" },
 				});
 				removeBtn.setText("×");
-				removeBtn.addEventListener("click", async () => {
+				removeBtn.addEventListener("click", () => {
 					current.splice(i, 1);
-					await onChange([...current]);
+					void onChange([...current]);
 					renderRows();
 				});
 			}
@@ -955,7 +959,7 @@ export class MiseFlowSettingsTab extends PluginSettingTab {
 				btn.setButtonText("Reset").onClick(async () => {
 					this.host.settings.giDictionary = DEFAULT_GI_DICTIONARY;
 					await this.host.saveSettings();
-					this.display();
+					this.renderSettings();
 				}),
 			);
 	}

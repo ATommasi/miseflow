@@ -127,13 +127,15 @@ export class AddToGroceryModal extends Modal {
 			cls: "mise-modal-confirm mod-cta",
 			attr: { type: "button" },
 		});
-		confirmBtn.addEventListener("click", async () => {
+		confirmBtn.addEventListener("click", () => {
 			confirmBtn.disabled = true;
-			try {
-				await this.applyChanges();
-			} finally {
-				this.close();
-			}
+			void (async () => {
+				try {
+					await this.applyChanges();
+				} finally {
+					this.close();
+				}
+			})();
 		});
 	}
 
