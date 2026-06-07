@@ -18,6 +18,7 @@ import { toTitleCase } from "../utils/text";
 import { AddOneOffModal } from "./add-item-modal";
 import { ConfirmModal } from "./confirm-modal";
 import { ExportListModal } from "./export-modal";
+import { resolveNotePath } from "../utils/paths";
 
 export const VIEW_TYPE_GROCERY_LIST = "mise-grocery-list";
 
@@ -295,7 +296,7 @@ export class GroceryListView extends ItemView {
 		});
 		planLink.addEventListener("click", (evt) => {
 			evt.preventDefault();
-			void this.openNote(settings.mealPlanNotePath || "Meal Plan.md", "# Meal Plan\n");
+			void this.openNote(resolveNotePath(settings.mealPlanNotePath || "Meal Plan.md"), "# Meal Plan\n");
 		});
 
 		// Grocery summary row.
@@ -313,7 +314,7 @@ export class GroceryListView extends ItemView {
 			});
 			groceryLink.addEventListener("click", (evt) => {
 				evt.preventDefault();
-				void this.openNote(settings.groceryListNotePath || "Grocery List.md", "# Grocery List\n");
+				void this.openNote(resolveNotePath(settings.groceryListNotePath || "Grocery List.md"), "# Grocery List\n");
 			});
 		}
 	}

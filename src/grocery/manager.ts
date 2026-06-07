@@ -19,6 +19,7 @@ import {
 	resetGroceryNoteChecks,
 	toggleGroceryNoteItemChecked,
 } from "./note-writer";
+import { resolveNotePath } from "../utils/paths";
 
 export interface SaveSink {
 	readonly settings: MiseFlowSettings;
@@ -159,7 +160,7 @@ export class GroceryListManager extends Events {
 	 * know what ingredients the user wants for manually-added entries).
 	 */
 	async syncFromMealPlanNote(): Promise<void> {
-		const path = this.sink.settings.mealPlanNotePath.trim() || "Meal Plan.md";
+		const path = resolveNotePath(this.sink.settings.mealPlanNotePath.trim() || "Meal Plan.md");
 		const file = this.app.vault.getAbstractFileByPath(path);
 		if (!(file instanceof TFile)) return;
 
@@ -482,8 +483,8 @@ export class GroceryListManager extends Events {
 
 		// Overwrite notes with empty content.
 		const { mealPlanNotePath, groceryListNotePath } = this.sink.settings;
-		await writeEmptyNote(this.app, mealPlanNotePath || "Meal Plan.md", "# Meal Plan\n");
-		await writeEmptyNote(this.app, groceryListNotePath || "Grocery List.md", "# Grocery List\n");
+		await writeEmptyNote(this.app, resolveNotePath(mealPlanNotePath || "Meal Plan.md"), "# Meal Plan\n");
+		await writeEmptyNote(this.app, resolveNotePath(groceryListNotePath || "Grocery List.md"), "# Grocery List\n");
 
 		this.items = [];
 		this.trigger("changed");

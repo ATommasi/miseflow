@@ -96,7 +96,9 @@ export class MiseFlowSettingsTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName("Meal plan note")
 			.setDesc(
-				"Vault-relative path of the note where your meal plan is stored. Both the plugin and you can edit it freely.",
+				"Vault-relative path of the note where your meal plan is stored. " +
+				"Supports moment.js tokens inside {}: {YYYY-MM-DD}, {MMMM}, {dddd}, etc. " +
+				'Example: "Meal Plans/MealPlan-{YYYY-MM-DD}.md".',
 			)
 			.addText((text) =>
 				text
@@ -112,7 +114,9 @@ export class MiseFlowSettingsTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName("Grocery list note")
 			.setDesc(
-				"Vault-relative path of the note where your grocery list is stored. Edited by the plugin and by you.",
+				"Vault-relative path of the note where your grocery list is stored. " +
+				"Supports moment.js tokens inside {}: {YYYY-MM-DD}, {MMMM}, {dddd}, etc. " +
+				'Example: "Shopping/Groceries-{YYYY-[W]WW}.md" for weekly lists.',
 			)
 			.addText((text) =>
 				text

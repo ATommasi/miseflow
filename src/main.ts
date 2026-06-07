@@ -22,6 +22,7 @@ import {
 	frontmatterTypeMatches,
 	normalizeRecipeTypeToken,
 } from "./utils/vault-files";
+import { resolveNotePath } from "./utils/paths";
 
 export default class MiseFlowPlugin extends Plugin {
 	settings!: MiseFlowSettings;
@@ -66,7 +67,7 @@ export default class MiseFlowPlugin extends Plugin {
 					onGroceryChanged: (cb) => this.manager.on("changed", cb),
 					navigateToGroceryCategory: async (category) => {
 						const path =
-							this.settings.groceryListNotePath || "Grocery List.md";
+							resolveNotePath(this.settings.groceryListNotePath || "Grocery List.md");
 						const file = await getOrCreateNote(
 							this.app,
 							path,
@@ -88,7 +89,7 @@ export default class MiseFlowPlugin extends Plugin {
 		});
 
 		this.addRibbonIcon("square-kanban", "Open meal plan", () => {
-			const path = this.settings.mealPlanNotePath || "Meal Plan.md";
+			const path = resolveNotePath(this.settings.mealPlanNotePath || "Meal Plan.md");
 			void getOrCreateNote(this.app, path, "# Meal Plan\n").then((file) => {
 				void this.app.workspace.getLeaf(false).openFile(file);
 			});
@@ -141,8 +142,8 @@ export default class MiseFlowPlugin extends Plugin {
 
 		this.registerEvent(
 			this.app.vault.on("modify", (file) => {
-				if (file.path === this.settings.mealPlanNotePath) syncMealPlan();
-				else if (file.path === this.settings.groceryListNotePath) syncGrocery();
+				if (file.path === resolveNotePath(this.settings.mealPlanNotePath)) syncMealPlan();
+				else if (file.path === resolveNotePath(this.settings.groceryListNotePath)) syncGrocery();
 			}),
 		);
 

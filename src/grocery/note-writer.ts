@@ -4,6 +4,7 @@ import { ingredientKey, normaliseName, parseIngredientLine } from "../parser/ing
 import { formatQuantity } from "../parser/quantity";
 import { MiseFlowSettings } from "../settings";
 import { MealPlanEntry } from "../types";
+import { resolveNotePath } from "../utils/paths";
 
 // ---------------------------------------------------------------------------
 // Day ordering
@@ -173,7 +174,7 @@ export async function writeMealPlanNote(
 	entries: MealPlanEntry[],
 	settings: MiseFlowSettings,
 ): Promise<void> {
-	const path = settings.mealPlanNotePath.trim() || "Meal Plan.md";
+	const path = resolveNotePath(settings.mealPlanNotePath.trim() || "Meal Plan.md");
 
 	// Build a lookup of recipeName → entry for the new set.
 	const entryByName = new Map<string, MealPlanEntry>();
@@ -246,7 +247,7 @@ export async function insertMealPlanEntry(
 	entry: MealPlanEntry,
 	settings: MiseFlowSettings,
 ): Promise<void> {
-	const path = settings.mealPlanNotePath.trim() || "Meal Plan.md";
+	const path = resolveNotePath(settings.mealPlanNotePath.trim() || "Meal Plan.md");
 	const file = app.vault.getAbstractFileByPath(entry.recipePath);
 	const recipeName = file instanceof TFile ? file.basename : entry.recipePath;
 
@@ -263,7 +264,7 @@ export async function removeMealPlanEntry(
 	recipePath: string,
 	settings: MiseFlowSettings,
 ): Promise<void> {
-	const path = settings.mealPlanNotePath.trim() || "Meal Plan.md";
+	const path = resolveNotePath(settings.mealPlanNotePath.trim() || "Meal Plan.md");
 	const file = app.vault.getAbstractFileByPath(recipePath);
 	const recipeName = (file instanceof TFile ? file.basename : recipePath).toLowerCase();
 
@@ -480,7 +481,7 @@ export async function addToGroceryNote(
 	settings: MiseFlowSettings,
 ): Promise<void> {
 	if (Object.keys(contributions).length === 0) return;
-	const path = settings.groceryListNotePath.trim() || "Grocery List.md";
+	const path = resolveNotePath(settings.groceryListNotePath.trim() || "Grocery List.md");
 	const existing = await readNoteOrEmpty(app, path);
 	const updated = mergeIntoGroceryText(existing || "# Grocery List\n\n", contributions, settings);
 	await writeNote(app, path, updated);
@@ -495,7 +496,7 @@ export async function removeFromGroceryNote(
 	settings: MiseFlowSettings,
 ): Promise<void> {
 	if (Object.keys(contributions).length === 0) return;
-	const path = settings.groceryListNotePath.trim() || "Grocery List.md";
+	const path = resolveNotePath(settings.groceryListNotePath.trim() || "Grocery List.md");
 	const existing = await readNoteOrEmpty(app, path);
 	if (!existing) return;
 	const updated = removeFromGroceryText(existing, contributions, settings);
@@ -510,7 +511,7 @@ export async function readGroceryNoteItems(
 	app: App,
 	settings: MiseFlowSettings,
 ): Promise<Map<string, { name: string; unit: string; quantity: number | null; checked: boolean; category: string }>> {
-	const path = settings.groceryListNotePath.trim() || "Grocery List.md";
+	const path = resolveNotePath(settings.groceryListNotePath.trim() || "Grocery List.md");
 	const text = await readNoteOrEmpty(app, path);
 	if (!text) return new Map();
 
@@ -541,7 +542,7 @@ export async function toggleGroceryNoteItemChecked(
 	checked: boolean,
 	settings: MiseFlowSettings,
 ): Promise<void> {
-	const path = settings.groceryListNotePath.trim() || "Grocery List.md";
+	const path = resolveNotePath(settings.groceryListNotePath.trim() || "Grocery List.md");
 	const text = await readNoteOrEmpty(app, path);
 	if (!text) return;
 
@@ -568,7 +569,7 @@ export async function resetGroceryNoteChecks(
 	app: App,
 	settings: MiseFlowSettings,
 ): Promise<void> {
-	const path = settings.groceryListNotePath.trim() || "Grocery List.md";
+	const path = resolveNotePath(settings.groceryListNotePath.trim() || "Grocery List.md");
 	const text = await readNoteOrEmpty(app, path);
 	if (!text) return;
 
