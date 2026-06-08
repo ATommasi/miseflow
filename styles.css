@@ -1,3 +1,63 @@
+/* @settings
+
+name: MiseFlow
+id: miseflow
+settings:
+  - id: recipe-view
+    title: Recipe view
+    type: heading
+    level: 2
+    collapsed: false
+  - id: mise-recipe-view-width
+    title: Max width
+    description: Maximum width of the recipe view panel.
+    type: variable-number-slider
+    default: 900
+    min: 500
+    max: 1400
+    step: 50
+    format: px
+  - id: mise-hero-aspect-ratio
+    title: Hero image aspect ratio
+    type: variable-select
+    default: "4 / 3"
+    options:
+      - label: "Square (1:1)"
+        value: "1 / 1"
+      - label: "Standard (4:3)"
+        value: "4 / 3"
+      - label: "Widescreen (16:9)"
+        value: "16 / 9"
+      - label: "Cinematic (2:1)"
+        value: "2 / 1"
+  - id: mise-hide-hero
+    title: Hide hero image
+    description: Hide the recipe hero image in the recipe view.
+    type: class-toggle
+    default: false
+  - id: mise-compact-ingredients
+    title: Compact ingredients
+    description: Reduce spacing between ingredient rows.
+    type: class-toggle
+    default: false
+  - id: shopping-assistant
+    title: Shopping assistant
+    type: heading
+    level: 2
+    collapsed: false
+  - id: mise-compact-list
+    title: Compact grocery list
+    description: Tighter row height in the grocery list.
+    type: class-toggle
+    default: false
+  - id: mise-compact-recipes
+    title: Compact meal plan panel
+    description: Tighter rows in the recipe sidebar.
+    type: class-toggle
+    default: false
+
+*/
+
 .mise-view {
 	padding: var(--size-4-3);
 	padding-bottom: calc(var(--size-4-12) + var(--safe-area-inset-bottom, 0px));
@@ -288,7 +348,7 @@
 
 .mise-recipe-view {
 	padding: var(--size-4-3);
-	max-width: 900px;
+	max-width: var(--mise-recipe-view-width, 900px);
 	margin: 0 auto;
 	display: flex;
 	flex-direction: column;
@@ -510,7 +570,7 @@
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	aspect-ratio: 4 / 3;
+	aspect-ratio: var(--mise-hero-aspect-ratio, 4 / 3);
 	overflow: hidden;
 	background: var(--background-secondary);
 	border: 1px solid var(--background-modifier-border);
@@ -1342,7 +1402,7 @@
 
 .mise-recipe-mobile-hero .mise-recipe-image-card {
 	/* let image fill the left column naturally */
-	aspect-ratio: 4 / 3;
+	aspect-ratio: var(--mise-hero-aspect-ratio, 4 / 3);
 	min-width: 0;
 	border-radius: var(--radius-l);
 }
@@ -2195,4 +2255,24 @@
 .mise-timer-play {
 	background-color: var(--color-green, #1a5522);
 	color: var(--color-base-00, #00000);
+}
+
+/* ── Style Settings class-toggle overrides ─────────────────────────────── */
+
+body.mise-hide-hero .mise-recipe-image-card { display: none; }
+
+body.mise-compact-ingredients .mise-recipe-ingredient {
+	padding-top: 2px;
+	padding-bottom: 2px;
+}
+
+body.mise-compact-list .mise-item {
+	padding-top: 2px;
+	padding-bottom: 2px;
+	min-height: unset;
+}
+
+body.mise-compact-recipes .mise-recipe {
+	padding-top: 4px;
+	padding-bottom: 4px;
 }

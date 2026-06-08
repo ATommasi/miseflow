@@ -160,6 +160,8 @@ export default class MiseFlowPlugin extends Plugin {
 				this.manager.refresh(),
 			);
 		});
+
+		this.app.workspace.trigger("parse-style-settings");
 	}
 
 	onunload(): void {

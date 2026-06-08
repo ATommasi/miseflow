@@ -245,29 +245,51 @@ export class RecipeView extends TextFileView {
 				times, settings, timerOptions,
 			);
 		} else {
-			this.renderMetaBanner(
-				root,
-				file,
-				frontmatter,
-				multiplier,
-				servings,
-				isInPlan,
-				isFavorite,
-				settings,
+			this.renderDesktopLayout(
+				root, file, frontmatter, split,
+				multiplier, servings, isInPlan, isFavorite,
+				times, settings, timerOptions,
 			);
 
-			if (split.before.trim()) {
-				void this.renderMarkdown(root, split.before, file.path);
-			}
 
-			const bodyRow = root.createDiv({ cls: "mise-recipe-body" });
-			const ingredientsCol = bodyRow.createDiv({ cls: "mise-recipe-body-main" });
-			if (split.ingredientGroups.length > 0) {
-				this.renderIngredients(ingredientsCol, file, split.ingredientGroups, multiplier, settings);
-			}
-			this.renderImageCard(bodyRow, file, frontmatter);
-			this.renderAfterIngredients(root, split.after, file.path, settings.instructionsHeading, timerOptions);
 		}
+	}
+
+	private renderDesktopLayout(
+		root: HTMLElement,
+		file: TFile,
+		frontmatter: Record<string, unknown>,
+		split: { before: string; ingredientGroups: IngredientGroup[]; after: string },
+		multiplier: number,
+		servings: number | null,
+		isInPlan: boolean,
+		isFavorite: boolean,
+		times: RecipeTimes,
+		settings: MiseFlowSettings,
+		timerOptions: TimerOptions | null,
+	): void {
+		this.renderMetaBanner(
+			root,
+			file,
+			frontmatter,
+			multiplier,
+			servings,
+			isInPlan,
+			isFavorite,
+			settings,
+		);
+
+		if (split.before.trim()) {
+			void this.renderMarkdown(root, split.before, file.path);
+		}
+
+		const bodyRow = root.createDiv({ cls: "mise-recipe-body" });
+		const ingredientsCol = bodyRow.createDiv({ cls: "mise-recipe-body-main" });
+		if (split.ingredientGroups.length > 0) {
+			this.renderIngredients(ingredientsCol, file, split.ingredientGroups, multiplier, settings);
+		}
+		this.renderImageCard(bodyRow, file, frontmatter);
+		this.renderAfterIngredients(root, split.after, file.path, settings.instructionsHeading, timerOptions);
 	}
 
 	private renderMobileLayout(
