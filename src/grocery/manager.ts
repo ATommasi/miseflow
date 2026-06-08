@@ -576,7 +576,7 @@ function recipePassesTagFilter(app: App, file: TFile, tagFilter: string): boolea
 	const cache = app.metadataCache.getFileCache(file);
 	const tags: string[] = [];
 
-	const fm = cache?.frontmatter?.tags;
+	const fm = cache?.frontmatter?.tags as unknown;
 	if (Array.isArray(fm)) {
 		tags.push(...fm.map((t: string) => String(t).replace(/^#/, "").toLowerCase()));
 	} else if (typeof fm === "string") {
