@@ -85,7 +85,7 @@ export class MiseFlowSettingsTab extends PluginSettingTab {
 
 		header.createEl("a", {
 			cls: "mise-settings-bmc",
-			text: "☕ Buy me a coffee",
+			text: "☕ buy me a coffee",
 			href: "https://buymeacoffee.com/atommasi",
 			attr: { target: "_blank", rel: "noopener" },
 		});
@@ -100,7 +100,7 @@ export class MiseFlowSettingsTab extends PluginSettingTab {
 			)
 			.addText((text) =>
 				text
-					.setPlaceholder("Meal Plan.md")
+					.setPlaceholder("Meal plan.md")
 					.setValue(this.host.settings.mealPlanNotePath)
 					.onChange(async (value) => {
 						this.host.settings.mealPlanNotePath =
@@ -153,7 +153,7 @@ export class MiseFlowSettingsTab extends PluginSettingTab {
 			)
 			.addText((text) =>
 				text
-					.setPlaceholder("Grocery List.md")
+					.setPlaceholder("Grocery list.md")
 					.setValue(this.host.settings.groceryListNotePath)
 					.onChange(async (value) => {
 						this.host.settings.groceryListNotePath =
@@ -189,7 +189,7 @@ export class MiseFlowSettingsTab extends PluginSettingTab {
 			)
 			.addText((text) =>
 				text
-					.setPlaceholder("recipe")
+					.setPlaceholder("Recipe")
 					.setValue(this.host.settings.recipeTypeValue)
 					.onChange(async (value) => {
 						this.host.settings.recipeTypeValue =
@@ -200,7 +200,7 @@ export class MiseFlowSettingsTab extends PluginSettingTab {
 
 
 		// ── Recipe View ─────────────────────────────────────────────────
-		new Setting(containerEl).setName("Recipe View").setHeading();
+		new Setting(containerEl).setName("Recipe view").setHeading();
 
 		new Setting(containerEl)
 			.setName("Auto-open recipe view")
@@ -251,7 +251,7 @@ export class MiseFlowSettingsTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName("Remove duplicate title")
 			.setDesc(
-				"Strip the leading H1 from a recipe note's body if it matches the note title, since the recipe view already shows the title above.",
+				"Strip the leading h1 from a recipe note's body if it matches the note title, since the recipe view already shows the title above.",
 			)
 			.addToggle((toggle) =>
 				toggle
@@ -283,7 +283,7 @@ export class MiseFlowSettingsTab extends PluginSettingTab {
 			)
 			.addText((text) =>
 				text
-					.setPlaceholder("rating")
+					.setPlaceholder("Rating")
 					.setValue(this.host.settings.ratingProperty)
 					.onChange(async (value) => {
 						this.host.settings.ratingProperty = value.trim() || "rating";
@@ -292,7 +292,7 @@ export class MiseFlowSettingsTab extends PluginSettingTab {
 			);
 
 
-		new Setting(containerEl).setName("Recipe Timers").setHeading();
+		new Setting(containerEl).setName("Recipe timers").setHeading();
 
 		new Setting(containerEl)
 			.setName("Step timers")
@@ -373,7 +373,7 @@ export class MiseFlowSettingsTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName("Default grouping")
 			.setDesc(
-				"How items are grouped in the Shopping Assistant. By category is best for supermarket shopping; by recipe is useful for meal prep.",
+				"How items are grouped in the shopping assistant. By category is best for supermarket shopping; by recipe is useful for meal prep.",
 			)
 			.addDropdown((dd) =>
 				dd
@@ -433,7 +433,7 @@ export class MiseFlowSettingsTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName("Sort categories alphabetically")
 			.setDesc(
-				"When on, categories are sorted A–Z automatically. Turn off to set a custom order.",
+				"When on, categories are sorted a–z automatically. Turn off to set a custom order.",
 			)
 			.addToggle((toggle) =>
 				toggle
@@ -549,7 +549,7 @@ export class MiseFlowSettingsTab extends PluginSettingTab {
 			new Setting(containerEl)
 				.setName("Last made property")
 				.setDesc(
-					"Frontmatter property name used to store the last made date (YYYY-MM-DD).",
+					"Frontmatter property name used to store the last made date (yyyy-mm-dd).",
 				)
 				.addText((text) =>
 					text
@@ -623,7 +623,7 @@ export class MiseFlowSettingsTab extends PluginSettingTab {
 			.setDesc("Frontmatter property name for the calories value.")
 			.addText((text) =>
 				text
-					.setPlaceholder("calories")
+					.setPlaceholder("Calories")
 					.setValue(this.host.settings.caloriesProperty)
 					.onChange(async (value) => {
 						this.host.settings.caloriesProperty = value.trim() || "calories";
@@ -636,7 +636,7 @@ export class MiseFlowSettingsTab extends PluginSettingTab {
 			.setDesc("Frontmatter property name for the protein value (grams).")
 			.addText((text) =>
 				text
-					.setPlaceholder("protein")
+					.setPlaceholder("Protein")
 					.setValue(this.host.settings.proteinProperty)
 					.onChange(async (value) => {
 						this.host.settings.proteinProperty = value.trim() || "protein";
@@ -649,7 +649,7 @@ export class MiseFlowSettingsTab extends PluginSettingTab {
 			.setDesc("Frontmatter property name for the fat value (grams).")
 			.addText((text) =>
 				text
-					.setPlaceholder("fat")
+					.setPlaceholder("Fat")
 					.setValue(this.host.settings.fatProperty)
 					.onChange(async (value) => {
 						this.host.settings.fatProperty = value.trim() || "fat";
@@ -662,7 +662,7 @@ export class MiseFlowSettingsTab extends PluginSettingTab {
 			.setDesc("Frontmatter property name for the carbs value (grams).")
 			.addText((text) =>
 				text
-					.setPlaceholder("carbs")
+					.setPlaceholder("Carbs")
 					.setValue(this.host.settings.carbsProperty)
 					.onChange(async (value) => {
 						this.host.settings.carbsProperty = value.trim() || "carbs";
@@ -713,11 +713,11 @@ export class MiseFlowSettingsTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName("Allergens property")
 			.setDesc(
-				"Frontmatter property that stores a recipe's allergens. Accepts both YAML lists and comma-separated text (e.g. gluten, dairy).",
+				"Frontmatter property that stores a recipe's allergens. Accepts both YAML lists and comma-separated text (e.g. Gluten, dairy).",
 			)
 			.addText((text) =>
 				text
-					.setPlaceholder("allergens")
+					.setPlaceholder("Allergens")
 					.setValue(this.host.settings.allergensProperty)
 					.onChange(async (value) => {
 						this.host.settings.allergensProperty =
@@ -731,7 +731,7 @@ export class MiseFlowSettingsTab extends PluginSettingTab {
 			const s = new Setting(containerEl)
 				.setName("My allergens")
 				.setDesc(
-					"Recipes containing any of these allergens show a warning in the recipe view and Shopping Assistant.",
+					"Recipes containing any of these allergens show a warning in the recipe view and shopping assistant.",
 				);
 			s.settingEl.addClass("mise-settings-has-list");
 			this.renderStringList(
@@ -767,7 +767,7 @@ export class MiseFlowSettingsTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName("High glycemic index warnings")
 			.setDesc(
-				"Show a high-GI badge on ingredients that may cause a rapid blood sugar spike. Informational only — not medical advice.",
+				"Show a high-gi badge on ingredients that may cause a rapid blood sugar spike. Informational only — not medical advice.",
 			)
 			.addToggle((toggle) =>
 				toggle
@@ -849,7 +849,7 @@ export class MiseFlowSettingsTab extends PluginSettingTab {
 				cls: "mise-settings-list-add",
 				attr: { type: "button" },
 			});
-			addBtn.setText("+ Add");
+			addBtn.setText("+ add");
 			addBtn.addEventListener("click", () => {
 				current.push("");
 				renderRows();
@@ -904,7 +904,7 @@ export class MiseFlowSettingsTab extends PluginSettingTab {
 					cls: "mise-settings-list-input",
 					type: "text",
 					value: entry.match,
-					attr: { placeholder: "e.g. chicken" },
+					attr: { placeholder: "E.g. Chicken" },
 				});
 
 				row.createSpan({ cls: "mise-settings-override-arrow", text: "→" });
@@ -914,7 +914,7 @@ export class MiseFlowSettingsTab extends PluginSettingTab {
 					type: "text",
 					value: entry.category,
 					attr: {
-						placeholder: "e.g. meat",
+						placeholder: "E.g. Meat",
 						list: datalistId,
 					},
 				});
@@ -948,7 +948,7 @@ export class MiseFlowSettingsTab extends PluginSettingTab {
 				cls: "mise-settings-list-add",
 				attr: { type: "button" },
 			});
-			addBtn.setText("+ Add override");
+			addBtn.setText("+ add override");
 			addBtn.addEventListener("click", () => {
 				current.push({ match: "", category: "" });
 				renderRows();
@@ -966,7 +966,7 @@ export class MiseFlowSettingsTab extends PluginSettingTab {
 		const setting = new Setting(containerEl)
 			.setName("High glycemic index dictionary")
 			.setDesc(
-				"One regex per line, case-insensitive. Lines starting with # are comments. Matched ingredient names show an up-arrow badge in the recipe view. GI values vary by source — informational only, not medical advice.",
+				"One regex per line, case-insensitive. Lines starting with # are comments. Matched ingredient names show an up-arrow badge in the recipe view. Gi values vary by source — informational only, not medical advice.",
 			);
 
 		const errorEl = containerEl.createDiv({
@@ -990,8 +990,8 @@ export class MiseFlowSettingsTab extends PluginSettingTab {
 		);
 
 		new Setting(containerEl)
-			.setName("Reset GI dictionary")
-			.setDesc("Restore the shipped list of commonly cited high-GI foods.")
+			.setName("Reset gi dictionary")
+			.setDesc("Restore the shipped list of commonly cited high-gi foods.")
 			.addButton((btn) =>
 				btn.setButtonText("Reset").onClick(async () => {
 					this.host.settings.giDictionary = DEFAULT_GI_DICTIONARY;
