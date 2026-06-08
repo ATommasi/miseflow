@@ -1,4 +1,4 @@
-import { App, Events, Notice, TFile } from "obsidian";
+import { App, Events, getAllTags, Notice, TFile } from "obsidian";
 import {
 	ingredientKey,
 	normaliseName,
@@ -624,20 +624,9 @@ function recipePassesTagFilter(app: App, file: TFile, tagFilter: string): boolea
 	if (!filter) return true;
 
 	const cache = app.metadataCache.getFileCache(file);
-	const tags: string[] = [];
+	if (!cache) return false;
 
-	const fm = cache?.frontmatter?.tags as unknown;
-	if (Array.isArray(fm)) {
-		tags.push(...fm.map((t: string) => String(t).replace(/^#/, "").toLowerCase()));
-	} else if (typeof fm === "string") {
-		tags.push(fm.replace(/^#/, "").toLowerCase());
-	}
-
-	for (const t of cache?.tags ?? []) {
-		tags.push(t.tag.replace(/^#/, "").toLowerCase());
-	}
-
-	return tags.includes(filter);
+	return (getAllTags(cache) ?? []).some((t) => t.replace(/^#/, "").toLowerCase() === filter);
 }
 
 function titleCase(name: string): string {

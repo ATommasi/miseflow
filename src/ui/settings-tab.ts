@@ -109,6 +109,10 @@ export class MiseFlowSettingsTab extends PluginSettingTab {
 					}),
 			);
 
+		// Declare first so the toggle's onChange closure can reference it.
+		// The Setting itself is appended to the DOM after the toggle below.
+		let tagFilterSetting: Setting;
+
 		new Setting(containerEl)
 			.setName("Auto-add ingredients on sync")
 			.setDesc(
@@ -120,27 +124,27 @@ export class MiseFlowSettingsTab extends PluginSettingTab {
 					.onChange(async (value) => {
 						this.host.settings.autoAddIngredientsOnSync = value;
 						await this.host.saveSettings();
-						this.renderSettings();
+						tagFilterSetting.settingEl.style.display = value ? "" : "none";
 					}),
 			);
 
-		if (this.host.settings.autoAddIngredientsOnSync) {
-			new Setting(containerEl)
-				.setName("Tag filter")
-				.setDesc(
-					"Only auto-add ingredients from recipes that have this tag (e.g. groceryList). Leave empty to auto-add from all recipes.",
-				)
-				.addText((text) =>
-					text
-						.setPlaceholder("groceryList")
-						.setValue(this.host.settings.autoAddIngredientsTag)
-						.onChange(async (value) => {
-							this.host.settings.autoAddIngredientsTag =
-								value.trim().replace(/^#/, "");
-							await this.host.saveSettings();
-						}),
-				);
-		}
+		tagFilterSetting = new Setting(containerEl)
+			.setName("Tag filter")
+			.setDesc(
+				"Only auto-add ingredients from recipes that have this tag (e.g. groceryList). Leave empty to auto-add from all recipes.",
+			)
+			.addText((text) =>
+				text
+					.setPlaceholder("groceryList")
+					.setValue(this.host.settings.autoAddIngredientsTag)
+					.onChange(async (value) => {
+						this.host.settings.autoAddIngredientsTag =
+							value.trim().replace(/^#/, "");
+						await this.host.saveSettings();
+					}),
+			);
+		tagFilterSetting.settingEl.style.display =
+			this.host.settings.autoAddIngredientsOnSync ? "" : "none";
 
 		new Setting(containerEl)
 			.setName("Grocery list note")
