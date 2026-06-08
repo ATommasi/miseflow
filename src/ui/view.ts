@@ -49,7 +49,7 @@ export class GroceryListView extends ItemView {
 	}
 
 	getDisplayText(): string {
-		return "Shopping Assistant";
+		return "Shopping assistant";
 	}
 
 	async onOpen(): Promise<void> {

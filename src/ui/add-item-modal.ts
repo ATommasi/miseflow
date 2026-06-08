@@ -91,7 +91,7 @@ export class AddOneOffModal extends Modal {
 			.setDesc("Optional. Leave blank to auto-detect.")
 			.addText((text) =>
 				text
-					.setPlaceholder("MiseFlow")
+					.setPlaceholder("Produce")
 					.setValue(this.category)
 					.onChange((value) => {
 						this.category = value;

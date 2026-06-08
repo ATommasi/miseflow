@@ -4,6 +4,7 @@ import {
 	normaliseName,
 	parseIngredientLine,
 } from "../parser/ingredient";
+import { parseRecipeFile } from "../parser/recipe";
 import { formatQuantity } from "../parser/quantity";
 import { MiseFlowSettings } from "../settings";
 import { GroceryItem, MealPlanEntry, OneOffItem } from "../types";
@@ -196,12 +197,27 @@ export class GroceryListManager extends Events {
 		const knownPaths = new Set(entries.map((e) => e.recipePath));
 		for (const [resolvedPath, meta] of inNote) {
 			if (knownPaths.has(resolvedPath)) continue;
+
+			let contributions: Record<string, GroceryContribution> = {};
+
+			if (this.sink.settings.autoAddIngredientsOnSync) {
+				const recipeFile = this.app.vault.getAbstractFileByPath(resolvedPath);
+				if (recipeFile instanceof TFile && recipePassesTagFilter(this.app, recipeFile, this.sink.settings.autoAddIngredientsTag)) {
+					const ingredients = await parseRecipeFile(this.app, recipeFile, this.sink.settings);
+					for (const ing of ingredients) {
+						const key = ingredientKey(ing.name, ing.unit);
+						contributions[key] = { name: normaliseName(ing.name), unit: ing.unit, quantity: ing.quantity };
+					}
+					await addToGroceryNote(this.app, contributions, this.sink.settings);
+				}
+			}
+
 			entries.push({
 				recipePath: resolvedPath,
 				day: meta.day,
 				mealType: meta.mealType,
 				addedDate: localDateISO(),
-				contributions: {}, // unknown — manually added
+				contributions,
 			});
 			changed = true;
 		}
@@ -544,6 +560,27 @@ function recipeBasename(app: App, recipePath: string): string {
 	const slash = recipePath.lastIndexOf("/");
 	const base = slash >= 0 ? recipePath.slice(slash + 1) : recipePath;
 	return base.replace(/\.md$/i, "");
+}
+
+function recipePassesTagFilter(app: App, file: TFile, tagFilter: string): boolean {
+	const filter = tagFilter.trim().replace(/^#/, "").toLowerCase();
+	if (!filter) return true;
+
+	const cache = app.metadataCache.getFileCache(file);
+	const tags: string[] = [];
+
+	const fm = cache?.frontmatter?.tags;
+	if (Array.isArray(fm)) {
+		tags.push(...fm.map((t: string) => String(t).replace(/^#/, "").toLowerCase()));
+	} else if (typeof fm === "string") {
+		tags.push(fm.replace(/^#/, "").toLowerCase());
+	}
+
+	for (const t of cache?.tags ?? []) {
+		tags.push(t.tag.replace(/^#/, "").toLowerCase());
+	}
+
+	return tags.includes(filter);
 }
 
 function titleCase(name: string): string {

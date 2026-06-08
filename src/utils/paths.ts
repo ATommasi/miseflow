@@ -10,5 +10,5 @@ import { moment } from "obsidian";
  */
 export function resolveNotePath(template: string, date: Date = new Date()): string {
 	const m = moment(date);
-	return template.replace(/\{([^}]+)\}/g, (_, fmt) => m.format(fmt));
+	return template.replace(/\{([^}]+)\}/g, (_, fmt: string) => m.format(fmt));
 }

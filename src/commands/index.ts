@@ -22,7 +22,7 @@ export function registerCommands(host: CommandsHost): void {
 
 	plugin.addCommand({
 		id: "open-grocery-list",
-		name: "Shopping Assistant",
+		name: "Shopping assistant",
 		callback: () => {
 			void host.openView();
 		},
