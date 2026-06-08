@@ -268,11 +268,15 @@ export default class MiseFlowPlugin extends Plugin {
 		if (!leaf) return;
 		if (leaf.view.getViewType() === VIEW_TYPE_RECIPE) return;
 
-		void leaf.setViewState({
-			type: VIEW_TYPE_RECIPE,
-			state: { file: file.path },
-			active: true,
-		});
+		// Defer past Obsidian's internal file-open async chain, which completes
+		// after the file-open event fires and would otherwise overwrite our call.
+		setTimeout(() => {
+			void leaf.setViewState({
+				type: VIEW_TYPE_RECIPE,
+				state: { file: file.path },
+				active: true,
+			});
+		}, 100);
 	}
 }
 

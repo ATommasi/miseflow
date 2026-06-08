@@ -1981,6 +1981,7 @@
 }
 
 .mise-timer-tray {
+	position: fixed;
 	bottom: var(--size-4-4);
 	right: var(--size-4-4);
 	z-index: 100;
