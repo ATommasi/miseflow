@@ -589,11 +589,24 @@ async function readNoteOrEmpty(app: App, path: string): Promise<string> {
 	return "";
 }
 
+async function ensureParentFolders(app: App, filePath: string): Promise<void> {
+	const parts = filePath.split("/");
+	parts.pop();
+	let current = "";
+	for (const part of parts) {
+		current = current ? `${current}/${part}` : part;
+		if (!app.vault.getAbstractFileByPath(current)) {
+			await app.vault.createFolder(current);
+		}
+	}
+}
+
 async function writeNote(app: App, path: string, content: string): Promise<void> {
 	const existing = app.vault.getAbstractFileByPath(path);
 	if (existing instanceof TFile) {
 		await app.vault.modify(existing, content);
 	} else {
+		await ensureParentFolders(app, path);
 		await app.vault.create(path, content);
 	}
 }
@@ -613,6 +626,7 @@ export async function getOrCreateNote(
 ): Promise<TFile> {
 	const existing = app.vault.getAbstractFileByPath(path);
 	if (existing instanceof TFile) return existing;
+	await ensureParentFolders(app, path);
 	return await app.vault.create(path, initialContent);
 }
 

@@ -21,6 +21,11 @@ import {
 	toggleGroceryNoteItemChecked,
 } from "./note-writer";
 import { resolveNotePath } from "../utils/paths";
+import {
+	frontmatterTypeMatches,
+	normalizeRecipeTypeToken,
+} from "../utils/vault-files";
+import { RECIPE_FRONTMATTER } from "../settings";
 
 export interface SaveSink {
 	readonly settings: MiseFlowSettings;
@@ -182,6 +187,27 @@ export class GroceryListManager extends Events {
 			}
 		}
 
+		// Second pass: scan lines the parser didn't recognise as recipe lines for
+		// any bare [[wikilink]], and include those that resolve to recipe-type files.
+		const WIKILINK_RE = /\[\[([^\]|#]+)(?:[|#][^\]]*)?\]\]/g;
+		const recipeTarget = normalizeRecipeTypeToken(this.sink.settings.recipeTypeValue) || "recipe";
+		for (const section of sections) {
+			for (const line of section.lines) {
+				if (line.wikilink) continue; // already captured above
+				for (const m of line.raw.matchAll(WIKILINK_RE)) {
+					const wikilink = (m[1] ?? "").trim();
+					if (!wikilink) continue;
+					const resolved = this.app.metadataCache.getFirstLinkpathDest(wikilink, path);
+					if (!(resolved instanceof TFile)) continue;
+					const fm = (this.app.metadataCache.getFileCache(resolved)?.frontmatter ?? {}) as Record<string, unknown>;
+					if (!frontmatterTypeMatches(fm[RECIPE_FRONTMATTER.type], recipeTarget)) continue;
+					if (!inNote.has(resolved.path)) {
+						inNote.set(resolved.path, { day: line.day, mealType: undefined });
+					}
+				}
+			}
+		}
+
 		const entries = this.sink.settings.state.mealPlanEntries ?? [];
 		let changed = false;
 
@@ -194,29 +220,39 @@ export class GroceryListManager extends Events {
 		}
 
 		// Add entries for new wikilinks not yet in state.
-		// Also back-fill auto-add for existing entries with no contributions when the feature is enabled.
+		// Back-fill auto-add for existing entries that have never been attempted.
+		const entriesByPath = new Map(entries.map((e) => [e.recipePath, e]));
 		for (const [resolvedPath, meta] of inNote) {
-			const existingEntry = entries.find((e) => e.recipePath === resolvedPath);
-			const hasContributions = existingEntry && Object.keys(existingEntry.contributions).length > 0;
+			const existingEntry = entriesByPath.get(resolvedPath);
 
-			if (existingEntry && hasContributions) continue;
+			if (existingEntry) {
+				// Already has ingredients, or auto-add already ran for this entry.
+				if (Object.keys(existingEntry.contributions).length > 0 || existingEntry.autoAddAttempted) continue;
+				// Feature is off — don't mutate or mark changed.
+				if (!this.sink.settings.autoAddIngredientsOnSync) continue;
+			}
 
 			let contributions: Record<string, GroceryContribution> = {};
 
 			if (this.sink.settings.autoAddIngredientsOnSync) {
 				const recipeFile = this.app.vault.getAbstractFileByPath(resolvedPath);
 				if (recipeFile instanceof TFile && recipePassesTagFilter(this.app, recipeFile, this.sink.settings.autoAddIngredientsTag)) {
-					const ingredients = await parseRecipeFile(this.app, recipeFile, this.sink.settings);
-					for (const ing of ingredients) {
-						const key = ingredientKey(ing.name, ing.unit);
-						contributions[key] = { name: normaliseName(ing.name), unit: ing.unit, quantity: ing.quantity };
+					try {
+						const ingredients = await parseRecipeFile(this.app, recipeFile, this.sink.settings);
+						for (const ing of ingredients) {
+							const key = ingredientKey(ing.name, ing.unit);
+							contributions[key] = { name: normaliseName(ing.name), unit: ing.unit, quantity: ing.quantity };
+						}
+						await addToGroceryNote(this.app, contributions, this.sink.settings);
+					} catch (e) {
+						console.error("miseflow: failed to auto-add ingredients for", resolvedPath, e);
 					}
-					await addToGroceryNote(this.app, contributions, this.sink.settings);
 				}
 			}
 
 			if (existingEntry) {
 				existingEntry.contributions = contributions;
+				existingEntry.autoAddAttempted = true;
 			} else {
 				entries.push({
 					recipePath: resolvedPath,
@@ -224,6 +260,7 @@ export class GroceryListManager extends Events {
 					mealType: meta.mealType,
 					addedDate: localDateISO(),
 					contributions,
+					autoAddAttempted: this.sink.settings.autoAddIngredientsOnSync,
 				});
 			}
 			changed = true;
@@ -506,8 +543,8 @@ export class GroceryListManager extends Events {
 
 		// Overwrite notes with empty content.
 		const { mealPlanNotePath, groceryListNotePath } = this.sink.settings;
-		await writeEmptyNote(this.app, resolveNotePath(mealPlanNotePath || "Meal Plan.md"), "# Meal Plan\n");
-		await writeEmptyNote(this.app, resolveNotePath(groceryListNotePath || "Grocery List.md"), "# Grocery List\n");
+		await writeEmptyNote(this.app, resolveNotePath(mealPlanNotePath.trim() || "Meal Plan.md"), "# Meal Plan\n");
+		await writeEmptyNote(this.app, resolveNotePath(groceryListNotePath.trim() || "Grocery List.md"), "# Grocery List\n");
 
 		this.items = [];
 		this.trigger("changed");
@@ -541,7 +578,20 @@ async function writeEmptyNote(app: App, path: string, content: string): Promise<
 	if (existing instanceof TFile) {
 		await app.vault.modify(existing, content);
 	} else {
+		await ensureParentFolders(app, path);
 		await app.vault.create(path, content);
+	}
+}
+
+async function ensureParentFolders(app: App, filePath: string): Promise<void> {
+	const parts = filePath.split("/");
+	parts.pop();
+	let current = "";
+	for (const part of parts) {
+		current = current ? `${current}/${part}` : part;
+		if (!app.vault.getAbstractFileByPath(current)) {
+			await app.vault.createFolder(current);
+		}
 	}
 }
 

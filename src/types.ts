@@ -91,6 +91,12 @@ export interface MealPlanEntry {
 		string,
 		{ name: string; unit: string; quantity: number | null }
 	>;
+	/**
+	 * True once the auto-add-on-sync pass has run for this entry (even if it
+	 * found no ingredients). Prevents repeated vault reads for recipes that
+	 * genuinely have no parseable ingredient list.
+	 */
+	autoAddAttempted?: boolean;
 }
 
 /**

@@ -271,6 +271,7 @@ export default class MiseFlowPlugin extends Plugin {
 		// Defer past Obsidian's internal file-open async chain, which completes
 		// after the file-open event fires and would otherwise overwrite our call.
 		setTimeout(() => {
+			if (!leaf.parent) return; // leaf was detached before the timeout fired
 			void leaf.setViewState({
 				type: VIEW_TYPE_RECIPE,
 				state: { file: file.path },
