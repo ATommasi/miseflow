@@ -86,9 +86,9 @@ export interface MiseFlowSettings {
 	timerRangeDefault: "max" | "min";
 	/** How many minutes to increment/decrement when using the stepper buttons. */
 	timerIncrementMinutes: number;
-	/** When true, ingredients are automatically extracted from newly discovered recipes during meal plan sync. */
+	/** When true, automatically extract and add ingredients during meal plan sync for newly discovered recipes. */
 	autoAddIngredientsOnSync: boolean;
-	/** If set, only recipes with this tag are auto-added during sync (no leading #). Empty = all recipes qualify. */
+	/** Only auto-add ingredients from recipes with this tag (no leading #). Empty = all recipes qualify. */
 	autoAddIngredientsTag: string;
 	/** Persisted state - kept in the same data file so a single saveData() round-trip is enough. */
 	state: MiseFlowSavedState;

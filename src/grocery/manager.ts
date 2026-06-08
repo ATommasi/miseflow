@@ -194,9 +194,12 @@ export class GroceryListManager extends Events {
 		}
 
 		// Add entries for new wikilinks not yet in state.
-		const knownPaths = new Set(entries.map((e) => e.recipePath));
+		// Also back-fill auto-add for existing entries with no contributions when the feature is enabled.
 		for (const [resolvedPath, meta] of inNote) {
-			if (knownPaths.has(resolvedPath)) continue;
+			const existingEntry = entries.find((e) => e.recipePath === resolvedPath);
+			const hasContributions = existingEntry && Object.keys(existingEntry.contributions).length > 0;
+
+			if (existingEntry && hasContributions) continue;
 
 			let contributions: Record<string, GroceryContribution> = {};
 
@@ -212,13 +215,17 @@ export class GroceryListManager extends Events {
 				}
 			}
 
-			entries.push({
-				recipePath: resolvedPath,
-				day: meta.day,
-				mealType: meta.mealType,
-				addedDate: localDateISO(),
-				contributions,
-			});
+			if (existingEntry) {
+				existingEntry.contributions = contributions;
+			} else {
+				entries.push({
+					recipePath: resolvedPath,
+					day: meta.day,
+					mealType: meta.mealType,
+					addedDate: localDateISO(),
+					contributions,
+				});
+			}
 			changed = true;
 		}
 

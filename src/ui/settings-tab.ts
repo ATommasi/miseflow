@@ -85,7 +85,6 @@ export class MiseFlowSettingsTab extends PluginSettingTab {
 
 		header.createEl("a", {
 			cls: "mise-settings-bmc",
-			// eslint-disable-next-line obsidianmd/ui/sentence-case
 			text: "☕ Buy me a coffee",
 			href: "https://buymeacoffee.com/atommasi",
 			attr: { target: "_blank", rel: "noopener" },
@@ -97,26 +96,23 @@ export class MiseFlowSettingsTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName("Meal plan note")
 			.setDesc(
-				"Vault-relative path of the note where your meal plan is stored. " +
-				"Supports moment.js tokens inside {}: {YYYY-MM-DD}, {MMMM}, {dddd}, etc. " +
-				'Example: "Meal Plans/MealPlan-{YYYY-MM-DD}.md".',
+				"Vault-relative path of the note where your meal plan is stored. Both the plugin and you can edit it freely.",
 			)
 			.addText((text) =>
 				text
-					// eslint-disable-next-line obsidianmd/ui/sentence-case
 					.setPlaceholder("Meal Plan.md")
 					.setValue(this.host.settings.mealPlanNotePath)
 					.onChange(async (value) => {
 						this.host.settings.mealPlanNotePath =
 							value.trim() || "Meal Plan.md";
-						await this.host.saveSettings();
+							await this.host.saveSettings();
 					}),
 			);
 
 		new Setting(containerEl)
 			.setName("Auto-add ingredients on sync")
 			.setDesc(
-				"When syncing the meal plan note, automatically extract all ingredients from newly discovered recipes and add them to the grocery list.",
+				"When syncing the meal plan note, automatically extract ingredients from newly discovered recipes and add them to the grocery list.",
 			)
 			.addToggle((toggle) =>
 				toggle
@@ -132,16 +128,15 @@ export class MiseFlowSettingsTab extends PluginSettingTab {
 			new Setting(containerEl)
 				.setName("Tag filter")
 				.setDesc(
-					"Only auto-add ingredients from recipes that have this tag (e.g. groceryList). Matches frontmatter tags and inline #tags. Leave empty to auto-add from all recipes.",
+					"Only auto-add ingredients from recipes that have this tag (e.g. groceryList). Leave empty to auto-add from all recipes.",
 				)
 				.addText((text) =>
 					text
 						.setPlaceholder("groceryList")
 						.setValue(this.host.settings.autoAddIngredientsTag)
 						.onChange(async (value) => {
-							this.host.settings.autoAddIngredientsTag = value
-								.trim()
-								.replace(/^#/, "");
+							this.host.settings.autoAddIngredientsTag =
+								value.trim().replace(/^#/, "");
 							await this.host.saveSettings();
 						}),
 				);
@@ -150,13 +145,10 @@ export class MiseFlowSettingsTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName("Grocery list note")
 			.setDesc(
-				"Vault-relative path of the note where your grocery list is stored. " +
-				"Supports moment.js tokens inside {}: {YYYY-MM-DD}, {MMMM}, {dddd}, etc. " +
-				'Example: "Shopping/Groceries-{YYYY-[W]WW}.md" for weekly lists.',
+				"Vault-relative path of the note where your grocery list is stored. Edited by the plugin and by you.",
 			)
 			.addText((text) =>
 				text
-					// eslint-disable-next-line obsidianmd/ui/sentence-case
 					.setPlaceholder("Grocery List.md")
 					.setValue(this.host.settings.groceryListNotePath)
 					.onChange(async (value) => {
@@ -193,7 +185,6 @@ export class MiseFlowSettingsTab extends PluginSettingTab {
 			)
 			.addText((text) =>
 				text
-					// eslint-disable-next-line obsidianmd/ui/sentence-case
 					.setPlaceholder("recipe")
 					.setValue(this.host.settings.recipeTypeValue)
 					.onChange(async (value) => {
@@ -205,7 +196,7 @@ export class MiseFlowSettingsTab extends PluginSettingTab {
 
 
 		// ── Recipe View ─────────────────────────────────────────────────
-		new Setting(containerEl).setName("Recipe view").setHeading();
+		new Setting(containerEl).setName("Recipe View").setHeading();
 
 		new Setting(containerEl)
 			.setName("Auto-open recipe view")
@@ -256,7 +247,7 @@ export class MiseFlowSettingsTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName("Remove duplicate title")
 			.setDesc(
-				"Strip the leading h1 from a recipe note's body if it matches the note title, since the recipe view already shows the title above.",
+				"Strip the leading H1 from a recipe note's body if it matches the note title, since the recipe view already shows the title above.",
 			)
 			.addToggle((toggle) =>
 				toggle
@@ -288,7 +279,6 @@ export class MiseFlowSettingsTab extends PluginSettingTab {
 			)
 			.addText((text) =>
 				text
-					// eslint-disable-next-line obsidianmd/ui/sentence-case
 					.setPlaceholder("rating")
 					.setValue(this.host.settings.ratingProperty)
 					.onChange(async (value) => {
@@ -298,7 +288,7 @@ export class MiseFlowSettingsTab extends PluginSettingTab {
 			);
 
 
-		new Setting(containerEl).setName("Recipe timers").setHeading();
+		new Setting(containerEl).setName("Recipe Timers").setHeading();
 
 		new Setting(containerEl)
 			.setName("Step timers")
@@ -379,7 +369,7 @@ export class MiseFlowSettingsTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName("Default grouping")
 			.setDesc(
-				"How items are grouped in the shopping assistant. By category is best for supermarket shopping; by recipe is useful for meal prep.",
+				"How items are grouped in the Shopping Assistant. By category is best for supermarket shopping; by recipe is useful for meal prep.",
 			)
 			.addDropdown((dd) =>
 				dd
@@ -439,7 +429,7 @@ export class MiseFlowSettingsTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName("Sort categories alphabetically")
 			.setDesc(
-				"When on, categories are sorted a–z automatically. Turn off to set a custom order.",
+				"When on, categories are sorted A–Z automatically. Turn off to set a custom order.",
 			)
 			.addToggle((toggle) =>
 				toggle
@@ -555,12 +545,10 @@ export class MiseFlowSettingsTab extends PluginSettingTab {
 			new Setting(containerEl)
 				.setName("Last made property")
 				.setDesc(
-					// eslint-disable-next-line obsidianmd/ui/sentence-case
 					"Frontmatter property name used to store the last made date (YYYY-MM-DD).",
 				)
 				.addText((text) =>
 					text
-						// eslint-disable-next-line obsidianmd/ui/sentence-case
 						.setPlaceholder("lastMade")
 						.setValue(this.host.settings.lastMadeProperty)
 						.onChange(async (value) => {
@@ -631,7 +619,6 @@ export class MiseFlowSettingsTab extends PluginSettingTab {
 			.setDesc("Frontmatter property name for the calories value.")
 			.addText((text) =>
 				text
-					// eslint-disable-next-line obsidianmd/ui/sentence-case
 					.setPlaceholder("calories")
 					.setValue(this.host.settings.caloriesProperty)
 					.onChange(async (value) => {
@@ -645,7 +632,6 @@ export class MiseFlowSettingsTab extends PluginSettingTab {
 			.setDesc("Frontmatter property name for the protein value (grams).")
 			.addText((text) =>
 				text
-					// eslint-disable-next-line obsidianmd/ui/sentence-case
 					.setPlaceholder("protein")
 					.setValue(this.host.settings.proteinProperty)
 					.onChange(async (value) => {
@@ -659,7 +645,6 @@ export class MiseFlowSettingsTab extends PluginSettingTab {
 			.setDesc("Frontmatter property name for the fat value (grams).")
 			.addText((text) =>
 				text
-					// eslint-disable-next-line obsidianmd/ui/sentence-case
 					.setPlaceholder("fat")
 					.setValue(this.host.settings.fatProperty)
 					.onChange(async (value) => {
@@ -673,7 +658,6 @@ export class MiseFlowSettingsTab extends PluginSettingTab {
 			.setDesc("Frontmatter property name for the carbs value (grams).")
 			.addText((text) =>
 				text
-					// eslint-disable-next-line obsidianmd/ui/sentence-case
 					.setPlaceholder("carbs")
 					.setValue(this.host.settings.carbsProperty)
 					.onChange(async (value) => {
@@ -725,12 +709,10 @@ export class MiseFlowSettingsTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName("Allergens property")
 			.setDesc(
-				// eslint-disable-next-line obsidianmd/ui/sentence-case
 				"Frontmatter property that stores a recipe's allergens. Accepts both YAML lists and comma-separated text (e.g. gluten, dairy).",
 			)
 			.addText((text) =>
 				text
-					// eslint-disable-next-line obsidianmd/ui/sentence-case
 					.setPlaceholder("allergens")
 					.setValue(this.host.settings.allergensProperty)
 					.onChange(async (value) => {
@@ -745,7 +727,7 @@ export class MiseFlowSettingsTab extends PluginSettingTab {
 			const s = new Setting(containerEl)
 				.setName("My allergens")
 				.setDesc(
-					"Recipes containing any of these allergens show a warning in the recipe view and shopping assistant.",
+					"Recipes containing any of these allergens show a warning in the recipe view and Shopping Assistant.",
 				);
 			s.settingEl.addClass("mise-settings-has-list");
 			this.renderStringList(
@@ -781,7 +763,6 @@ export class MiseFlowSettingsTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName("High glycemic index warnings")
 			.setDesc(
-				// eslint-disable-next-line obsidianmd/ui/sentence-case
 				"Show a high-GI badge on ingredients that may cause a rapid blood sugar spike. Informational only — not medical advice.",
 			)
 			.addToggle((toggle) =>
@@ -864,7 +845,7 @@ export class MiseFlowSettingsTab extends PluginSettingTab {
 				cls: "mise-settings-list-add",
 				attr: { type: "button" },
 			});
-			addBtn.setText("+ add");
+			addBtn.setText("+ Add");
 			addBtn.addEventListener("click", () => {
 				current.push("");
 				renderRows();
@@ -919,7 +900,6 @@ export class MiseFlowSettingsTab extends PluginSettingTab {
 					cls: "mise-settings-list-input",
 					type: "text",
 					value: entry.match,
-					// eslint-disable-next-line obsidianmd/ui/sentence-case
 					attr: { placeholder: "e.g. chicken" },
 				});
 
@@ -930,7 +910,6 @@ export class MiseFlowSettingsTab extends PluginSettingTab {
 					type: "text",
 					value: entry.category,
 					attr: {
-						// eslint-disable-next-line obsidianmd/ui/sentence-case
 						placeholder: "e.g. meat",
 						list: datalistId,
 					},
@@ -965,7 +944,7 @@ export class MiseFlowSettingsTab extends PluginSettingTab {
 				cls: "mise-settings-list-add",
 				attr: { type: "button" },
 			});
-			addBtn.setText("+ add override");
+			addBtn.setText("+ Add override");
 			addBtn.addEventListener("click", () => {
 				current.push({ match: "", category: "" });
 				renderRows();
@@ -983,7 +962,6 @@ export class MiseFlowSettingsTab extends PluginSettingTab {
 		const setting = new Setting(containerEl)
 			.setName("High glycemic index dictionary")
 			.setDesc(
-				// eslint-disable-next-line obsidianmd/ui/sentence-case
 				"One regex per line, case-insensitive. Lines starting with # are comments. Matched ingredient names show an up-arrow badge in the recipe view. GI values vary by source — informational only, not medical advice.",
 			);
 
@@ -1008,9 +986,7 @@ export class MiseFlowSettingsTab extends PluginSettingTab {
 		);
 
 		new Setting(containerEl)
-			// eslint-disable-next-line obsidianmd/ui/sentence-case
 			.setName("Reset GI dictionary")
-			// eslint-disable-next-line obsidianmd/ui/sentence-case
 			.setDesc("Restore the shipped list of commonly cited high-GI foods.")
 			.addButton((btn) =>
 				btn.setButtonText("Reset").onClick(async () => {
