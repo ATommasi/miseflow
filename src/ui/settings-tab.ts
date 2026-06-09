@@ -73,11 +73,11 @@ export class MiseFlowSettingsTab extends PluginSettingTab {
 
 	// ── Declarative settings API (Obsidian 1.13.0+) ───────────────────────
 
-	override getControlValue(key: string): unknown {
+	getControlValue(key: string): unknown {
 		return (this.host.settings as unknown as Record<string, unknown>)[key];
 	}
 
-	override async setControlValue(key: string, value: unknown): Promise<void> {
+	async setControlValue(key: string, value: unknown): Promise<void> {
 		const settings = this.host.settings as unknown as Record<string, unknown>;
 		const textDefaults: Record<string, string> = {
 			mealPlanNotePath: "Meal Plan.md",
@@ -108,10 +108,10 @@ export class MiseFlowSettingsTab extends PluginSettingTab {
 			this.host.manager.trigger("changed");
 		}
 
-		this.refreshDomState();
+		this.display();
 	}
 
-	override getSettingDefinitions() {
+	getSettingDefinitions() {
 		const s = this.host.settings;
 		return [
 			// Logo header
@@ -355,7 +355,7 @@ export class MiseFlowSettingsTab extends PluginSettingTab {
 									s.categoryOrder = [...DEFAULT_CATEGORY_ORDER];
 									s.categoryOverrides = [];
 									await this.host.saveSettings();
-									this.update();
+									this.display();
 									this.host.manager.trigger("changed");
 								}),
 							);
@@ -526,7 +526,7 @@ export class MiseFlowSettingsTab extends PluginSettingTab {
 								btn.setButtonText("Reset").onClick(async () => {
 									s.giDictionary = DEFAULT_GI_DICTIONARY;
 									await this.host.saveSettings();
-									this.update();
+									this.display();
 								}),
 							);
 						},
