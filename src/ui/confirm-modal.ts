@@ -43,7 +43,7 @@ export class ConfirmModal extends Modal {
 				void Promise.resolve(this.options.onConfirm());
 			});
 		if (this.options.destructive) {
-			confirmBtn.setDestructive();
+			confirmBtn.setWarning();
 		} else {
 			confirmBtn.setCta();
 		}

@@ -120,7 +120,7 @@ export class GroceryListView extends ItemView {
 
 		const clearBtn = new ButtonComponent(actionsEl)
 			.setButtonText("Clear all")
-			.setDestructive()
+			.setWarning()
 			.onClick(() => {
 				new ConfirmModal(this.app, {
 					title: "Clear meal plan and grocery list?",
