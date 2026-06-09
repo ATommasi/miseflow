@@ -143,7 +143,7 @@ export class MiseFlowSettingsTab extends PluginSettingTab {
 				items: [
 					{
 						name: "Meal plan note",
-						desc: "Vault-relative path of the note where your meal plan is stored. Both the plugin and you can edit it freely.",
+						desc: "Vault-relative path of the note where your meal plan is stored. moment.js date tokens supported, e.g. Meal Plan {YYYY-MM-DD}.md.",
 						control: { type: "text" as const, key: "mealPlanNotePath", placeholder: "Meal plan.md" },
 					},
 					{
@@ -159,7 +159,7 @@ export class MiseFlowSettingsTab extends PluginSettingTab {
 					},
 					{
 						name: "Grocery list note",
-						desc: "Vault-relative path of the note where your grocery list is stored. Edited by the plugin and by you.",
+						desc: "Vault-relative path of the note where your grocery list is stored. moment.js date tokens supported, e.g. Grocery List {YYYY-MM-DD}.md.",
 						control: { type: "text" as const, key: "groceryListNotePath", placeholder: "Grocery list.md" },
 					},
 				],
@@ -589,9 +589,7 @@ export class MiseFlowSettingsTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName("Meal plan note")
-			.setDesc(
-				"Vault-relative path of the note where your meal plan is stored. Both the plugin and you can edit it freely.",
-			)
+			.setDesc(createMomentDesc("Vault-relative path of the note where your meal plan is stored."))
 			.addText((text) =>
 				text
 					.setPlaceholder("Meal plan.md")
@@ -625,11 +623,13 @@ export class MiseFlowSettingsTab extends PluginSettingTab {
 		tagFilterSetting = new Setting(containerEl)
 			.setName("Tag filter")
 			.setDesc(
+				// eslint-disable-next-line obsidianmd/ui/sentence-case
 				"Only auto-add ingredients from recipes that have this tag (e.g. groceryList). Leave empty to auto-add from all recipes.",
 			)
 			.addText((text) =>
 				text
-					.setPlaceholder("groceryList")
+					// eslint-disable-next-line obsidianmd/ui/sentence-case
+						.setPlaceholder("groceryList")
 					.setValue(this.host.settings.autoAddIngredientsTag)
 					.onChange(async (value) => {
 						this.host.settings.autoAddIngredientsTag =
@@ -642,9 +642,7 @@ export class MiseFlowSettingsTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName("Grocery list note")
-			.setDesc(
-				"Vault-relative path of the note where your grocery list is stored. Edited by the plugin and by you.",
-			)
+			.setDesc(createMomentDesc("Vault-relative path of the note where your grocery list is stored."))
 			.addText((text) =>
 				text
 					.setPlaceholder("Grocery list.md")
@@ -1047,6 +1045,7 @@ export class MiseFlowSettingsTab extends PluginSettingTab {
 				)
 				.addText((text) =>
 					text
+						// eslint-disable-next-line obsidianmd/ui/sentence-case
 						.setPlaceholder("lastMade")
 						.setValue(this.host.settings.lastMadeProperty)
 						.onChange(async (value) => {
@@ -1499,6 +1498,20 @@ export class MiseFlowSettingsTab extends PluginSettingTab {
 // ---------------------------------------------------------------------------
 // Module-level helpers
 // ---------------------------------------------------------------------------
+
+function createMomentDesc(prefix: string): DocumentFragment {
+	const frag = document.createDocumentFragment();
+	frag.appendText(`${prefix} `);
+	const link = frag.createEl("a", {
+		// eslint-disable-next-line obsidianmd/ui/sentence-case
+		text: "moment.js format tokens",
+		href: "https://momentjs.com/docs/#/displaying/format/",
+		attr: { target: "_blank", rel: "noopener" },
+	});
+	frag.appendChild(link);
+	frag.appendText(" supported, e.g. Meal Plan {YYYY-MM-DD}.md.");
+	return frag;
+}
 
 function renderErrors(container: HTMLElement, errors: readonly string[]): void {
 	container.empty();

@@ -979,13 +979,13 @@ settings:
 	padding: 2px 6px;
 	border-radius: var(--radius-s);
 	font-size: var(--font-ui-smaller);
-	font-weight: var(--font-medium);
+	font-weight: var(--font-normal);
 	line-height: 1;
 	white-space: nowrap;
 	cursor: help;
-	background-color: var(--background-modifier-warning, rgba(255, 191, 0, 0.15));
-	border: 1px solid var(--color-yellow, rgba(255, 191, 0, 0.45));
-	color: var(--color-orange, var(--text-warning, #b88500));
+	background-color: rgba(var(--color-orange-rgb), 0.05);
+	border: 1px solid rgba(var(--color-yellow-rgb), 0.5);
+	color: var(--text-warning);
 	font-variant-numeric: tabular-nums;
 	align-self: center;
 	flex-shrink: 0;
@@ -998,8 +998,8 @@ settings:
 }
 
 .mise-recipe-ingredient-temp-icon .svg-icon {
-	width: 12px;
-	height: 12px;
+	width: 14px;
+	height: 14px;
 }
 
 .mise-recipe-ingredient-gi {
@@ -1013,9 +1013,9 @@ settings:
 	line-height: 1;
 	white-space: nowrap;
 	cursor: help;
-	background-color: color-mix(in srgb, var(--color-orange, #d97706) 14%, var(--background-secondary));
-	border: 1px solid color-mix(in srgb, var(--color-orange, #d97706) 40%, transparent);
-	color: var(--color-orange, #d97706);
+	background-color: rgba(var(--color-orange-rgb), 0.2);
+	border: 1px solid rgba(var(--color-yellow-rgb), 0.5);
+	color: var(--text-warning);
 	letter-spacing: 0.04em;
 	align-self: center;
 	flex-shrink: 0;
@@ -1028,8 +1028,8 @@ settings:
 }
 
 .mise-recipe-ingredient-gi-icon .svg-icon {
-	width: 12px;
-	height: 12px;
+	width: 16px;
+	height: 16px;
 }
 
 .mise-recipe-ingredient-cart {
@@ -1067,8 +1067,8 @@ settings:
 }
 
 .mise-recipe-ingredient-cart-icon .svg-icon {
-	width: 13px;
-	height: 13px;
+	width: 18px;
+	height: 18px;
 }
 
 .mise-recipe-ingredient-gi-text {
@@ -2015,7 +2015,7 @@ settings:
  * Step timers
  * --------------------------------------------------------------------*/
 
-.markdown-rendered .mise-timer-btn {
+.mise-timer-btn:not(.clickable-icon) {
 	display: inline-flex;
 	align-items: center;
 	padding: 0 2px 4px 2px;
@@ -2034,8 +2034,8 @@ settings:
 	transition: background-color 80ms ease-in-out, border-color 80ms ease-in-out;
 }
 
-.markdown-rendered .mise-timer-btn:hover,
-.markdown-rendered .mise-timer-btn:focus-visible {
+.mise-timer-btn:hover,
+.mise-timer-btn:focus-visible {
 	background-color: color-mix(in srgb, var(--interactive-accent) 22%, var(--background-secondary));
 	border-color: var(--interactive-accent);
 }
@@ -2253,8 +2253,13 @@ settings:
 }
 
 .mise-timer-play {
-	background-color: var(--color-green, #1a5522);
-	color: var(--color-base-00, #00000);
+	background-color: var(--interactive-accent);
+	color: var(--text-on-accent);
+}
+
+.mise-timer-play:hover {
+	background-color: var(--interactive-accent-hover);
+	color: var(--text-on-accent);
 }
 
 /* ── Style Settings class-toggle overrides ─────────────────────────────── */
