@@ -1,6 +1,12 @@
-<p align="center">
-	<img align="center" width="250" alt="miseflow-final" src="https://github.com/user-attachments/assets/1bd14075-406d-42af-b005-9a245a714811" />
-</p>
+<div align="center">
+	<img width="250" alt="miseflow-final" src="https://github.com/user-attachments/assets/1bd14075-406d-42af-b005-9a245a714811" />
+
+
+<a href="https://github.com/AdamArcane/miseflow/releases/latest">![Obsidian release version badge](https://img.shields.io/github/v/release/AdamArcane/miseflow?logo=obsidian&color=rgb(125%2C58%2C237))</a>
+![GitHub License](https://img.shields.io/github/license/AdamArcane/miseflow)
+![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/AdamArcane/miseflow/lint.yml)
+
+</div>
 
 > **Early Release**
 > MiseFlow is fresh out of the oven. Expect a few rough edges while the recipe develops. If you find a bug or have an idea, please open an issue.
@@ -9,37 +15,16 @@
 
 > *Mise en place* - the culinary practice of preparing everything before you cook.
 
-MiseFlow transforms Obsidian into a complete meal planning, grocery shopping, and recipe management system.
+MiseFlow is an [Obsidian](https://obsidian.md) plugin that transforms your recipes from simple markdown into a complete meal planning, grocery shopping, and recipe management system.
 
-Plan your week, generate grocery lists from only the ingredients you actually need, track your cooking history, and view recipes in a clean cooking interface designed for real kitchens.
-
-Everything stays in your vault.
-
-Everything stays in Markdown.
-
-No subscriptions. No cloud lock-in. No exporting your data someday.
-
-Just recipes, notes, and food.
+- Plan your week: generate grocery lists from only the ingredients you actually need, track your cooking history, and view recipes in a clean cooking interface designed for real kitchens.
+- Everything stays in your vault.
+- Everything stays in Markdown.
+- No subscriptions. No cloud lock-in. No exporting your data someday.
+- Just recipes, notes, and food.
 
 ---
 
-## Why MiseFlow?
-
-Most recipe apps want to own your recipes.
-
-MiseFlow doesn't.
-
-Your meal plan is a note.
-
-Your grocery list is a note.
-
-Your recipes are notes.
-
-The plugin simply connects everything together and handles the tedious parts for you.
-
-If you're already storing recipes in Obsidian, MiseFlow helps turn them into a complete cooking workflow.
-
----
 
 # 🗓️ Plan Your Meals
 
@@ -106,13 +91,13 @@ Everything remains synced with your Markdown grocery list.
 
 # 👨‍🍳 Cook Without Scrolling Through Notes
 
-When it's time to cook, open a recipe in the dedicated Recipe View.
+When it's time to cook, open a recipe in the dedicated Recipe View. 
 
 <img width="830" alt="Recipe View" src="https://github.com/user-attachments/assets/8261ff5a-22e9-4ab7-9289-b901267bd5ac" />
 
 ### Recipe View Features
 
-* NEW: Optimized for mobile view!
+* Optimized for mobile view and desktop
 * Beautiful hero images
 * Ingredient lists optimized for cooking
 * Portion scaling and quantity adjustment
@@ -154,7 +139,7 @@ That means:
 
 * Your data remains future-proof
 * Your recipes are searchable
-* Your recipes work with Dataview
+* You can query and display your recipes with Dataview
 * Your recipes work with backlinks
 * Your recipes work with your existing vault structure
 * You can always access your data without the plugin
@@ -163,23 +148,7 @@ Your recipes belong to you.
 
 ---
 
-# 🚀 Who Is MiseFlow For?
 
-MiseFlow is a great fit if:
-
-* You already keep recipes in Obsidian
-* You meal plan regularly
-* You make grocery lists every week
-* You want ownership of your recipe data
-* You prefer Markdown over cloud services
-
-MiseFlow may not be the right fit if:
-
-* You want a hosted recipe service
-* You don't use Obsidian
-* You prefer fully managed meal-planning platforms
-
----
 
 # Installation
 
@@ -213,4 +182,4 @@ You're ready to cook.
 
 # Credits
 
-MiseFlow is a fork of [Pantry](https://github.com/Ekrizdis367/obsidian-pantry) by TheEkrizdis, significantly extended and rewritten by [Adam Tommasi](https://github.com/ATommasi).
+MiseFlow is a fork of [Pantry](https://github.com/Ekrizdis367/obsidian-pantry) by TheEkrizdis, significantly extended and rewritten by [Adam Tommasi](https://github.com/AdamArcane).
