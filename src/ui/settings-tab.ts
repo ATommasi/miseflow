@@ -108,7 +108,7 @@ export class MiseFlowSettingsTab extends PluginSettingTab {
 			this.host.manager.trigger("changed");
 		}
 
-		this.display();
+		this.refreshState();
 	}
 
 	getSettingDefinitions() {
@@ -355,7 +355,7 @@ export class MiseFlowSettingsTab extends PluginSettingTab {
 									s.categoryOrder = [...DEFAULT_CATEGORY_ORDER];
 									s.categoryOverrides = [];
 									await this.host.saveSettings();
-									this.display();
+									this.rerender();
 									this.host.manager.trigger("changed");
 								}),
 							);
@@ -526,7 +526,7 @@ export class MiseFlowSettingsTab extends PluginSettingTab {
 								btn.setButtonText("Reset").onClick(async () => {
 									s.giDictionary = DEFAULT_GI_DICTIONARY;
 									await this.host.saveSettings();
-									this.display();
+									this.rerender();
 								}),
 							);
 						},
@@ -534,6 +534,24 @@ export class MiseFlowSettingsTab extends PluginSettingTab {
 				],
 			},
 		];
+	}
+
+	// ── Compat helpers ────────────────────────────────────────────────────
+
+	private refreshState(): void {
+		if ('refreshDomState' in this) {
+			(this as unknown as { refreshDomState(): void }).refreshDomState();
+		} else {
+			this.display();
+		}
+	}
+
+	private rerender(): void {
+		if ('update' in this) {
+			(this as unknown as { update(): void }).update();
+		} else {
+			this.display();
+		}
 	}
 
 	// ── Imperative fallback (Obsidian < 1.13.0) ───────────────────────────
