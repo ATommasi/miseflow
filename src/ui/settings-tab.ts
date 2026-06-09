@@ -539,18 +539,20 @@ export class MiseFlowSettingsTab extends PluginSettingTab {
 	// ── Compat helpers ────────────────────────────────────────────────────
 
 	private refreshState(): void {
-		if ('refreshDomState' in this) {
-			(this as unknown as { refreshDomState(): void }).refreshDomState();
+		const tab = this as unknown as { refreshDomState?(): void; display(): void };
+		if (typeof tab.refreshDomState === 'function') {
+			tab.refreshDomState();
 		} else {
-			this.display();
+			tab.display();
 		}
 	}
 
 	private rerender(): void {
-		if ('update' in this) {
-			(this as unknown as { update(): void }).update();
+		const tab = this as unknown as { update?(): void; display(): void };
+		if (typeof tab.update === 'function') {
+			tab.update();
 		} else {
-			this.display();
+			tab.display();
 		}
 	}
 
