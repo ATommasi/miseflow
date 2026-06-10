@@ -90,6 +90,10 @@ export interface MiseFlowSettings {
 	autoAddIngredientsOnSync: boolean;
 	/** Only auto-add ingredients from recipes with this tag (no leading #). Empty = all recipes qualify. */
 	autoAddIngredientsTag: string;
+	/** Vault-relative path to a template note used when importing recipes. Empty = built-in default. */
+	importTemplatePath: string;
+	/** Default folder for imported recipes. Empty = first recipe folder. */
+	importFolder: string;
 	/** Persisted state - kept in the same data file so a single saveData() round-trip is enough. */
 	state: MiseFlowSavedState;
 }
@@ -180,6 +184,8 @@ export const DEFAULT_SETTINGS: MiseFlowSettings = {
 	timerIncrementMinutes: 1,
 	autoAddIngredientsOnSync: false,
 	autoAddIngredientsTag: "",
+	importTemplatePath: "",
+	importFolder: "",
 	state: {
 		mealPlanEntries: [],
 		oneOffs: [],

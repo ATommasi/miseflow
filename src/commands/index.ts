@@ -4,6 +4,7 @@ import { MiseFlowSettings } from "../settings";
 import { AddOneOffModal } from "../ui/add-item-modal";
 import { AddToMealPlanModal } from "../ui/add-to-meal-plan-modal";
 import { ExportListModal } from "../ui/export-modal";
+import { ImportRecipeModal, ImportRecipeHost } from "../ui/import-recipe-modal";
 import { LeaderboardModal } from "../ui/leaderboard-modal";
 import { SuggestMealModal } from "../ui/suggest-modal";
 
@@ -16,6 +17,7 @@ export interface CommandsHost {
 	openCurrentAsRecipe(): Promise<void>;
 	openCurrentAsMarkdown(): Promise<void>;
 }
+
 
 export function registerCommands(host: CommandsHost): void {
 	const { plugin, manager } = host;
@@ -153,6 +155,19 @@ export function registerCommands(host: CommandsHost): void {
 				getSettings: () => host.settings,
 				manager,
 			}).open();
+		},
+	});
+
+	const importHost: ImportRecipeHost = {
+		getSettings: () => host.settings,
+		saveSettings: () => host.saveSettings(),
+	};
+
+	plugin.addCommand({
+		id: "import-recipe",
+		name: "Import recipe from URL",
+		callback: () => {
+			new ImportRecipeModal(plugin.app, importHost).open();
 		},
 	});
 }

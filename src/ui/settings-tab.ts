@@ -158,6 +158,41 @@ export class MiseFlowSettingsTab extends PluginSettingTab {
 					}),
 			);
 
+		// ── Recipe Import ─────────────────────────────────────────────────
+		new Setting(containerEl).setName("Recipe import").setHeading();
+
+		new Setting(containerEl)
+			.setName("Import folder")
+			.setDesc(
+				"Vault-relative folder where imported recipes are saved. Leave blank to use the first recipe folder.",
+			)
+			.addText((text) =>
+				text
+					.setPlaceholder("Recipes")
+					.setValue(this.host.settings.importFolder)
+					.onChange(async (value) => {
+						this.host.settings.importFolder = value.trim();
+						await this.host.saveSettings();
+					}),
+			);
+
+		new Setting(containerEl)
+			.setName("Import template note")
+			.setDesc(
+				"Vault-relative path to a note used as the template for imported recipes. " +
+				"Use {{title}}, {{ingredients}}, {{instructions}}, {{image}}, {{url}}, {{servings}}, {{prepTime}}, {{cookTime}}, {{totalTime}}, {{description}}, {{date}} as tokens. " +
+				"Leave blank to use the built-in default. If you have Templater installed with 'trigger on file creation' enabled, Templater will also run on the new note automatically.",
+			)
+			.addText((text) =>
+				text
+					.setPlaceholder("Templates/Recipe Import.md")
+					.setValue(this.host.settings.importTemplatePath)
+					.onChange(async (value) => {
+						this.host.settings.importTemplatePath = value.trim();
+						await this.host.saveSettings();
+					}),
+			);
+
 		// ── Recipe Library ───────────────────────────────────────────────
 		new Setting(containerEl).setName("Recipe library").setHeading();
 
