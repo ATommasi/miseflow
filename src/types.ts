@@ -1,3 +1,17 @@
+/**
+ * Types used across the app, for better type safety and readability.
+ *
+ * This file intentionally avoids domain-specific types (e.g. Recipe, MealPlanEntry)
+ * that would create circular dependencies with the parser and UI modules. Only
+ * the most basic shared types go here.
+ *
+ * The one exception is NameMatcher, a generic type for functions that check
+ * ingredient names against some criterion and return a typed value on match.
+ * This is used by both the meat temperature detector and the GI matcher, and
+ * will likely be used for future per-ingredient annotations (allergens, cuisine
+ * types, dietary flags, etc), so it lives here to avoid coupling those modules.
+ */
+
 export interface ParsedIngredient {
 	/** Numeric quantity, if one was parsed. */
 	quantity: number | null;
@@ -133,3 +147,12 @@ export interface RecipeNutrition {
 	fat: number | null;
 	carbs: number | null;
 }
+
+/**
+ * A compiled check against an ingredient name.
+ * Returns a typed value on match, null otherwise.
+ *
+ * detectMeatTemp and the GI matcher satisfy this shape, as should any
+ * future per-ingredient annotation (allergens, cuisines, dietary flags, etc).
+ */
+export type NameMatcher<T> = (name: string) => T | null;

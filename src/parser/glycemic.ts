@@ -13,7 +13,8 @@
  * user's hands.
  */
 
-import type { NameMatcher } from "./matcher";
+import { NameMatcher } from "../types";
+
 
 /**
  * Default high-GI dictionary, shipped as a single string so users see

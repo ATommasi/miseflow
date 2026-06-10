@@ -7,7 +7,7 @@
  * https://www.fsis.usda.gov/food-safety/safe-food-handling-and-preparation/food-safety-basics/safe-temperature-chart
  */
 
-import type { NameMatcher } from "./matcher";
+import type { NameMatcher } from "../types";
 
 export interface MeatTemp {
 	/** Human-readable category, e.g. "Poultry". */
@@ -18,12 +18,12 @@ export interface MeatTemp {
 	celsius: number;
 }
 
-const POULTRY: MeatTemp  = { category: "Poultry",            fahrenheit: 165, celsius: 74 };
-const GROUND: MeatTemp   = { category: "Ground meat",        fahrenheit: 160, celsius: 71 };
-const PORK: MeatTemp     = { category: "Pork",               fahrenheit: 145, celsius: 63 };
+const POULTRY: MeatTemp = { category: "Poultry", fahrenheit: 165, celsius: 74 };
+const GROUND: MeatTemp = { category: "Ground meat", fahrenheit: 160, celsius: 71 };
+const PORK: MeatTemp = { category: "Pork", fahrenheit: 145, celsius: 63 };
 const RED_MEAT: MeatTemp = { category: "Beef / lamb / veal", fahrenheit: 145, celsius: 63 };
-const FISH: MeatTemp     = { category: "Fish",               fahrenheit: 145, celsius: 63 };
-const SHELLFISH: MeatTemp = { category: "Shellfish",         fahrenheit: 145, celsius: 63 };
+const FISH: MeatTemp = { category: "Fish", fahrenheit: 145, celsius: 63 };
+const SHELLFISH: MeatTemp = { category: "Shellfish", fahrenheit: 145, celsius: 63 };
 
 /**
  * Keywords per temperature category. Singular forms only — buildCategoryRegex
