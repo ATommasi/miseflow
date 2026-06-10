@@ -4,20 +4,21 @@
  * The shipped dictionary is a list of regex patterns matched against the
  * cleaned ingredient name. Patterns are case-insensitive. Users can
  * customise the list in Settings → Diabetic mode (only visible when the
- * mode is turned on). The dictionary is intentionally conservative -
- * widely-cited GI ≥ 70 foods only - so a false positive doesn't make
+ * mode is turned on). The dictionary is intentionally conservative —
+ * widely-cited GI ≥ 70 foods only — so a false positive doesn't make
  * users tune out the warnings.
  *
- * GI values vary across studies, preparations, and even cultivars, so
- * we treat this as guidance rather than fact and leave the final
- * dictionary in the user's hands.
+ * GI values vary across studies, preparations, and cultivars, so this is
+ * treated as guidance rather than fact; the final dictionary is in the
+ * user's hands.
  */
+
+import type { NameMatcher } from "./matcher";
 
 /**
  * Default high-GI dictionary, shipped as a single string so users see
- * the same `#`-comment formatting they'll edit in settings. Stored
- * here (not in settings.ts) because settings.ts shouldn't carry
- * domain knowledge.
+ * the same `#`-comment formatting they'll edit in settings. Stored here
+ * (not in settings.ts) because settings.ts shouldn't carry domain knowledge.
  */
 export const DEFAULT_GI_DICTIONARY = `# High glycemic index (GI ≥ 70) ingredients.
 # One regex per line, case-insensitive. Lines starting with # are comments.
@@ -63,63 +64,68 @@ export const DEFAULT_GI_DICTIONARY = `# High glycemic index (GI ≥ 70) ingredie
 \\bdates?\\b
 `;
 
-interface CompiledPattern {
+export interface CompiledPattern {
 	source: string;
 	regex: RegExp;
 }
 
-/**
- * Parse the user-editable dictionary string into compiled regexes.
- * Comment and blank lines are skipped. Invalid regexes are skipped
- * silently rather than throwing - we don't want a typo to take down
- * the recipe view. Callers can validate independently before saving.
- */
-export function parseGiDictionary(text: string): CompiledPattern[] {
-	const out: CompiledPattern[] = [];
-	for (const rawLine of text.split(/\r?\n/)) {
-		const line = rawLine.trim();
-		if (!line || line.startsWith("#")) continue;
-		try {
-			out.push({ source: line, regex: new RegExp(line, "i") });
-		} catch {
-			// invalid regex - skip
-		}
-	}
-	return out;
+export interface CompiledGiDictionary {
+	patterns: CompiledPattern[];
+	errors: string[];
 }
 
 /**
- * Validate a dictionary string and return any invalid lines so the
- * settings UI can surface them. Returns an empty array if every
- * non-comment line compiles.
+ * Parse and compile a user-editable dictionary string in one pass.
+ * Comment and blank lines are skipped. Invalid regexes are collected
+ * into `errors` rather than thrown — a typo shouldn't take down the
+ * recipe view.
  */
-export function validateGiDictionary(text: string): string[] {
+export function compileGiDictionary(text: string): CompiledGiDictionary {
+	const patterns: CompiledPattern[] = [];
 	const errors: string[] = [];
 	for (const rawLine of text.split(/\r?\n/)) {
 		const line = rawLine.trim();
 		if (!line || line.startsWith("#")) continue;
 		try {
-			new RegExp(line, "i");
+			patterns.push({ source: line, regex: new RegExp(line, "i") });
 		} catch (err) {
-			const reason = err instanceof Error ? err.message : "invalid regex";
-			errors.push(`${line} - ${reason}`);
+			errors.push(`${line} - ${err instanceof Error ? err.message : "invalid regex"}`);
 		}
 	}
-	return errors;
+	return { patterns, errors };
+}
+
+/** Returns compiled patterns, silently dropping invalid lines. */
+export function parseGiDictionary(text: string): CompiledPattern[] {
+	return compileGiDictionary(text).patterns;
+}
+
+/** Returns any invalid lines so the settings UI can surface them. */
+export function validateGiDictionary(text: string): string[] {
+	return compileGiDictionary(text).errors;
 }
 
 /**
  * Returns true if any pattern in the compiled dictionary matches the
- * supplied ingredient name. Caller is expected to pass an already
- * cleaned name (no quantity, no markdown, no trailing tags).
+ * supplied ingredient name. Caller should pass an already-cleaned name
+ * (no quantity, no markdown, no trailing tags).
+ *
+ * Use compileGiDictionary once and cache the result; don't recompile per call.
  */
 export function isHighGi(
 	name: string,
 	dictionary: readonly CompiledPattern[],
 ): boolean {
 	if (!name) return false;
-	for (const entry of dictionary) {
-		if (entry.regex.test(name)) return true;
-	}
-	return false;
+	return dictionary.some((entry) => entry.regex.test(name));
+}
+
+/**
+ * Wrap a compiled dictionary as a NameMatcher for use alongside other
+ * per-ingredient checks (e.g. detectMeatTemp).
+ */
+export function createGiMatcher(
+	dictionary: readonly CompiledPattern[],
+): NameMatcher<true> {
+	return (name) => (isHighGi(name, dictionary) ? true : null);
 }

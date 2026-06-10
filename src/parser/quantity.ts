@@ -29,20 +29,24 @@ const UNICODE_FRACTIONS: Record<string, number> = {
 	"⅞": 0.875,
 };
 
+// Derived from UNICODE_FRACTIONS keys — add new fractions to the map only.
+const UNICODE_FRAC_CLASS = Object.keys(UNICODE_FRACTIONS).join("");
+const ADJACENT_UNICODE_RE = new RegExp(`^(\\d+)([${UNICODE_FRAC_CLASS}])\\s*(.*)$`);
+
 export interface QuantityParseResult {
 	quantity: number | null;
 	rest: string;
 }
 
 /** ASCII slash plus the unicode fraction slash (U+2044) used by some recipe sites. */
-const FRACTION_SLASH = "[/\u2044]";
+const FRACTION_SLASH = "[/⁄]";
 
 export function parseLeadingQuantity(input: string): QuantityParseResult {
 	const trimmed = input.trim();
 	if (!trimmed) return { quantity: null, rest: "" };
 
 	// Adjacent unicode fraction with whole number, no space: "2½ cups"
-	const adjacentUnicode = trimmed.match(/^(\d+)([¼½¾⅓⅔⅕⅖⅗⅘⅙⅚⅛⅜⅝⅞])\s*(.*)$/);
+	const adjacentUnicode = trimmed.match(ADJACENT_UNICODE_RE);
 	if (adjacentUnicode) {
 		const whole = Number(adjacentUnicode[1]);
 		const frac = UNICODE_FRACTIONS[adjacentUnicode[2] ?? ""] ?? 0;
@@ -80,16 +84,13 @@ export function parseLeadingQuantity(input: string): QuantityParseResult {
 		return { quantity: Number(numeric[1]), rest: numeric[2] ?? "" };
 	}
 
-	// Leading unicode fraction (with optional whole number prefix).
+	// Leading unicode fraction (standalone, no whole-number prefix).
 	const firstChar = trimmed[0];
-	if (firstChar !== undefined && UNICODE_FRACTIONS[firstChar] !== undefined) {
-		const value = UNICODE_FRACTIONS[firstChar];
-		if (value !== undefined) {
-			return {
-				quantity: value,
-				rest: trimmed.slice(1).trimStart(),
-			};
-		}
+	if (firstChar !== undefined && firstChar in UNICODE_FRACTIONS) {
+		return {
+			quantity: UNICODE_FRACTIONS[firstChar] ?? null,
+			rest: trimmed.slice(1).trimStart(),
+		};
 	}
 
 	// "a" / "an" -> 1, only when followed by a space and at least one more word.
@@ -110,8 +111,8 @@ export function parseLeadingQuantity(input: string): QuantityParseResult {
  *
  * Examples:
  *   1.5           -> "1 1/2"
- *   0.6666...     -> "2/3"      (sum of 1/3 + 1/3)
- *   0.8333...     -> "5/6"      (sum of 1/2 + 1/3)
+ *   0.6666...     -> "2/3"
+ *   0.8333...     -> "5/6"
  *   1.99 (drift)  -> "2"        (snap-to-whole within tolerance)
  *   0.4           -> "0.4"      (no clean fraction, keep decimal)
  */
@@ -142,9 +143,7 @@ export function formatQuantity(qty: number | null): string {
 
 /**
  * Find the closest fraction with a small kitchen-standard denominator
- * within a tight tolerance. Returns null when nothing is close enough.
- *
- * Smaller denominators are preferred on ties, so 0.5 -> 1/2 rather than 4/8.
+ * within a tight tolerance. Smaller denominators win on ties.
  */
 function approximateFraction(
 	frac: number,

@@ -1,11 +1,13 @@
 /**
- * Meat detection helper used by the recipe view to surface a small
- * food-safety warning next to ingredients that need to hit a safe
- * minimum internal temperature.
+ * Meat detection helper used by the recipe view to surface a food-safety
+ * warning next to ingredients that need to hit a safe minimum internal
+ * temperature.
  *
- * Temperatures follow the USDA "Safe Minimum Internal Temperature"
- * chart (https://www.fsis.usda.gov/food-safety/safe-food-handling-and-preparation/food-safety-basics/safe-temperature-chart).
+ * Temperatures follow the USDA "Safe Minimum Internal Temperature" chart:
+ * https://www.fsis.usda.gov/food-safety/safe-food-handling-and-preparation/food-safety-basics/safe-temperature-chart
  */
+
+import type { NameMatcher } from "./matcher";
 
 export interface MeatTemp {
 	/** Human-readable category, e.g. "Poultry". */
@@ -16,261 +18,131 @@ export interface MeatTemp {
 	celsius: number;
 }
 
-interface MeatGroup {
-	keywords: string[];
-	temp: MeatTemp;
-}
+const POULTRY: MeatTemp  = { category: "Poultry",            fahrenheit: 165, celsius: 74 };
+const GROUND: MeatTemp   = { category: "Ground meat",        fahrenheit: 160, celsius: 71 };
+const PORK: MeatTemp     = { category: "Pork",               fahrenheit: 145, celsius: 63 };
+const RED_MEAT: MeatTemp = { category: "Beef / lamb / veal", fahrenheit: 145, celsius: 63 };
+const FISH: MeatTemp     = { category: "Fish",               fahrenheit: 145, celsius: 63 };
+const SHELLFISH: MeatTemp = { category: "Shellfish",         fahrenheit: 145, celsius: 63 };
 
-const POULTRY: MeatTemp = {
-	category: "Poultry",
-	fahrenheit: 165,
-	celsius: 74,
-};
-const GROUND: MeatTemp = {
-	category: "Ground meat",
-	fahrenheit: 160,
-	celsius: 71,
-};
-const PORK: MeatTemp = { category: "Pork", fahrenheit: 145, celsius: 63 };
-const RED_MEAT: MeatTemp = {
-	category: "Beef / lamb / veal",
-	fahrenheit: 145,
-	celsius: 63,
-};
-const FISH: MeatTemp = { category: "Fish", fahrenheit: 145, celsius: 63 };
-const SHELLFISH: MeatTemp = {
-	category: "Shellfish",
-	fahrenheit: 145,
-	celsius: 63,
-};
-
-const MEAT_GROUPS: MeatGroup[] = [
+/**
+ * Keywords per temperature category. Singular forms only — buildCategoryRegex
+ * appends `s?` automatically. Keep both forms only for irregular plurals
+ * (e.g. "anchovy" / "anchovies").
+ *
+ * Categories are tested in order, so more-specific categories (GROUND) must
+ * appear before the general ones they overlap with (PORK, RED_MEAT).
+ */
+const CATEGORY_KEYWORDS: { temp: MeatTemp; keywords: string[] }[] = [
 	{
-		keywords: [
-			"ground chicken",
-			"ground turkey",
-			"ground duck",
-			"ground poultry",
-			"chicken sausage",
-			"turkey sausage",
-			"rotisserie chicken",
-			"chicken thigh",
-			"chicken thighs",
-			"chicken breast",
-			"chicken breasts",
-			"chicken wing",
-			"chicken wings",
-			"chicken drumstick",
-			"chicken drumsticks",
-			"chicken leg",
-			"chicken legs",
-			"chicken tender",
-			"chicken tenders",
-			"chicken",
-			"turkey",
-			"duck",
-			"goose",
-			"cornish hen",
-			"poultry",
-		],
 		temp: POULTRY,
+		keywords: [
+			"ground chicken", "ground turkey", "ground duck", "ground poultry",
+			"chicken sausage", "turkey sausage", "rotisserie chicken",
+			"chicken thigh", "chicken breast", "chicken wing",
+			"chicken drumstick", "chicken leg", "chicken tender",
+			"chicken", "turkey", "duck", "goose", "cornish hen", "poultry",
+		],
 	},
 	{
-		keywords: [
-			"ground beef",
-			"ground pork",
-			"ground lamb",
-			"ground veal",
-			"ground meat",
-			"hamburger meat",
-			"hamburger patty",
-			"burger patty",
-			"minced beef",
-			"minced pork",
-			"minced lamb",
-			"italian sausage",
-			"breakfast sausage",
-			"pork sausage",
-			"chorizo",
-			"merguez",
-			"bratwurst",
-			"brat",
-			"sausage",
-		],
 		temp: GROUND,
-	},
-	{
 		keywords: [
-			"pork chop",
-			"pork chops",
-			"pork loin",
-			"pork shoulder",
-			"pork tenderloin",
-			"pork belly",
-			"pork ribs",
-			"pork ribs",
-			"pork",
-			"ham",
-			"bacon",
-			"prosciutto",
-			"pancetta",
-			"ribs",
-			"baby back ribs",
-			"spare ribs",
+			"ground beef", "ground pork", "ground lamb", "ground veal", "ground meat",
+			"hamburger meat", "hamburger patty", "burger patty",
+			"minced beef", "minced pork", "minced lamb",
+			"italian sausage", "breakfast sausage", "pork sausage",
+			"chorizo", "merguez", "bratwurst", "brat", "sausage",
 		],
-		temp: PORK,
 	},
 	{
+		temp: PORK,
 		keywords: [
-			"ribeye",
-			"sirloin",
-			"tenderloin",
-			"filet mignon",
-			"t-bone",
-			"porterhouse",
-			"ny strip",
-			"new york strip",
-			"flank steak",
-			"skirt steak",
-			"flat iron steak",
-			"hanger steak",
-			"brisket",
-			"chuck roast",
-			"chuck steak",
-			"roast beef",
-			"beef stew meat",
-			"beef short rib",
-			"steak",
-			"beef",
-			"lamb chop",
-			"lamb chops",
-			"lamb shoulder",
-			"lamb leg",
-			"leg of lamb",
-			"lamb shank",
-			"lamb",
+			"pork chop", "pork loin", "pork shoulder", "pork tenderloin",
+			"pork belly", "pork rib", "baby back rib", "spare rib",
+			"pork", "ham", "bacon", "prosciutto", "pancetta", "ribs",
+		],
+	},
+	{
+		temp: RED_MEAT,
+		keywords: [
+			"filet mignon", "flat iron steak", "new york strip", "flank steak",
+			"skirt steak", "hanger steak", "chuck roast", "chuck steak",
+			"roast beef", "beef stew meat", "beef short rib",
+			"ribeye", "sirloin", "tenderloin", "t-bone", "porterhouse",
+			"ny strip", "brisket", "steak", "beef",
+			"lamb chop", "lamb shoulder", "leg of lamb", "lamb shank", "lamb leg", "lamb",
 			"veal",
 		],
-		temp: RED_MEAT,
 	},
 	{
-		keywords: [
-			"salmon fillet",
-			"tuna steak",
-			"fish fillet",
-			"fish steak",
-			"salmon",
-			"tuna",
-			"tilapia",
-			"cod",
-			"trout",
-			"halibut",
-			"mahi-mahi",
-			"mahi mahi",
-			"mahi",
-			"snapper",
-			"swordfish",
-			"sea bass",
-			"branzino",
-			"barramundi",
-			"haddock",
-			"pollock",
-			"anchovy",
-			"anchovies",
-			"sardine",
-			"sardines",
-			"fish",
-		],
 		temp: FISH,
+		keywords: [
+			"salmon fillet", "tuna steak", "fish fillet", "fish steak",
+			"mahi-mahi", "mahi mahi", "sea bass",
+			"salmon", "tuna", "tilapia", "cod", "trout", "halibut",
+			"snapper", "swordfish", "branzino", "barramundi",
+			"haddock", "pollock", "anchovy", "anchovies", "sardine", "mahi", "fish",
+		],
 	},
 	{
-		keywords: [
-			"shrimp",
-			"prawn",
-			"prawns",
-			"scallop",
-			"scallops",
-			"crab",
-			"lobster",
-			"clam",
-			"clams",
-			"mussel",
-			"mussels",
-			"oyster",
-			"oysters",
-			"crawfish",
-			"crayfish",
-		],
 		temp: SHELLFISH,
+		keywords: [
+			"shrimp", "prawn", "scallop", "crab", "lobster",
+			"clam", "mussel", "oyster", "crawfish", "crayfish",
+		],
 	},
 ];
 
 /**
- * Words that, when present, mean the ingredient is a flavoring or
- * pantry staple rather than the meat itself. "Chicken broth", "fish
- * sauce", "beef bouillon", etc. should not get a temperature warning.
+ * Words that, when present, indicate a flavoring or pantry staple rather than
+ * the meat itself. "Chicken broth", "fish sauce", etc. skip the warning.
  */
 const NON_MEAT_QUALIFIERS = [
-	"stock",
-	"broth",
-	"bouillon",
-	"consomme",
-	"consommé",
-	"sauce",
-	"powder",
-	"extract",
-	"flavor",
-	"flavoring",
-	"flavour",
-	"flavouring",
-	"seasoning",
-	"rub",
-	"jerky",
+	"stock", "broth", "bouillon", "consomme", "consommé",
+	"sauce", "powder", "extract", "flavor", "flavoring",
+	"flavour", "flavouring", "seasoning", "rub", "jerky",
 ];
 
-interface PreparedKeyword {
-	regex: RegExp;
-	temp: MeatTemp;
-	length: number;
+function escapeRegex(value: string): string {
+	return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-const PREPARED_KEYWORDS: PreparedKeyword[] = MEAT_GROUPS.flatMap((group) =>
-	group.keywords.map((keyword) => ({
-		regex: buildKeywordRegex(keyword),
-		temp: group.temp,
-		length: keyword.length,
-	})),
-).sort((a, b) => b.length - a.length);
+/**
+ * Build a single regex from a keyword list. Keywords are sorted longest-first
+ * so more-specific phrases win over shorter overlapping ones (e.g. "ground
+ * chicken" beats "chicken"). The `s?` suffix handles common pluralisation;
+ * keep both forms in the keyword list for irregular plurals like
+ * "anchovy"/"anchovies".
+ */
+function buildCategoryRegex(keywords: string[]): RegExp {
+	const alts = [...keywords]
+		.sort((a, b) => b.length - a.length)
+		.map((k) => {
+			const esc = escapeRegex(k);
+			return /s$/i.test(k) ? esc : `${esc}s?`;
+		})
+		.join("|");
+	return new RegExp(`(?:^|[^a-z0-9])(?:${alts})(?:[^a-z0-9]|$)`, "i");
+}
 
-const NON_MEAT_REGEX = new RegExp(
+const MEAT_CATEGORIES = CATEGORY_KEYWORDS.map(({ temp, keywords }) => ({
+	temp,
+	regex: buildCategoryRegex(keywords),
+}));
+
+const NON_MEAT_RE = new RegExp(
 	`\\b(?:${NON_MEAT_QUALIFIERS.map(escapeRegex).join("|")})\\b`,
 	"i",
 );
 
 /**
- * Returns the safe internal temperature for an ingredient name, or null
- * if it doesn't look like a meat that needs a warning. Longer keywords
- * win, so "ground turkey" is treated as poultry rather than just
- * "turkey".
+ * Returns the safe internal temperature for an ingredient name, or null if it
+ * doesn't look like a meat that needs a warning.
+ *
+ * Satisfies NameMatcher<MeatTemp>.
  */
-export function detectMeatTemp(name: string): MeatTemp | null {
+export const detectMeatTemp: NameMatcher<MeatTemp> = (name) => {
 	const text = name.toLowerCase();
-	if (NON_MEAT_REGEX.test(text)) return null;
-	for (const entry of PREPARED_KEYWORDS) {
-		if (entry.regex.test(text)) return entry.temp;
-	}
-	return null;
-}
-
-function buildKeywordRegex(keyword: string): RegExp {
-	const escaped = escapeRegex(keyword);
-	const suffix = /s$/i.test(keyword) ? "" : "s?";
-	return new RegExp(
-		`(?:^|[^a-z0-9])${escaped}${suffix}(?:[^a-z0-9]|$)`,
-		"i",
-	);
-}
-
-function escapeRegex(value: string): string {
-	return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
+	if (NON_MEAT_RE.test(text)) return null;
+	return MEAT_CATEGORIES.find(({ regex }) => regex.test(text))?.temp ?? null;
+};

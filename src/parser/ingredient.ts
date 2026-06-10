@@ -100,22 +100,11 @@ const UNIT_MAP: Record<string, string> = {
 };
 
 /**
- * Strip leading list markers ("- ", "* ", "1. ") and inline checkbox syntax.
- *
- * Re-runs the bullet/checkbox passes so cases like "- [ ] - 3 lb beef" (where
- * the user double-bullets after the checkbox) collapse to "3 lb beef".
+ * Strip leading list markers ("- ", "* ", "1. ") and inline checkbox syntax,
+ * including nested combinations like "- [ ] - text".
  */
 function stripListMarkers(line: string): string {
-	let prev = "";
-	let out = line;
-	while (out !== prev) {
-		prev = out;
-		out = out.replace(/^\s*[-*+]\s+/, "");
-		out = out.replace(/^\s*\d+\.\s+/, "");
-		out = out.replace(/^\[.\]\s+/, "");
-		out = out.trim();
-	}
-	return out;
+	return line.replace(/^(?:\s*[-*+]\s+|\s*\d+\.\s+|\[.\]\s+)+/, "").trim();
 }
 
 /** Drop trailing parenthetical notes like "(optional)" or "(diced)". */
@@ -125,20 +114,13 @@ function stripTrailingNotes(text: string): string {
 
 /**
  * Pull trailing Obsidian-style #tags (`... #Meat #Spicy`) off the line.
- *
- * Returns the cleaned text and the tags (in order, without the leading `#`).
- * Only tags that appear at the very end of the line are extracted, so an
- * inline `#1` in something like `pan #1` is left alone.
+ * Only tags at the very end of the line are extracted; an inline `#1`
+ * in something like `pan #1` is left alone.
  */
 function extractTrailingTags(text: string): { text: string; tags: string[] } {
 	const match = text.match(/((?:\s+#[\w/-]+)+)\s*$/);
 	if (!match) return { text: text.trim(), tags: [] };
-	const tagBlock = match[1] ?? "";
-	const tags: string[] = [];
-	for (const raw of tagBlock.split(/\s+/)) {
-		const cleaned = raw.replace(/^#/, "").trim();
-		if (cleaned) tags.push(cleaned);
-	}
+	const tags = (match[1] ?? "").match(/#[\w/-]+/g)?.map((t) => t.slice(1)) ?? [];
 	return {
 		text: text.slice(0, match.index ?? text.length).trim(),
 		tags,
@@ -146,10 +128,9 @@ function extractTrailingTags(text: string): { text: string; tags: string[] } {
 }
 
 /**
- * Strip markdown bold/italic markers (** *** __) without removing inline content.
- *
- * We deliberately leave single `*` / `_` alone so we don't accidentally chew
- * through legitimate punctuation in ingredient names (e.g. "all-purpose").
+ * Strip markdown bold/italic markers (** *** __) without removing inline
+ * content. Single `*` / `_` are left alone to avoid chewing through
+ * legitimate punctuation in ingredient names (e.g. "all-purpose").
  */
 function stripMarkdownEmphasis(text: string): string {
 	return text
@@ -160,7 +141,7 @@ function stripMarkdownEmphasis(text: string): string {
 		.trim();
 }
 
-/** Drop common "of" connectors after a unit, e.g. "1 cup of flour" -> "1 cup flour". */
+/** Drop a leading "of" connector, e.g. "1 cup of flour" -> "1 cup flour". */
 function stripOf(text: string): string {
 	return text.replace(/^of\s+/i, "");
 }
@@ -179,9 +160,6 @@ function consumeUnit(rest: string): { unit: string; rest: string } {
 	if (oneWord) {
 		const candidate = (oneWord[1] ?? "").toLowerCase();
 		const canonical = UNIT_MAP[candidate];
-		// Some "units" like "unit", "whole", or "each" are just filler words:
-		// consume them so they don't end up in the name, but contribute no
-		// canonical unit so quantities still aggregate naturally.
 		if (canonical !== undefined) {
 			return { unit: canonical, rest: oneWord[2] ?? "" };
 		}
@@ -191,9 +169,7 @@ function consumeUnit(rest: string): { unit: string; rest: string } {
 
 /**
  * Parse a single ingredient line.
- *
- * Returns null when the line is empty or clearly not an ingredient
- * (e.g. a blank list bullet).
+ * Returns null when the line is empty or clearly not an ingredient.
  */
 export function parseIngredientLine(line: string): ParsedIngredient | null {
 	const cleaned = stripListMarkers(line);
@@ -219,10 +195,7 @@ export function parseIngredientLine(line: string): ParsedIngredient | null {
 	}
 
 	name = name.replace(/[,;]+$/g, "").trim();
-	if (!name) {
-		// e.g. just a number with no name: skip.
-		return null;
-	}
+	if (!name) return null;
 
 	return {
 		quantity,
@@ -245,19 +218,14 @@ export function normaliseName(name: string): string {
 		.trim();
 }
 
-/**
- * Build a stable consolidation key. Items consolidate when their
- * normalised name and canonical unit match.
- */
+/** Build a stable consolidation key from normalised name and canonical unit. */
 export function ingredientKey(name: string, unit: string): string {
 	return `${normaliseName(name)}|${unit.toLowerCase().trim()}`;
 }
 
 /**
  * Returns true if `tags` contains the ignore-ingredient marker.
- *
- * Accepts case-insensitive variants like `#IgnoreIngredient`,
- * `#ignoreingredient`, `#ignore-ingredient`, `#ignore_ingredient`.
+ * Accepts case-insensitive variants: #IgnoreIngredient, #ignore-ingredient, etc.
  */
 export function hasIgnoreTag(tags: readonly string[]): boolean {
 	return tags.some((tag) => normaliseTag(tag) === "ignoreingredient");
