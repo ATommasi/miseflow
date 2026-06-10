@@ -289,7 +289,7 @@ export class RecipeView extends TextFileView {
 			this.renderIngredients(ingredientsCol, file, split.ingredientGroups, multiplier, settings);
 		}
 		this.renderImageCard(bodyRow, file, frontmatter);
-		this.renderAfterIngredients(root, split.after, file.path, settings.instructionsHeading, timerOptions);
+		this.renderAfterIngredients(root, split.after, file.path, settings.instructionsHeading, timerOptions, settings.crossOffWhileCooking);
 	}
 
 	private renderMobileLayout(
@@ -368,7 +368,7 @@ export class RecipeView extends TextFileView {
 		);
 		this.renderMobileStepsTab(
 			tabPanels.get("steps")!,
-			split.after, file.path, settings.instructionsHeading, timerOptions, times,
+			split.after, file.path, settings.instructionsHeading, timerOptions, times, settings.crossOffWhileCooking,
 		);
 		void this.renderMobileInfoTab(
 			tabPanels.get("info")!,
@@ -530,6 +530,7 @@ export class RecipeView extends TextFileView {
 		instructionsHeading: string,
 		timerOptions: TimerOptions | null,
 		times: RecipeTimes,
+		crossOff = false,
 	): void {
 		const hasPrep = times.prep !== null;
 		const hasCook = times.cook !== null;
@@ -554,7 +555,7 @@ export class RecipeView extends TextFileView {
 			}
 		}
 
-		this.renderAfterIngredients(root, afterMarkdown, sourcePath, instructionsHeading, timerOptions);
+		this.renderAfterIngredients(root, afterMarkdown, sourcePath, instructionsHeading, timerOptions, crossOff);
 	}
 
 	private async renderMobileInfoTab(
@@ -639,6 +640,7 @@ export class RecipeView extends TextFileView {
 		sourcePath: string,
 		instructionsHeading: string,
 		timerOptions: TimerOptions | null,
+		crossOff = false,
 	): void {
 		if (!afterMarkdown.trim()) return;
 
@@ -662,6 +664,7 @@ export class RecipeView extends TextFileView {
 			sourcePath,
 			instructionsHeading,
 			timerOptions,
+			crossOff,
 		);
 
 		if (split.after.trim()) {
@@ -675,6 +678,7 @@ export class RecipeView extends TextFileView {
 		sourcePath: string,
 		title: string,
 		timerOptions: TimerOptions | null,
+		crossOff = false,
 	): Promise<void> {
 		const wrap = root.createDiv({
 			cls: "mise-recipe-instructions",
@@ -702,9 +706,15 @@ export class RecipeView extends TextFileView {
 					group.headingLevel >= 4
 						? "mise-recipe-instruction-group-heading--sub"
 						: "mise-recipe-instruction-group-heading--section";
-				groupEl.createDiv({
+				const headingBtn = groupEl.createEl("button", {
 					cls: `mise-recipe-instruction-group-heading ${levelCls}`,
-					text: group.heading,
+					attr: { type: "button" },
+				});
+				const chevronEl = headingBtn.createSpan({ cls: "mise-chevron" });
+				setIcon(chevronEl, "chevron-down");
+				headingBtn.createSpan({ text: group.heading });
+				headingBtn.addEventListener("click", () => {
+					groupEl.toggleClass("is-collapsed", !groupEl.hasClass("is-collapsed"));
 				});
 			}
 
@@ -734,6 +744,14 @@ export class RecipeView extends TextFileView {
 					);
 					if (timerOptions) {
 						processTimerButtons(body, timerOptions);
+					}
+
+					if (crossOff) {
+						li.style.cursor = "pointer";
+						li.addEventListener("click", (e) => {
+							if ((e.target as HTMLElement).closest("button")) return;
+							li.toggleClass("is-done", !li.hasClass("is-done"));
+						});
 					}
 				}
 			}
@@ -1291,16 +1309,28 @@ export class RecipeView extends TextFileView {
 		const groceryItems = this.deps.getGroceryItems();
 
 		for (const group of ingredientGroups) {
+			if (group.lines.length === 0 && !group.heading) continue;
+
+			const groupEl = wrap.createDiv({
+				cls: "mise-recipe-ingredient-group",
+			});
+
 			if (group.heading) {
-				wrap.createDiv({
+				const headingBtn = groupEl.createEl("button", {
 					cls: "mise-recipe-ingredient-group-heading",
-					text: group.heading,
+					attr: { type: "button" },
+				});
+				const chevronEl = headingBtn.createSpan({ cls: "mise-chevron" });
+				setIcon(chevronEl, "chevron-down");
+				headingBtn.createSpan({ text: group.heading });
+				headingBtn.addEventListener("click", () => {
+					groupEl.toggleClass("is-collapsed", !groupEl.hasClass("is-collapsed"));
 				});
 			}
 
 			if (group.lines.length === 0) continue;
 
-			const ul = wrap.createEl("ul", {
+			const ul = groupEl.createEl("ul", {
 				cls: "mise-recipe-ingredient-list",
 			});
 
@@ -1311,8 +1341,6 @@ export class RecipeView extends TextFileView {
 				const li = ul.createEl("li", {
 					cls: "mise-recipe-ingredient",
 				});
-
-
 
 				const scaledQty =
 					parsed.quantity === null
@@ -1357,13 +1385,22 @@ export class RecipeView extends TextFileView {
 							title: `Remove from grocery list`,
 						},
 					});
-					cartBtn.addEventListener("click", () => {
+					cartBtn.addEventListener("click", (e) => {
+						e.stopPropagation();
 						void this.deps.removeFromGroceryByKey(key);
 					});
 					const cartIconEl = cartBtn.createSpan({
 						cls: "mise-recipe-ingredient-cart-icon",
 					});
 					setIcon(cartIconEl, "list-x");
+				}
+
+				if (settings.crossOffWhileCooking) {
+					li.style.cursor = "pointer";
+					li.addEventListener("click", (e) => {
+						if ((e.target as HTMLElement).closest("button")) return;
+						li.toggleClass("is-done", !li.hasClass("is-done"));
+					});
 				}
 			}
 		}

@@ -818,8 +818,8 @@ settings:
 	flex-shrink: 0;
 	background: var(--background-secondary);
 	border-radius: var(--radius-l);
-	border: 1px solid var(--background-modifier-border);
-	overflow: hidden;
+	border: 1px solid color-mix(in srgb, var(--background-modifier-border) 45%, transparent);
+	overflow: visible;
 }
 
 .mise-recipe-ingredients-header {
@@ -827,7 +827,7 @@ settings:
 	align-items: center;
 	gap: var(--size-2-2);
 	padding: var(--size-2-3) var(--size-4-2);
-	border-bottom: 1px solid var(--background-modifier-border);
+	border-bottom: 1px solid color-mix(in srgb, var(--background-modifier-border) 45%, transparent);
 	color: var(--text-muted);
 }
 
@@ -871,20 +871,65 @@ settings:
 	color: var(--text-muted);
 }
 
+.mise-recipe-ingredient-group {
+	display: flex;
+	flex-direction: column;
+}
+
+.mise-recipe-ingredient-group + .mise-recipe-ingredient-group {
+	border-top: 1px solid color-mix(in srgb, var(--background-modifier-border) 45%, transparent);
+	margin-top: var(--size-2-1);
+	padding-top: var(--size-2-1);
+}
+
+.mise-recipe-ingredient-group.is-collapsed .mise-recipe-ingredient-list {
+	display: none;
+}
+
+.mise-recipe-ingredient-group.is-collapsed .mise-chevron {
+	transform: rotate(-90deg);
+}
+
 .mise-recipe-ingredient-list {
 	list-style: none;
-	padding: 0;
+	padding: var(--size-2-1) 0;
 	margin: 0;
 	flex-grow: 1;
+	display: flex;
+	flex-direction: column;
 }
 
 .mise-recipe-ingredient-group-heading {
-	padding: var(--size-2-2) var(--size-4-2);
+	display: flex;
+	align-items: center;
+	gap: var(--size-2-2);
+	width: 100%;
+	padding: var(--size-2-2) var(--size-4-2) var(--size-2-2) var(--size-2-3);
 	font-size: var(--font-ui-small);
 	font-weight: var(--font-semibold);
 	color: var(--text-accent);
-	border-top: 1px solid var(--background-modifier-border);
-	background: var(--background-primary-alt);
+	background: transparent;
+	border: none;
+	border-left: 2px solid var(--interactive-accent);
+	border-radius: 0;
+	box-shadow: none;
+	cursor: pointer;
+	text-align: left;
+	margin: var(--size-2-1) 0;
+	transition: background-color 80ms ease-in-out;
+}
+
+.mise-recipe-ingredient-group-heading:hover {
+	background: var(--background-modifier-hover);
+	color: var(--text-accent);
+}
+
+.mise-recipe-ingredient-group-heading .mise-chevron {
+	color: var(--text-faint);
+	flex-shrink: 0;
+	order: 1;
+	margin-left: auto;
+	transition: transform 120ms ease-in-out;
 }
 
 .mise-recipe-ingredient {
@@ -892,13 +937,10 @@ settings:
 	flex-direction: row;
 	align-items: center;
 	gap: var(--size-2-3);
-	padding: var(--size-2-3) var(--size-4-2);
+	padding: var(--size-2-2) var(--size-4-2);
 	font-size: var(--font-ui-medium);
+	border-radius: var(--radius-s);
 	transition: background-color 80ms ease-in-out;
-}
-
-.mise-recipe-ingredient+.mise-recipe-ingredient {
-	border-top: 1px solid var(--background-modifier-border);
 }
 
 .mise-recipe-ingredient:hover {
@@ -911,6 +953,12 @@ settings:
 
 .mise-recipe-ingredient.is-excluded {
 	opacity: 0.9;
+}
+
+.mise-recipe-ingredient.is-done .mise-recipe-ingredient-name,
+.mise-recipe-ingredient.is-done .mise-recipe-ingredient-qty {
+	text-decoration: line-through;
+	color: var(--text-faint);
 }
 
 .mise-recipe-ingredient-toggle {
@@ -1261,8 +1309,8 @@ settings:
 	flex-shrink: 0;
 	background: var(--background-secondary);
 	border-radius: var(--radius-l);
-	border: 1px solid var(--background-modifier-border);
-	overflow: hidden;
+	border: 1px solid color-mix(in srgb, var(--background-modifier-border) 45%, transparent);
+	overflow: visible;
 	margin-top: var(--size-4-3);
 }
 
@@ -1271,7 +1319,7 @@ settings:
 	align-items: center;
 	gap: var(--size-2-2);
 	padding: var(--size-2-3) var(--size-4-2);
-	border-bottom: 1px solid var(--background-modifier-border);
+	border-bottom: 1px solid color-mix(in srgb, var(--background-modifier-border) 45%, transparent);
 	color: var(--text-muted);
 }
 
@@ -1292,9 +1340,12 @@ settings:
 
 .mise-recipe-instruction-list {
 	list-style: none;
-	padding: 0;
+	padding: var(--size-2-2) 0;
 	margin: 0;
 	counter-reset: instruction;
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
 }
 
 .mise-recipe-instruction-group {
@@ -1302,25 +1353,59 @@ settings:
 	flex-direction: column;
 }
 
-.mise-recipe-instruction-group+.mise-recipe-instruction-group {
-	border-top: 1px solid var(--background-modifier-border);
+.mise-recipe-instruction-group + .mise-recipe-instruction-group {
+	border-top: 1px solid color-mix(in srgb, var(--background-modifier-border) 45%, transparent);
+	margin-top: var(--size-2-1);
+	padding-top: var(--size-2-1);
+}
+
+.mise-recipe-instruction-group.is-collapsed .mise-recipe-instruction-list {
+	display: none;
+}
+
+.mise-recipe-instruction-group.is-collapsed .mise-chevron {
+	transform: rotate(-90deg);
+}
+
+.mise-recipe-instruction-group-heading {
+	display: flex;
+	align-items: center;
+	gap: var(--size-2-2);
+	width: 100%;
+	background: transparent;
+	border: none;
+	border-left: 2px solid var(--interactive-accent);
+	border-radius: 0;
+	box-shadow: none;
+	cursor: pointer;
+	text-align: left;
+	color: var(--text-accent);
+	font-weight: var(--font-semibold);
+	margin: var(--size-2-1) 0;
+	transition: background-color 80ms ease-in-out;
+}
+
+.mise-recipe-instruction-group-heading:hover {
+	background: var(--background-modifier-hover);
+	color: var(--text-accent);
+}
+
+.mise-recipe-instruction-group-heading .mise-chevron {
+	color: var(--text-faint);
+	flex-shrink: 0;
+	order: 1;
+	margin-left: auto;
+	transition: transform 120ms ease-in-out;
 }
 
 .mise-recipe-instruction-group-heading--section {
-	padding: var(--size-2-3) var(--size-4-3);
+	padding: var(--size-2-3) var(--size-4-3) var(--size-2-3) var(--size-2-3);
 	font-size: var(--font-ui-medium);
-	font-weight: var(--font-semibold);
-	color: var(--text-accent);
-	background: var(--background-primary-alt);
 }
 
 .mise-recipe-instruction-group-heading--sub {
-	padding: var(--size-2-1) var(--size-4-3);
+	padding: var(--size-2-2) var(--size-4-3) var(--size-2-2) var(--size-2-3);
 	font-size: var(--font-ui-small);
-	font-weight: var(--font-semibold);
-	color: var(--text-accent);
-	background: var(--background-primary-alt);
-	border-top: 1px solid var(--background-modifier-border);
 }
 
 .mise-recipe-instruction {
@@ -1329,15 +1414,22 @@ settings:
 	gap: var(--size-4-2);
 	align-items: start;
 	padding: var(--size-4-2) var(--size-4-3);
+	border-radius: var(--radius-s);
 	transition: background-color 80ms ease-in-out;
-}
-
-.mise-recipe-instruction+.mise-recipe-instruction {
-	border-top: 1px solid var(--background-modifier-border);
 }
 
 .mise-recipe-instruction:hover {
 	background: var(--background-modifier-hover);
+}
+
+.mise-recipe-instruction.is-done .mise-recipe-instruction-body {
+	text-decoration: line-through;
+	opacity: 0.45;
+}
+
+.mise-recipe-instruction.is-done .mise-recipe-instruction-number {
+	background: var(--background-modifier-border);
+	color: var(--text-faint);
 }
 
 .mise-recipe-instruction-number {

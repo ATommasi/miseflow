@@ -38,6 +38,8 @@ export interface MiseFlowSettings {
 	nutritionDisplay: NutritionDisplay;
 	/** Whether frontmatter nutrition values are stored as recipe totals or per-serving values. */
 	nutritionSource: NutritionSource;
+	/** When true, clicking an ingredient row or instruction step crosses it off for the session. */
+	crossOffWhileCooking: boolean;
 	/** Show a "Mark as cooked" button in the recipe view action bar. */
 	showMarkCookedButton: boolean;
 	/** When true, clicking "Mark as cooked" prompts for a date instead of using today. */
@@ -158,6 +160,7 @@ export const DEFAULT_SETTINGS: MiseFlowSettings = {
 	recipeTypeValue: "recipe",
 	nutritionDisplay: "per-serving",
 	nutritionSource: "recipe-total",
+	crossOffWhileCooking: true,
 	showMarkCookedButton: true,
 	markCookedAskDate: false,
 	trackLastMade: true,

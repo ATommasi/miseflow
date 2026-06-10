@@ -548,6 +548,20 @@ export class MiseFlowSettingsTab extends PluginSettingTab {
 			);
 
 		new Setting(containerEl)
+			.setName("Cross off while cooking")
+			.setDesc(
+				"Click any ingredient or instruction step to cross it off while cooking. Resets when the note is reopened.",
+			)
+			.addToggle((toggle) =>
+				toggle
+					.setValue(this.host.settings.crossOffWhileCooking)
+					.onChange(async (value) => {
+						this.host.settings.crossOffWhileCooking = value;
+						await this.host.saveSettings();
+					}),
+			);
+
+		new Setting(containerEl)
 			.setName("Ask for date when marking cooked")
 			.setDesc(
 				"Open a date picker instead of using today's date when marking a recipe as cooked.",
