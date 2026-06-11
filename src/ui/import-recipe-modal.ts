@@ -147,7 +147,7 @@ export class ImportRecipeModal extends Modal {
 					state: { file: file.path },
 					active: true,
 				});
-				this.app.workspace.revealLeaf(leaf);
+				void this.app.workspace.revealLeaf(leaf);
 			}
 		} catch (err) {
 			new Notice(`Import failed: ${String(err)}`);

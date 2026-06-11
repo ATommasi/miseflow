@@ -283,6 +283,13 @@ export class RecipeView extends TextFileView {
 			void this.renderMarkdown(root, split.before, file.path);
 		}
 
+		if (settings.showJumpBar) {
+			const jumpSections = extractExtraSections(split.after, settings.instructionsHeading);
+			if (jumpSections.length > 0) {
+				this.renderJumpBar(root, jumpSections);
+			}
+		}
+
 		const bodyRow = root.createDiv({ cls: "mise-recipe-body" });
 		const ingredientsCol = bodyRow.createDiv({ cls: "mise-recipe-body-main" });
 		if (split.ingredientGroups.length > 0) {
@@ -747,7 +754,7 @@ export class RecipeView extends TextFileView {
 					}
 
 					if (crossOff) {
-						li.style.cursor = "pointer";
+						li.addClass("mise-crossoff");
 						li.addEventListener("click", (e) => {
 							if ((e.target as HTMLElement).closest("button")) return;
 							li.toggleClass("is-done", !li.hasClass("is-done"));
@@ -755,6 +762,27 @@ export class RecipeView extends TextFileView {
 					}
 				}
 			}
+		}
+	}
+
+	private renderJumpBar(root: HTMLElement, sections: string[]): void {
+		const bar = root.createDiv({ cls: "mise-recipe-jump-bar" });
+		bar.createSpan({ cls: "mise-recipe-jump-label", text: "Jump to:" });
+		for (const heading of sections) {
+			const link = bar.createEl("button", {
+				cls: "mise-recipe-jump-link",
+				text: heading,
+				attr: { type: "button" },
+			});
+			link.addEventListener("click", () => {
+				const all = root.querySelectorAll<HTMLElement>("h1,h2,h3,h4,h5,h6");
+				for (const el of Array.from(all)) {
+					if (el.textContent?.trim().toLowerCase() === heading.toLowerCase()) {
+						el.scrollIntoView({ behavior: "smooth", block: "start" });
+						break;
+					}
+				}
+			});
 		}
 	}
 
@@ -1396,7 +1424,7 @@ export class RecipeView extends TextFileView {
 				}
 
 				if (settings.crossOffWhileCooking) {
-					li.style.cursor = "pointer";
+					li.addClass("mise-crossoff");
 					li.addEventListener("click", (e) => {
 						if ((e.target as HTMLElement).closest("button")) return;
 						li.toggleClass("is-done", !li.hasClass("is-done"));
@@ -1581,6 +1609,20 @@ function resolveNutritionDisplayValue(
 		return perServing ?? baseValue;
 	}
 	return total ?? baseValue;
+}
+
+function extractExtraSections(afterIngredients: string, instructionsHeading: string): string[] {
+	const instSplit = splitBodyAroundInstructions(afterIngredients, instructionsHeading);
+	const postInstructions = instSplit.after;
+	if (!postInstructions.trim()) return [];
+	const headingPattern = /^#{1,6}\s+(.+?)\s*#*\s*$/gm;
+	const headings: string[] = [];
+	let match: RegExpExecArray | null;
+	while ((match = headingPattern.exec(postInstructions)) !== null) {
+		const text = (match[1] ?? "").trim();
+		if (text) headings.push(text);
+	}
+	return headings;
 }
 
 function localDateISO(): string {

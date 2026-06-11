@@ -40,6 +40,8 @@ export interface MiseFlowSettings {
 	nutritionSource: NutritionSource;
 	/** When true, clicking an ingredient row or instruction step crosses it off for the session. */
 	crossOffWhileCooking: boolean;
+	/** Show a "Jump to" bar linking to extra sections (Tips, Notes, etc.) above the ingredients. */
+	showJumpBar: boolean;
 	/** Show a "Mark as cooked" button in the recipe view action bar. */
 	showMarkCookedButton: boolean;
 	/** When true, clicking "Mark as cooked" prompts for a date instead of using today. */
@@ -161,6 +163,7 @@ export const DEFAULT_SETTINGS: MiseFlowSettings = {
 	nutritionDisplay: "per-serving",
 	nutritionSource: "recipe-total",
 	crossOffWhileCooking: true,
+	showJumpBar: true,
 	showMarkCookedButton: true,
 	markCookedAskDate: false,
 	trackLastMade: true,

@@ -45,7 +45,7 @@ export async function extractRecipe(
 	// object via Object.fromEntries before validation. Normalise either form.
 	const nutrientObj: Record<string, string> =
 		r.nutrients instanceof Map
-			? Object.fromEntries(r.nutrients)
+			? Object.fromEntries<string>(r.nutrients)
 			: (r.nutrients as unknown as Record<string, string>) ?? {};
 
 	return {

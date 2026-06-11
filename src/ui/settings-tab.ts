@@ -103,7 +103,7 @@ export class MiseFlowSettingsTab extends PluginSettingTab {
 					.onChange(async (value) => {
 						this.host.settings.mealPlanNotePath =
 							value.trim() || "Meal Plan.md";
-							await this.host.saveSettings();
+						await this.host.saveSettings();
 					}),
 			);
 
@@ -303,6 +303,20 @@ export class MiseFlowSettingsTab extends PluginSettingTab {
 					.setValue(this.host.settings.stripBodyHeroImage)
 					.onChange(async (value) => {
 						this.host.settings.stripBodyHeroImage = value;
+						await this.host.saveSettings();
+					}),
+			);
+
+		new Setting(containerEl)
+			.setName("Show jump bar")
+			.setDesc(
+				"Show a bar above the ingredients linking to extra sections like tips or notes",
+			)
+			.addToggle((toggle) =>
+				toggle
+					.setValue(this.host.settings.showJumpBar)
+					.onChange(async (value) => {
+						this.host.settings.showJumpBar = value;
 						await this.host.saveSettings();
 					}),
 			);
@@ -560,6 +574,7 @@ export class MiseFlowSettingsTab extends PluginSettingTab {
 						await this.host.saveSettings();
 					}),
 			);
+
 
 		new Setting(containerEl)
 			.setName("Ask for date when marking cooked")
@@ -1051,7 +1066,7 @@ export class MiseFlowSettingsTab extends PluginSettingTab {
 // Module-level helpers
 // ---------------------------------------------------------------------------
 
-function createMomentDesc(prefix: string): DocumentFragment {
+function createMomentDesc(prefix: string): string {
 	const frag = activeDocument.createDocumentFragment();
 	frag.appendText(`${prefix} `);
 	const link = frag.createEl("a", {
@@ -1061,7 +1076,8 @@ function createMomentDesc(prefix: string): DocumentFragment {
 	});
 	frag.appendChild(link);
 	frag.appendText(" supported, e.g. Meal Plan {YYYY-MM-DD}.md.");
-	return frag;
+	return frag.textContent || "";
+
 }
 
 function renderErrors(container: HTMLElement, errors: readonly string[]): void {
