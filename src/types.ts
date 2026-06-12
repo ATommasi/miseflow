@@ -156,3 +156,31 @@ export interface RecipeNutrition {
  * future per-ingredient annotation (allergens, cuisines, dietary flags, etc).
  */
 export type NameMatcher<T> = (name: string) => T | null;
+
+export type BadgeColor = "default" | "green" | "blue" | "purple" | "yellow" | "red";
+
+export type BadgeValueType =
+	| "auto"     // string as-is, number as-is, ISO date → formatted, wiki-link stripped
+	| "minutes"; // integer minutes → "1h 30m"
+
+export type BadgeType = "badge" | "separator" | "newline";
+
+export interface CustomBadge {
+	/** Defaults to "badge" when absent. */
+	type?: BadgeType;
+	property: string;
+	label: string;
+	icon: string;
+	color: BadgeColor;
+	valueType: BadgeValueType;
+	prefix: string;
+	suffix: string;
+	splitArray: boolean;
+	enabled: boolean;
+	/** When true, the label is omitted and only the value is shown. */
+	hideLabel?: boolean;
+	/** JS expression evaluated with frontmatter properties in scope. When set, replaces property/prefix/suffix/splitArray. */
+	formula?: string;
+	/** True for the five built-in badges shipped with the plugin. Hides the delete button. */
+	builtin?: boolean;
+}

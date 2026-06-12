@@ -177,6 +177,9 @@ export default class MiseFlowPlugin extends Plugin {
 
 	async saveSettings(): Promise<void> {
 		await this.saveData(this.settings);
+		this.app.workspace.getLeavesOfType(VIEW_TYPE_RECIPE).forEach(leaf => {
+			if (leaf.view instanceof RecipeView) leaf.view.refresh();
+		});
 	}
 
 	async activateView(): Promise<void> {
