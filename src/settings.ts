@@ -2,6 +2,7 @@ import { DEFAULT_GI_DICTIONARY } from "./parser/glycemic";
 import {
 	CategoryOverride,
 	CategorySource,
+	CustomBadge,
 	GroupingMode,
 	MealPlanEntry,
 	OneOffItem,
@@ -98,6 +99,14 @@ export interface MiseFlowSettings {
 	importTemplatePath: string;
 	/** Default folder for imported recipes. Empty = first recipe folder. */
 	importFolder: string;
+	/** User-configured badges shown in the recipe view header. Pre-populated with built-in defaults. */
+	customBadges: CustomBadge[];
+	/** Show frontmatter tags in the recipe header above the badges. */
+	showTagsInHeader: boolean;
+	/** Prefix each tag with # when displaying. */
+	tagHeaderShowHash: boolean;
+	/** Show the full tag path (tag1/tag2) vs only the last segment (tag2). */
+	tagHeaderFullPath: boolean;
 	/** Persisted state - kept in the same data file so a single saveData() round-trip is enough. */
 	state: MiseFlowSavedState;
 }
@@ -192,6 +201,16 @@ export const DEFAULT_SETTINGS: MiseFlowSettings = {
 	autoAddIngredientsTag: "",
 	importTemplatePath: "",
 	importFolder: "",
+	customBadges: [
+		{ property: "diet",      label: "",           icon: "",         color: "green",   valueType: "auto",    prefix: "", suffix: "", splitArray: true,  enabled: true, builtin: true },
+		{ property: "prepTime",  label: "Prep",       icon: "clock",    color: "default", valueType: "minutes", prefix: "", suffix: "", splitArray: false, enabled: true, builtin: true },
+		{ property: "cookTime",  label: "Cook",       icon: "clock",    color: "default", valueType: "minutes", prefix: "", suffix: "", splitArray: false, enabled: true, builtin: true },
+		{ property: "", label: "Total", icon: "clock", color: "default", valueType: "minutes", prefix: "", suffix: "", splitArray: false, enabled: true, builtin: true, formula: "(prepTime || 0) + (cookTime || 0) || null" },
+		{ property: "lastMade",  label: "Last made",  icon: "calendar", color: "green",   valueType: "auto",    prefix: "", suffix: "", splitArray: false, enabled: true, builtin: true },
+	],
+	showTagsInHeader: false,
+	tagHeaderShowHash: false,
+	tagHeaderFullPath: true,
 	state: {
 		mealPlanEntries: [],
 		oneOffs: [],

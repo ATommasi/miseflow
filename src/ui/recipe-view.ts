@@ -28,13 +28,13 @@ import {
 	formatMinutes,
 	matchingAllergens,
 	readAllergens,
-	readDiet,
 	readFavorite,
-	readLastMade,
 	readTimes,
 	RecipeTimes,
 } from "../parser/recipe-meta";
 import {
+	CustomBadge,
+	BadgeValueType,
 	IngredientGroup,
 	InstructionGroup,
 	GroceryItem,
@@ -110,6 +110,56 @@ const SERVINGS_KEYS = [
 	"portions",
 ] as const;
 
+function readFrontmatterTags(frontmatter: Record<string, unknown>): string[] {
+	const raw = frontmatter["tags"] ?? frontmatter["tag"];
+	const arr = Array.isArray(raw) ? raw : typeof raw === "string" ? [raw] : [];
+	return arr
+		.filter((t): t is string => typeof t === "string" && t.length > 0)
+		.map(t => t.startsWith("#") ? t.slice(1) : t);
+}
+
+function stripWikiLink(s: string): string {
+	return s.replace(/\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g, (_, t: string, d?: string) => (d ?? t).trim());
+}
+
+function normalizeScalar(v: unknown, valueType: BadgeValueType): string {
+	if (valueType === "minutes" && typeof v === "number") return formatMinutes(v);
+	if (typeof v === "number") return String(v);
+	if (typeof v === "string") {
+		const s = stripWikiLink(v.trim());
+		if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
+			return new Date(s + "T00:00:00").toLocaleDateString(undefined, {
+				year: "numeric", month: "short", day: "numeric",
+			});
+		}
+		return s;
+	}
+	return "";
+}
+
+function evalFormula(expr: string, fm: Record<string, unknown>): string | number | boolean | null {
+	try {
+		// eslint-disable-next-line @typescript-eslint/no-implied-eval
+		const fn = new Function(...Object.keys(fm), `"use strict"; return (${expr});`) as (...args: unknown[]) => unknown;
+		const result = fn(...Object.values(fm));
+		if (result == null) return null;
+		if (typeof result !== 'string' && typeof result !== 'number' && typeof result !== 'boolean') return null;
+		return result;
+	} catch {
+		return null;
+	}
+}
+
+function resolveBadgeValues(raw: unknown, badge: CustomBadge): string[] | null {
+	if (raw === null || raw === undefined) return null;
+	if (typeof raw === "boolean") return raw ? [""] : null;
+	const items = Array.isArray(raw) ? raw : [raw];
+	const values = items.map(v => normalizeScalar(v, badge.valueType)).filter(Boolean);
+	if (values.length === 0) return null;
+	if (Array.isArray(raw) && badge.splitArray) return values;
+	return [values.join(", ")];
+}
+
 /**
  * Replacement view for markdown files that represent recipes.
  *
@@ -170,6 +220,10 @@ export class RecipeView extends TextFileView {
 		);
 	}
 
+	refresh(): void {
+		this.render();
+	}
+
 	private render(): void {
 		clearAllTimers();
 		const root = this.contentEl;
@@ -206,11 +260,9 @@ export class RecipeView extends TextFileView {
 			settings.ingredientsHeading,
 		);
 
-		const diet = readDiet(frontmatter);
 		const allergens = readAllergens(frontmatter, settings.allergensProperty);
 		const times = readTimes(frontmatter);
 		const isFavorite = readFavorite(frontmatter);
-		const lastMade = readLastMade(frontmatter, settings.lastMadeProperty);
 		const allergenWarnings = matchingAllergens(
 			allergens,
 			settings.myAllergens,
@@ -233,7 +285,7 @@ export class RecipeView extends TextFileView {
 			}
 			: null;
 
-		this.renderTitle(root, file, diet, times, lastMade, frontmatter, settings);
+		this.renderTitle(root, file, frontmatter, settings);
 		if (allergenWarnings.length > 0) {
 			this.renderAllergenWarning(root, allergenWarnings);
 		}
@@ -856,9 +908,6 @@ export class RecipeView extends TextFileView {
 	private renderTitle(
 		root: HTMLElement,
 		file: TFile,
-		diet: readonly string[],
-		times: RecipeTimes,
-		lastMade: string | null,
 		frontmatter: Record<string, unknown>,
 		settings: MiseFlowSettings,
 	): void {
@@ -867,7 +916,6 @@ export class RecipeView extends TextFileView {
 			cls: "mise-recipe-title",
 			text: file.basename,
 		});
-
 
 		// Star rating
 		const ratingProp = settings.ratingProperty || "rating";
@@ -878,98 +926,105 @@ export class RecipeView extends TextFileView {
 				? Math.min(5, Math.max(0, Math.round(Number(ratingRaw) || 0)))
 				: 0;
 
-		const ratingBlock = header.createDiv({ cls: "mise-recipe-hero-rating" });
-		ratingBlock.createSpan({ cls: "mise-recipe-hero-meta-label", text: "Rating: " });
-		const starsRow = ratingBlock.createSpan({ cls: "mise-recipe-mobile-stars" });
+		const ratingBlock = header.createDiv({
+			cls: "mise-recipe-hero-rating" + (currentRating === 0 ? " is-unrated" : ""),
+		});
+		const starsRow = ratingBlock.createSpan({ cls: "mise-recipe-header-stars" });
 
 		const renderStars = (value: number): void => {
+			ratingBlock.toggleClass("is-unrated", value === 0);
 			starsRow.empty();
+			const starEls: HTMLElement[] = [];
 			for (let i = 1; i <= 5; i++) {
 				const star = starsRow.createSpan({
-					cls: "mise-recipe-mobile-star" + (i <= value ? " is-filled" : ""),
+					cls: "mise-recipe-header-star" + (i <= value ? " is-filled" : ""),
 					text: "★",
 					attr: { "data-value": String(i), role: "button", "aria-label": `Rate ${i} stars` },
+				});
+				starEls.push(star);
+				star.addEventListener("mouseenter", () => {
+					starEls.forEach((s, j) => s.toggleClass("is-preview", j < i));
 				});
 				star.addEventListener("click", () => {
 					const next = i === value ? 0 : i;
 					void this.setRating(file, next, ratingProp).then(() => renderStars(next));
 				});
 			}
+			starsRow.addEventListener("mouseleave", () => {
+				starEls.forEach(s => s.removeClass("is-preview"));
+			});
 		};
 		renderStars(currentRating);
 
-		const hasBadges =
-			diet.length > 0 ||
-			times.prep !== null ||
-			times.cook !== null ||
-			times.total !== null ||
-			lastMade !== null;
-		if (!hasBadges) return;
+		if (settings.showTagsInHeader) {
+			const tags = readFrontmatterTags(frontmatter);
+			if (tags.length > 0) {
+				const tagsEl = header.createDiv({ cls: "mise-recipe-header-tags" });
+				for (const tag of tags) {
+					const display = settings.tagHeaderFullPath ? tag : (tag.split("/").pop() ?? tag);
+					const text = settings.tagHeaderShowHash ? `#${display}` : display;
+					const a = tagsEl.createEl("a", { cls: "tag", text, href: `#${tag}` });
+					a.addEventListener("click", (e) => {
+						e.preventDefault();
+						// eslint-disable-next-line @typescript-eslint/no-explicit-any
+						(this.app as any).internalPlugins?.getPluginById("global-search")?.instance?.openGlobalSearch(`tag:#${tag}`);
+					});
+				}
+			}
+		}
 
-		const badges = header.createDiv({ cls: "mise-recipe-badges" });
-
-		for (const tag of diet) {
-			const badge = badges.createSpan({
-				cls: "mise-badge mise-badge-diet",
-				text: tag,
+		const resolvedBadges = (settings.customBadges ?? [])
+			.filter(b => b.enabled && (b.type === "separator" || b.type === "newline" || b.formula || b.property))
+			.map(b => {
+				if (b.type === "separator" || b.type === "newline") return { badge: b, values: null };
+				const values = b.formula
+					? (() => {
+						const v = evalFormula(b.formula, frontmatter);
+						if (v === null) return null;
+						const s = normalizeScalar(v, b.valueType);
+						return s ? [s] : null;
+					})()
+					: resolveBadgeValues(frontmatter[b.property], b);
+				return { badge: b, values };
 			});
-			badge.setAttribute("title", `Diet: ${tag}`);
-		}
 
-		this.renderTimeBadge(badges, "Prep", times.prep);
-		this.renderTimeBadge(badges, "Cook", times.cook);
-		// Only show Total when neither prep nor cook is present (otherwise
-		// Total is just their sum and would be redundant noise).
-		if (times.prep === null && times.cook === null) {
-			this.renderTimeBadge(badges, "Total", times.total);
-		}
+		const hasRealBadges = resolvedBadges.some(({ badge, values }) =>
+			badge.type !== "separator" && badge.type !== "newline" && values !== null);
+		if (!hasRealBadges) return;
 
-		if (lastMade !== null) {
-			this.renderLastMade(badges, lastMade);
+		const badgesEl = header.createDiv({ cls: "mise-recipe-badges" });
+		for (const { badge, values } of resolvedBadges) {
+			if (badge.type === "newline") {
+				badgesEl.createSpan({ cls: "mise-badge-newline" });
+				continue;
+			}
+			if (badge.type === "separator") {
+				badgesEl.createSpan({ cls: "mise-badge-separator", text: badge.label || "·" });
+				continue;
+			}
+			if (values === null) continue;
+			for (const val of values) {
+				this.renderBadge(badgesEl, badge, val);
+			}
 		}
 	}
 
-	private renderTimeBadge(
-		row: HTMLElement,
-		label: string,
-		minutes: number | null,
-	): void {
-		if (minutes === null) return;
-		const badge = row.createSpan({
-			cls: "mise-badge mise-badge-time",
-		});
-		const icon = badge.createSpan({ cls: "mise-badge-icon" });
-		setIcon(icon, "clock");
-		badge.createSpan({
-			cls: "mise-badge-label",
-			text: `${label}`,
-		});
-		badge.createSpan({
-			cls: "mise-badge-value",
-			text: formatMinutes(minutes),
-		});
-		badge.setAttribute("title", `${label} time: ${formatMinutes(minutes)}`);
-	}
-
-	private renderLastMade(
-		row: HTMLElement,
-		lastMade: string | null,
-	): void {
-		if (lastMade === null) return;
-		const badge = row.createSpan({
-			cls: "mise-badge mise-badge-last-made",
-		});
-		const icon = badge.createSpan({ cls: "mise-badge-icon" });
-		setIcon(icon, "calendar");
-		badge.createSpan({
-			cls: "mise-badge-label",
-			text: "Last made",
-		});
-		badge.createSpan({
-			cls: "mise-badge-value",
-			text: lastMade,
-		});
-		badge.setAttribute("title", `Last made: ${lastMade}`);
+	private renderBadge(row: HTMLElement, badge: CustomBadge, value: string): void {
+		const colorCls = badge.color !== "default" ? ` mise-badge-custom-${badge.color}` : "";
+		const el = row.createSpan({ cls: `mise-badge${colorCls}` });
+		if (badge.icon) {
+			const iconEl = el.createSpan({ cls: "mise-badge-icon" });
+			setIcon(iconEl, badge.icon);
+		}
+		const label = badge.label || badge.property;
+		if (!badge.hideLabel) {
+			el.createSpan({ cls: "mise-badge-label", text: label });
+		}
+		if (value) {
+			el.createSpan({ cls: "mise-badge-value", text: `${badge.prefix}${value}${badge.suffix}` });
+		}
+		const display = value ? `${badge.prefix}${value}${badge.suffix}` : "";
+		el.setAttribute("title", display ? `${label}: ${display}` : label);
 	}
 
 	private renderAllergenWarning(

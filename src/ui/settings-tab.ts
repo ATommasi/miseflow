@@ -1,11 +1,20 @@
 import {
 	AbstractInputSuggest,
 	App,
+	Modal,
 	Plugin,
 	PluginSettingTab,
 	Setting,
 	TFolder,
+	setIcon,
 } from "obsidian";
+import { EditorState } from "@codemirror/state";
+import { EditorView, keymap } from "@codemirror/view";
+import { defaultKeymap } from "@codemirror/commands";
+import { syntaxHighlighting } from "@codemirror/language";
+import { javascript } from "@codemirror/lang-javascript";
+import { linter, lintGutter, Diagnostic } from "@codemirror/lint";
+import { classHighlighter } from "@lezer/highlight";
 import { GroceryListManager } from "../grocery/manager";
 import {
 	DEFAULT_GI_DICTIONARY,
@@ -13,9 +22,10 @@ import {
 } from "../parser/glycemic";
 import {
 	DEFAULT_CATEGORY_ORDER,
+	DEFAULT_SETTINGS,
 	MiseFlowSettings,
 } from "../settings";
-import { CategoryOverride } from "../types";
+import { BadgeColor, BadgeType, CategoryOverride, CustomBadge } from "../types";
 
 export interface SettingsHost {
 	app: App;
@@ -49,6 +59,297 @@ class FolderSuggest extends AbstractInputSuggest<TFolder> {
 	selectSuggestion(folder: TFolder): void {
 		this.setValue(folder.path);
 		this.close();
+	}
+}
+
+// ---------------------------------------------------------------------------
+// Badge edit modal
+// ---------------------------------------------------------------------------
+
+class BadgeEditModal extends Modal {
+	private draft: CustomBadge;
+	private formulaEditor: EditorView | null = null;
+
+	constructor(
+		app: App,
+		badge: CustomBadge,
+		private readonly onSave: (badge: CustomBadge) => Promise<void>,
+	) {
+		super(app);
+		this.draft = { ...badge };
+	}
+
+	override onOpen(): void {
+		const { contentEl } = this;
+		const isBuiltin = !!this.draft.builtin;
+		contentEl.addClass("mise-badge-edit-modal");
+		const badgeTitle = this.draft.label || this.draft.property;
+		this.titleEl.setText(badgeTitle ? `Edit badge: ${badgeTitle}` : "Add badge");
+
+		if (this.draft.valueType === "minutes") {
+			const note = contentEl.createDiv({ cls: "mise-badge-edit-modal-note" });
+			note.createSpan({ text: "ℹ️  " });
+			note.createSpan({ text: "This value is stored as minutes and will be auto-formatted as a duration (e.g. 90 → 1h 30m). Prefix and suffix are applied after formatting." });
+		}
+
+		// ── Formula toggle ──────────────────────────────────────────────
+		let useFormula = !!(this.draft.formula);
+
+		const formulaSetting = new Setting(contentEl)
+			.setName("Formula")
+			.setDesc("JavaScript expression evaluated with all frontmatter properties in scope. Return a string or number.");
+		formulaSetting.settingEl.addClass("mise-badge-formula-setting");
+		const editorWrap = formulaSetting.settingEl.createDiv({ cls: "mise-badge-formula-editor" });
+
+		const formulaLinter = linter((view): Diagnostic[] => {
+			const doc = view.state.doc.toString().trim();
+			this.draft.formula = doc || undefined;
+			if (!doc) return [];
+			try {
+				// eslint-disable-next-line @typescript-eslint/no-implied-eval
+				new Function(`"use strict"; return (${doc});`);
+				return [];
+			} catch (e) {
+				return [{
+					from: 0,
+					to: view.state.doc.length,
+					severity: "error",
+					message: (e as Error).message,
+				}];
+			}
+		}, { delay: 300 });
+
+		const formulaTheme = EditorView.theme({
+			"&": {
+				fontSize: "var(--font-ui-smaller)",
+				fontFamily: "var(--font-monospace)",
+				border: "1px solid var(--background-modifier-border)",
+				borderRadius: "var(--input-radius)",
+				background: "var(--background-primary)",
+			},
+			"&.cm-focused": {
+				outline: "none",
+				borderColor: "var(--interactive-accent)",
+				boxShadow: "0 0 0 2px color-mix(in srgb, var(--interactive-accent) 25%, transparent)",
+			},
+			".cm-content": {
+				color: "var(--text-normal)",
+				caretColor: "var(--text-normal)",
+				padding: "8px",
+				minHeight: "75px",
+			},
+			".cm-line": { lineHeight: "1.6" },
+			".cm-gutters": {
+				background: "var(--background-secondary)",
+				border: "none",
+				borderRight: "1px solid var(--background-modifier-border)",
+				color: "var(--text-faint)",
+			},
+		});
+
+		const formulaEditor = new EditorView({
+			state: EditorState.create({
+				doc: this.draft.formula ?? "",
+				extensions: [
+					javascript(),
+					syntaxHighlighting(classHighlighter),
+					keymap.of(defaultKeymap),
+					formulaLinter,
+					lintGutter(),
+					formulaTheme,
+					EditorView.lineWrapping,
+				],
+			}),
+			parent: editorWrap,
+		});
+		this.formulaEditor = formulaEditor;
+
+		const propertySetting = new Setting(contentEl)
+			.setName("Property")
+			.setDesc("Frontmatter key to read from the recipe note.")
+			.addText(t =>
+				t.setPlaceholder("E.g. Cuisine")
+					.setValue(this.draft.property)
+					.onChange(v => { this.draft.property = v.trim(); }),
+			);
+
+		const prefixSetting = new Setting(contentEl)
+			.setName("Prefix")
+			.setDesc("Text prepended to the value, e.g. \"$\".")
+			.addText(t =>
+				t.setPlaceholder("Ex. $")
+					.setValue(this.draft.prefix)
+					.onChange(v => { this.draft.prefix = v; }),
+			);
+
+		const suffixSetting = new Setting(contentEl)
+			.setName("Suffix")
+			.setDesc("Text appended to the value, e.g. \" kcal\" or \" min\".")
+			.addText(t =>
+				t.setPlaceholder("Ex. Kcal")
+					.setValue(this.draft.suffix)
+					.onChange(v => { this.draft.suffix = v; }),
+			);
+
+		const splitSetting = new Setting(contentEl)
+			.setName("Split array")
+			.setDesc("When the property is a list, show one badge per item instead of a single comma-joined badge.")
+			.addToggle(t =>
+				t.setValue(this.draft.splitArray).onChange(v => { this.draft.splitArray = v; }),
+			);
+
+		const applyVisibility = (): void => {
+			toggleSetting.settingEl.style.display = isBuiltin ? "none" : "";
+			formulaSetting.settingEl.style.display = useFormula ? "" : "none";
+			propertySetting.settingEl.style.display = useFormula ? "none" : "";
+			prefixSetting.settingEl.style.display = isBuiltin || useFormula ? "none" : "";
+			suffixSetting.settingEl.style.display = isBuiltin || useFormula ? "none" : "";
+			splitSetting.settingEl.style.display = isBuiltin || useFormula ? "none" : "";
+		};
+
+		// Insert the toggle *before* the fields we just built by prepending to contentEl.
+		// Use a Setting so it gets standard styling.
+		const toggleSetting = new Setting(contentEl)
+			.setName("Use formula")
+			.setDesc("Replace property lookup with a custom JavaScript expression.")
+			.addToggle(t => t.setValue(useFormula).onChange(v => {
+				useFormula = v;
+				if (!v) this.draft.formula = undefined;
+				applyVisibility();
+			}));
+		// Move the toggle above the formula/property fields.
+		contentEl.insertBefore(toggleSetting.settingEl, formulaSetting.settingEl);
+
+		applyVisibility();
+
+		// ── Shared fields (always visible) ──────────────────────────────
+		new Setting(contentEl)
+			.setName("Label")
+			.setDesc("Display label shown in the badge. Defaults to the property name.")
+			.addText(t =>
+				t.setPlaceholder("Ex. Cuisine")
+					.setValue(this.draft.label)
+					.onChange(v => { this.draft.label = v; }),
+			);
+
+		new Setting(contentEl)
+			.setName("Show label")
+			.setDesc("When off, only the value is shown with no label text.")
+			.addToggle(t =>
+				t.setValue(!this.draft.hideLabel).onChange(v => { this.draft.hideLabel = !v; }),
+			);
+
+		let iconPreviewEl: HTMLElement;
+		new Setting(contentEl)
+			.setName("Icon")
+			.setDesc("Lucide icon name shown inside the badge. Leave blank for no icon.")
+			.addText(t => {
+				t.setPlaceholder("Ex. Tag, globe, bookmark")
+					.setValue(this.draft.icon)
+					.onChange(v => {
+						this.draft.icon = v.trim();
+						iconPreviewEl.empty();
+						if (this.draft.icon) setIcon(iconPreviewEl, this.draft.icon);
+					});
+				iconPreviewEl = t.inputEl.parentElement!.createSpan({ cls: "mise-settings-badge-icon-preview" });
+				if (this.draft.icon) setIcon(iconPreviewEl, this.draft.icon);
+			});
+
+		new Setting(contentEl)
+			.setName("Color")
+			.addDropdown(d => {
+				const opts: { value: BadgeColor; label: string }[] = [
+					{ value: "default", label: "Default" },
+					{ value: "green", label: "Green" },
+					{ value: "blue", label: "Blue" },
+					{ value: "purple", label: "Purple" },
+					{ value: "yellow", label: "Yellow" },
+					{ value: "red", label: "Red" },
+				];
+				for (const o of opts) d.addOption(o.value, o.label);
+				d.setValue(this.draft.color).onChange(v => { this.draft.color = v as BadgeColor; });
+			});
+
+		new Setting(contentEl)
+			.addButton(b =>
+				b.setButtonText("Save").setCta().onClick(async () => {
+					await this.onSave({ ...this.draft });
+					this.close();
+				}),
+			)
+			.addButton(b =>
+				b.setButtonText("Cancel").onClick(() => this.close()),
+			);
+	}
+
+	override onClose(): void {
+		this.formulaEditor?.destroy();
+		this.formulaEditor = null;
+		this.contentEl.empty();
+	}
+}
+
+// ---------------------------------------------------------------------------
+// Separator edit modal
+// ---------------------------------------------------------------------------
+
+const SEPARATOR_PRESETS = ["·", "|", "•", "/", "—", "◆", "×"];
+
+class SeparatorEditModal extends Modal {
+	private char: string;
+
+	constructor(
+		app: App,
+		badge: CustomBadge,
+		private readonly onSave: (badge: CustomBadge) => Promise<void>,
+	) {
+		super(app);
+		this.char = badge.label || "·";
+	}
+
+	override onOpen(): void {
+		const { contentEl } = this;
+		this.titleEl.setText("Edit separator");
+
+		const presetRow = contentEl.createDiv({ cls: "mise-separator-presets" });
+		for (const p of SEPARATOR_PRESETS) {
+			const btn = presetRow.createEl("button", { cls: "mise-separator-preset-btn", text: p });
+			if (p === this.char) btn.classList.add("is-active");
+			btn.addEventListener("click", () => {
+				this.char = p;
+				input.value = p;
+				presetRow.querySelectorAll(".mise-separator-preset-btn").forEach(b => b.classList.remove("is-active"));
+				btn.classList.add("is-active");
+			});
+		}
+
+		let input: HTMLInputElement;
+		new Setting(contentEl)
+			.setName("Custom")
+			.setDesc("Any character or short string.")
+			.addText(t => {
+				input = t.inputEl;
+				t.setValue(this.char).onChange(v => {
+					this.char = v || "·";
+					presetRow.querySelectorAll(".mise-separator-preset-btn").forEach(b => b.classList.remove("is-active"));
+					const match = presetRow.querySelector(`.mise-separator-preset-btn`) as HTMLButtonElement | null;
+					// Highlight preset button if the typed value matches one
+					presetRow.querySelectorAll<HTMLButtonElement>(".mise-separator-preset-btn").forEach(b => {
+						if (b.textContent === v) b.classList.add("is-active");
+					});
+				});
+			});
+
+		new Setting(contentEl)
+			.addButton(b => b.setButtonText("Save").setCta().onClick(async () => {
+				await this.onSave({ label: this.char, type: "separator", property: "", icon: "", color: "default", valueType: "auto", prefix: "", suffix: "", splitArray: false, enabled: true });
+				this.close();
+			}))
+			.addButton(b => b.setButtonText("Cancel").onClick(() => this.close()));
+	}
+
+	override onClose(): void {
+		this.contentEl.empty();
 	}
 }
 
@@ -336,6 +637,51 @@ export class MiseFlowSettingsTab extends PluginSettingTab {
 					}),
 			);
 
+		new Setting(containerEl)
+			.setName("Show tags in header")
+			.setDesc("Display frontmatter tags above the badges in the recipe header.")
+			.addToggle(t => t
+				.setValue(this.host.settings.showTagsInHeader)
+				.onChange(async v => {
+					this.host.settings.showTagsInHeader = v;
+					await this.host.saveSettings();
+				}),
+			);
+
+		new Setting(containerEl)
+			.setName("Tag prefix")
+			.setDesc("Prefix each tag with # when displaying.")
+			.addToggle(t => t
+				.setValue(this.host.settings.tagHeaderShowHash)
+				.onChange(async v => {
+					this.host.settings.tagHeaderShowHash = v;
+					await this.host.saveSettings();
+				}),
+			);
+
+		new Setting(containerEl)
+			.setName("Tag format")
+			.setDesc("Show the full tag path or only the last segment.")
+			.addDropdown(d => d
+				.addOption("full", "Full path  (cooking/italian)")
+				.addOption("leaf", "Last segment  (italian)")
+				.setValue(this.host.settings.tagHeaderFullPath ? "full" : "leaf")
+				.onChange(async v => {
+					this.host.settings.tagHeaderFullPath = v === "full";
+					await this.host.saveSettings();
+				}),
+			);
+
+		const badgeSetting = new Setting(containerEl)
+			.setName("Header badges")
+			.setDesc(
+				"Frontmatter properties to surface as badges in the recipe view header. Click a row to edit, drag to reorder. The last made badge property should match the tracking setting in the cooking & tracking section.",
+			);
+		badgeSetting.settingEl.addClass("mise-settings-badge-section");
+		this.renderBadgeList(badgeSetting.settingEl, this.host.settings.customBadges, async (badges) => {
+			this.host.settings.customBadges = badges;
+			await this.host.saveSettings();
+		});
 
 		new Setting(containerEl).setName("Recipe timers").setHeading();
 
@@ -855,6 +1201,184 @@ export class MiseFlowSettingsTab extends PluginSettingTab {
 		onChange: (folders: string[]) => Promise<void>,
 	): void {
 		this.renderStringList(containerEl, folders, "e.g. Recipes/", onChange, true);
+	}
+
+	private renderBadgeList(
+		containerEl: HTMLElement,
+		badges: CustomBadge[],
+		onChange: (badges: CustomBadge[]) => Promise<void>,
+	): void {
+		const current: CustomBadge[] = badges.map(b => ({ ...b }));
+		const listEl = containerEl.createDiv({ cls: "mise-settings-badge-list" });
+		let dragIndex: number | null = null;
+
+		const openModal = (badge: CustomBadge, onSave: (b: CustomBadge) => Promise<void>): void => {
+			new BadgeEditModal(this.app, badge, onSave).open();
+		};
+
+		const renderRows = (): void => {
+			listEl.empty();
+
+			for (let i = 0; i < current.length; i++) {
+				const entry = current[i]!;
+				const isSeparator = entry.type === "separator";
+				const isNewline = entry.type === "newline";
+				const row = listEl.createDiv({ cls: "mise-settings-badge-row" });
+				row.setAttribute("draggable", "true");
+
+				const handle = row.createSpan({ cls: "mise-settings-badge-handle", attr: { title: "Drag to reorder" } });
+				setIcon(handle, "grip-vertical");
+
+				const info = row.createDiv({ cls: "mise-settings-badge-info" });
+				if (isSeparator) {
+					info.createSpan({ cls: "mise-settings-badge-separator-char", text: entry.label || "·" });
+					info.createSpan({ cls: "mise-settings-badge-label-preview", text: "Separator" });
+					info.addEventListener("click", () => {
+						new SeparatorEditModal(this.app, { ...entry }, async (updated) => {
+							current[i] = { ...current[i]!, label: updated.label };
+							await onChange([...current]);
+							renderRows();
+						}).open();
+					});
+				} else if (isNewline) {
+					const icon = info.createSpan({ cls: "mise-settings-badge-newline-icon" });
+					setIcon(icon, "corner-down-left");
+					info.createSpan({ cls: "mise-settings-badge-label-preview", text: "New line" });
+				} else {
+					if (entry.formula) {
+						info.createSpan({ cls: "mise-settings-badge-property mise-settings-badge-formula-tag", text: "ƒ" });
+						const preview = entry.formula.length > 40 ? entry.formula.slice(0, 40) + "…" : entry.formula;
+						info.createSpan({ cls: entry.label ? "mise-settings-badge-property" : "mise-settings-badge-label-preview", text: entry.label || preview });
+						if (entry.label) info.createSpan({ cls: "mise-settings-badge-label-preview", text: preview });
+					} else {
+						info.createSpan({ cls: "mise-settings-badge-property", text: entry.property || "(no property)" });
+						if (entry.label) {
+							info.createSpan({ cls: "mise-settings-badge-label-preview", text: entry.label });
+						}
+					}
+					info.addEventListener("click", () => {
+						openModal({ ...entry }, async (updated) => {
+							current[i] = updated;
+							await onChange([...current]);
+							renderRows();
+						});
+					});
+				}
+
+				const enabledInput = row.createEl("input", { type: "checkbox", cls: "mise-settings-badge-checkbox" });
+				enabledInput.checked = entry.enabled;
+				enabledInput.setAttribute("title", entry.enabled ? "Visible" : "Hidden");
+				enabledInput.addEventListener("change", async () => {
+					current[i] = { ...current[i]!, enabled: enabledInput.checked };
+					await onChange([...current]);
+				});
+
+				const removeBtn = row.createEl("button", {
+					cls: "mise-settings-badge-icon-btn clickable-icon",
+					attr: { type: "button", "aria-label": "Remove badge" },
+				});
+				setIcon(removeBtn, "trash-2");
+				removeBtn.addEventListener("click", () => {
+					current.splice(i, 1);
+					void onChange([...current]);
+					renderRows();
+				});
+
+				// ── Drag and drop ──
+				row.addEventListener("dragstart", (e) => {
+					dragIndex = i;
+					row.classList.add("is-dragging");
+					if (e.dataTransfer) e.dataTransfer.effectAllowed = "move";
+				});
+				row.addEventListener("dragend", () => {
+					row.classList.remove("is-dragging");
+					dragIndex = null;
+					listEl.querySelectorAll(".mise-settings-badge-row").forEach(r => r.classList.remove("drag-over"));
+				});
+				row.addEventListener("dragover", (e) => {
+					e.preventDefault();
+					if (e.dataTransfer) e.dataTransfer.dropEffect = "move";
+					if (dragIndex !== null && dragIndex !== i) row.classList.add("drag-over");
+				});
+				row.addEventListener("dragleave", () => row.classList.remove("drag-over"));
+				row.addEventListener("drop", (e) => {
+					e.preventDefault();
+					row.classList.remove("drag-over");
+					if (dragIndex !== null && dragIndex !== i) {
+						const [moved] = current.splice(dragIndex, 1);
+						current.splice(i, 0, moved!);
+						void onChange([...current]);
+						renderRows();
+					}
+					dragIndex = null;
+				});
+			}
+
+			const footer = listEl.createDiv({ cls: "mise-settings-badge-footer" });
+
+			const addBtn = footer.createEl("button", {
+				cls: "mise-settings-list-add",
+				attr: { type: "button" },
+			});
+			addBtn.setText("+ add badge");
+			addBtn.addEventListener("click", () => {
+				openModal(
+					{ property: "", label: "", icon: "", color: "default", valueType: "auto", prefix: "", suffix: "", splitArray: false, enabled: true },
+					async (newBadge) => {
+						current.push(newBadge);
+						await onChange([...current]);
+						renderRows();
+					},
+				);
+			});
+
+			const addSepBtn = footer.createEl("button", { cls: "mise-settings-list-add", attr: { type: "button" } });
+			addSepBtn.setText("+ separator");
+			addSepBtn.addEventListener("click", () => {
+				const newSep: CustomBadge = { type: "separator", property: "", label: "·", icon: "", color: "default", valueType: "auto", prefix: "", suffix: "", splitArray: false, enabled: true };
+				new SeparatorEditModal(this.app, newSep, async (updated) => {
+					current.push({ ...newSep, label: updated.label });
+					await onChange([...current]);
+					renderRows();
+				}).open();
+			});
+
+			const addNlBtn = footer.createEl("button", { cls: "mise-settings-list-add", attr: { type: "button" } });
+			addNlBtn.setText("+ new line");
+			addNlBtn.addEventListener("click", async () => {
+				current.push({ type: "newline", property: "", label: "", icon: "", color: "default", valueType: "auto", prefix: "", suffix: "", splitArray: false, enabled: true });
+				await onChange([...current]);
+				renderRows();
+			});
+
+			const resetBtn = footer.createEl("button", {
+				cls: "mise-settings-badge-reset",
+				attr: { type: "button" },
+			});
+			resetBtn.setText("Reset to defaults");
+			let resetPending = false;
+			resetBtn.addEventListener("click", async () => {
+				if (!resetPending) {
+					resetPending = true;
+					resetBtn.setText("Confirm reset?");
+					resetBtn.classList.add("is-warning");
+					setTimeout(() => {
+						if (resetPending) {
+							resetPending = false;
+							resetBtn.setText("Reset to defaults");
+							resetBtn.classList.remove("is-warning");
+						}
+					}, 3000);
+				} else {
+					resetPending = false;
+					current.splice(0, current.length, ...DEFAULT_SETTINGS.customBadges.map(b => ({ ...b })));
+					await onChange([...current]);
+					renderRows();
+				}
+			});
+		};
+
+		renderRows();
 	}
 
 	/**

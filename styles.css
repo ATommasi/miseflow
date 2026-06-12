@@ -373,8 +373,37 @@ settings:
 .mise-recipe-hero-rating {
 	display: flex;
 	align-items: center;
-	gap: var(--size-2-2);
-	flex-wrap: nowrap;
+}
+
+.mise-recipe-hero-rating.is-unrated {
+	opacity: 0;
+	transition: opacity 120ms ease;
+}
+
+.mise-recipe-hero-rating.is-unrated:hover {
+	opacity: 1;
+}
+
+.mise-recipe-header-stars {
+	display: flex;
+	gap: 1px;
+}
+
+.mise-recipe-header-star {
+	font-size: 13px;
+	line-height: 1;
+	cursor: pointer;
+	color: var(--text-faint);
+	transition: color 80ms ease, transform 80ms ease;
+	user-select: none;
+}
+
+.mise-recipe-header-star.is-filled {
+	color: var(--color-yellow, #f1c40f);
+}
+
+.mise-recipe-header-star.is-preview {
+	color: color-mix(in srgb, var(--color-yellow, #f1c40f) 55%, var(--text-faint));
 }
 
 .mise-recipe-badges {
@@ -420,6 +449,26 @@ settings:
 	font-variant-numeric: tabular-nums;
 }
 
+.mise-recipe-header-tags {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--size-2-1);
+}
+
+.mise-badge-separator {
+	display: inline-flex;
+	align-items: center;
+	color: var(--text-faint);
+	font-size: var(--font-ui-smaller);
+	user-select: none;
+	padding: 0 2px;
+}
+
+.mise-badge-newline {
+	flex-basis: 100%;
+	height: 0;
+}
+
 .mise-badge-last-made {
 	background: var(--background-modifier-success-rgb, var(--background-secondary));
 	color: var(--color-green, #2ea043);
@@ -435,6 +484,36 @@ settings:
 	border-color: color-mix(in srgb, var(--color-green, #2ea043) 30%, transparent);
 	background-color: color-mix(in srgb, var(--color-green, #2ea043) 12%, var(--background-secondary));
 	text-transform: capitalize;
+}
+
+.mise-badge-custom-green {
+	color: var(--color-green, #2ea043);
+	background-color: color-mix(in srgb, var(--color-green, #2ea043) 12%, var(--background-secondary));
+	border-color: color-mix(in srgb, var(--color-green, #2ea043) 30%, transparent);
+}
+
+.mise-badge-custom-blue {
+	color: var(--color-blue, #1e90ff);
+	background-color: color-mix(in srgb, var(--color-blue, #1e90ff) 12%, var(--background-secondary));
+	border-color: color-mix(in srgb, var(--color-blue, #1e90ff) 30%, transparent);
+}
+
+.mise-badge-custom-purple {
+	color: var(--color-purple, #9b59b6);
+	background-color: color-mix(in srgb, var(--color-purple, #9b59b6) 12%, var(--background-secondary));
+	border-color: color-mix(in srgb, var(--color-purple, #9b59b6) 30%, transparent);
+}
+
+.mise-badge-custom-yellow {
+	color: var(--color-yellow, #e0b430);
+	background-color: color-mix(in srgb, var(--color-yellow, #e0b430) 12%, var(--background-secondary));
+	border-color: color-mix(in srgb, var(--color-yellow, #e0b430) 30%, transparent);
+}
+
+.mise-badge-custom-red {
+	color: var(--color-red, #e03e3e);
+	background-color: color-mix(in srgb, var(--color-red, #e03e3e) 12%, var(--background-secondary));
+	border-color: color-mix(in srgb, var(--color-red, #e03e3e) 30%, transparent);
 }
 
 
@@ -1296,6 +1375,241 @@ settings:
 	color: var(--text-muted);
 	flex-shrink: 0;
 	font-size: var(--font-ui-small);
+}
+
+/* ── Badge list (settings) ───────────────────────────────────────────────── */
+
+.mise-settings-badge-section {
+	flex-direction: column;
+	align-items: stretch;
+	gap: var(--size-4-2);
+}
+
+.mise-settings-badge-section .setting-item-control {
+	display: none;
+}
+
+.mise-settings-badge-list {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	width: 100%;
+}
+
+.mise-settings-badge-row {
+	display: flex;
+	align-items: center;
+	gap: var(--size-2-3);
+	padding: var(--size-2-2) var(--size-2-2);
+	border-radius: var(--radius-s);
+}
+
+.mise-settings-badge-row:hover {
+	background: var(--background-modifier-hover);
+}
+
+.mise-settings-badge-row.drag-over {
+	border-top: 2px solid var(--interactive-accent);
+}
+
+.mise-settings-badge-row.is-dragging {
+	opacity: 0.4;
+}
+
+.mise-settings-badge-handle {
+	flex-shrink: 0;
+	color: var(--text-faint);
+	cursor: grab;
+	display: flex;
+	align-items: center;
+}
+
+.mise-settings-badge-handle:active {
+	cursor: grabbing;
+}
+
+.mise-settings-badge-info {
+	flex: 1;
+	display: flex;
+	align-items: center;
+	gap: var(--size-4-2);
+	cursor: pointer;
+	min-width: 0;
+}
+
+.mise-settings-badge-property {
+	font-size: var(--font-ui-small);
+	color: var(--text-normal);
+	font-weight: var(--font-medium);
+}
+
+.mise-settings-badge-label-preview {
+	font-size: var(--font-ui-smaller);
+	color: var(--text-muted);
+}
+
+.mise-settings-badge-separator-char {
+	font-size: var(--font-ui-small);
+	color: var(--text-faint);
+	font-weight: var(--font-medium);
+	min-width: 16px;
+	text-align: center;
+}
+
+.mise-settings-badge-newline-icon {
+	display: inline-flex;
+	align-items: center;
+	color: var(--text-faint);
+}
+
+.mise-settings-badge-newline-icon .svg-icon {
+	width: 14px;
+	height: 14px;
+}
+
+.mise-separator-presets {
+	display: flex;
+	gap: var(--size-2-2);
+	padding: var(--size-4-2) 0;
+}
+
+.mise-separator-preset-btn {
+	min-width: 32px;
+	height: 32px;
+	padding: 0 var(--size-2-2);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-s);
+	background: var(--background-secondary);
+	color: var(--text-normal);
+	cursor: pointer;
+	font-size: var(--font-ui-medium);
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.mise-separator-preset-btn.is-active {
+	border-color: var(--interactive-accent);
+	background: color-mix(in srgb, var(--interactive-accent) 15%, var(--background-secondary));
+	color: var(--interactive-accent);
+}
+
+.mise-settings-badge-checkbox {
+	cursor: pointer;
+	flex-shrink: 0;
+}
+
+.mise-settings-badge-icon-btn {
+	flex-shrink: 0;
+	width: 24px;
+	height: 24px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	border: none;
+	border-radius: var(--radius-s);
+	background: transparent;
+	color: var(--text-faint);
+	cursor: pointer;
+	padding: 0;
+}
+
+.mise-settings-badge-icon-btn:hover {
+	background: var(--background-modifier-hover);
+	color: var(--text-error);
+}
+
+.mise-settings-badge-icon-preview {
+	flex-shrink: 0;
+	display: inline-flex;
+	align-items: center;
+	color: var(--text-muted);
+	width: 16px;
+	height: 16px;
+	margin-left: var(--size-2-1);
+}
+
+.mise-settings-badge-footer {
+	display: flex;
+	align-items: center;
+	gap: var(--size-4-2);
+	padding-top: var(--size-2-2);
+}
+
+.mise-settings-badge-reset {
+	font-size: var(--font-ui-smaller);
+	color: var(--text-faint);
+	background: transparent;
+	border: none;
+	padding: var(--size-2-1) var(--size-4-1);
+	cursor: pointer;
+	border-radius: var(--radius-s);
+}
+
+.mise-settings-badge-reset:hover {
+	color: var(--text-muted);
+	background: var(--background-modifier-hover);
+}
+
+.mise-settings-badge-reset.is-warning {
+	color: var(--text-error);
+}
+
+.mise-settings-badge-formula-tag {
+	font-family: var(--font-monospace);
+	font-size: var(--font-ui-smaller);
+	background: color-mix(in srgb, var(--color-purple, #9b59b6) 15%, var(--background-secondary));
+	color: var(--color-purple, #9b59b6);
+	border-radius: var(--radius-s);
+	padding: 1px 5px;
+}
+
+/* Modal */
+.mise-badge-edit-modal .setting-item {
+	border: none;
+	padding: var(--size-4-1) 0;
+}
+
+.mise-badge-formula-setting {
+	flex-direction: column;
+	align-items: stretch;
+	gap: var(--size-2-2);
+}
+
+.mise-badge-formula-setting .setting-item-info {
+	width: 100%;
+}
+
+.mise-badge-formula-setting .setting-item-control {
+	display: none;
+}
+
+.mise-badge-formula-editor {
+	width: 100%;
+	border-radius: var(--input-radius);
+	overflow: hidden;
+}
+
+.mise-badge-formula-editor .tok-keyword    { color: var(--color-purple, #c678dd); }
+.mise-badge-formula-editor .tok-string,
+.mise-badge-formula-editor .tok-string2    { color: var(--color-green, #98c379); }
+.mise-badge-formula-editor .tok-number     { color: var(--color-orange, #d19a66); }
+.mise-badge-formula-editor .tok-comment    { color: var(--text-faint); font-style: italic; }
+.mise-badge-formula-editor .tok-operator   { color: var(--color-cyan, #56b6c2); }
+.mise-badge-formula-editor .tok-propertyName { color: var(--color-blue, #61afef); }
+.mise-badge-formula-editor .tok-variableName { color: var(--text-normal); }
+.mise-badge-formula-editor .tok-function   { color: var(--color-blue, #61afef); }
+.mise-badge-formula-editor .tok-bool       { color: var(--color-purple, #c678dd); }
+.mise-badge-formula-editor .tok-null       { color: var(--color-purple, #c678dd); }
+
+.mise-badge-edit-modal-note {
+	font-size: var(--font-ui-smaller);
+	color: var(--text-muted);
+	background: var(--background-modifier-info);
+	border-radius: var(--radius-s);
+	padding: var(--size-2-2) var(--size-4-2);
+	margin-bottom: var(--size-4-2);
+	line-height: 1.5;
 }
 
 /* ── Category order textarea ─────────────────────────────────────────────── */
