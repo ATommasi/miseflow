@@ -25,7 +25,7 @@ import {
 	DEFAULT_SETTINGS,
 	MiseFlowSettings,
 } from "../settings";
-import { BadgeColor, BadgeType, CategoryOverride, CustomBadge } from "../types";
+import { BadgeColor, CategoryOverride, CustomBadge } from "../types";
 
 export interface SettingsHost {
 	app: App;
@@ -104,19 +104,7 @@ class BadgeEditModal extends Modal {
 		const formulaLinter = linter((view): Diagnostic[] => {
 			const doc = view.state.doc.toString().trim();
 			this.draft.formula = doc || undefined;
-			if (!doc) return [];
-			try {
-				// eslint-disable-next-line @typescript-eslint/no-implied-eval
-				new Function(`"use strict"; return (${doc});`);
-				return [];
-			} catch (e) {
-				return [{
-					from: 0,
-					to: view.state.doc.length,
-					severity: "error",
-					message: (e as Error).message,
-				}];
-			}
+			return [];
 		}, { delay: 300 });
 
 		const formulaTheme = EditorView.theme({
@@ -332,7 +320,6 @@ class SeparatorEditModal extends Modal {
 				t.setValue(this.char).onChange(v => {
 					this.char = v || "·";
 					presetRow.querySelectorAll(".mise-separator-preset-btn").forEach(b => b.classList.remove("is-active"));
-					const match = presetRow.querySelector(`.mise-separator-preset-btn`) as HTMLButtonElement | null;
 					// Highlight preset button if the typed value matches one
 					presetRow.querySelectorAll<HTMLButtonElement>(".mise-separator-preset-btn").forEach(b => {
 						if (b.textContent === v) b.classList.add("is-active");
@@ -1268,9 +1255,9 @@ export class MiseFlowSettingsTab extends PluginSettingTab {
 				const enabledInput = row.createEl("input", { type: "checkbox", cls: "mise-settings-badge-checkbox" });
 				enabledInput.checked = entry.enabled;
 				enabledInput.setAttribute("title", entry.enabled ? "Visible" : "Hidden");
-				enabledInput.addEventListener("change", async () => {
+				enabledInput.addEventListener("change", () => {
 					current[i] = { ...current[i]!, enabled: enabledInput.checked };
-					await onChange([...current]);
+					void onChange([...current]);
 				});
 
 				const removeBtn = row.createEl("button", {
@@ -1345,10 +1332,10 @@ export class MiseFlowSettingsTab extends PluginSettingTab {
 
 			const addNlBtn = footer.createEl("button", { cls: "mise-settings-list-add", attr: { type: "button" } });
 			addNlBtn.setText("+ new line");
-			addNlBtn.addEventListener("click", async () => {
+			addNlBtn.addEventListener("click", () => {
 				current.push({ type: "newline", property: "", label: "", icon: "", color: "default", valueType: "auto", prefix: "", suffix: "", splitArray: false, enabled: true });
-				await onChange([...current]);
 				renderRows();
+				void onChange([...current]);
 			});
 
 			const resetBtn = footer.createEl("button", {
@@ -1357,12 +1344,12 @@ export class MiseFlowSettingsTab extends PluginSettingTab {
 			});
 			resetBtn.setText("Reset to defaults");
 			let resetPending = false;
-			resetBtn.addEventListener("click", async () => {
+			resetBtn.addEventListener("click", () => {
 				if (!resetPending) {
 					resetPending = true;
 					resetBtn.setText("Confirm reset?");
 					resetBtn.classList.add("is-warning");
-					setTimeout(() => {
+					window.setTimeout(() => {
 						if (resetPending) {
 							resetPending = false;
 							resetBtn.setText("Reset to defaults");
@@ -1372,8 +1359,8 @@ export class MiseFlowSettingsTab extends PluginSettingTab {
 				} else {
 					resetPending = false;
 					current.splice(0, current.length, ...DEFAULT_SETTINGS.customBadges.map(b => ({ ...b })));
-					await onChange([...current]);
 					renderRows();
+					void onChange([...current]);
 				}
 			});
 		};

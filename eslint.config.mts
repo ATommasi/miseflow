@@ -31,6 +31,7 @@ export default tseslint.config(
 			"obsidianmd/ui/sentence-case": "warn",
 			// Async event handlers are idiomatic in Obsidian plugins.
 			"@typescript-eslint/no-misused-promises": "off",
+			"no-new-func": "error",
 		},
 	},
 	globalIgnores([

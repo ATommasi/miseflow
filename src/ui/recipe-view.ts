@@ -139,7 +139,7 @@ function normalizeScalar(v: unknown, valueType: BadgeValueType): string {
 
 function evalFormula(expr: string, fm: Record<string, unknown>): string | number | boolean | null {
 	try {
-		// eslint-disable-next-line @typescript-eslint/no-implied-eval
+		// eslint-disable-next-line @typescript-eslint/no-implied-eval, no-new-func -- user-defined badge formulas require dynamic code execution; input is controlled by the plugin user in their own vault
 		const fn = new Function(...Object.keys(fm), `"use strict"; return (${expr});`) as (...args: unknown[]) => unknown;
 		const result = fn(...Object.values(fm));
 		if (result == null) return null;
@@ -966,8 +966,7 @@ export class RecipeView extends TextFileView {
 					const a = tagsEl.createEl("a", { cls: "tag", text, href: `#${tag}` });
 					a.addEventListener("click", (e) => {
 						e.preventDefault();
-						// eslint-disable-next-line @typescript-eslint/no-explicit-any
-						(this.app as any).internalPlugins?.getPluginById("global-search")?.instance?.openGlobalSearch(`tag:#${tag}`);
+						(this.app as unknown as { internalPlugins?: { getPluginById(id: string): { instance: { openGlobalSearch(q: string): void } } | undefined } }).internalPlugins?.getPluginById("global-search")?.instance?.openGlobalSearch(`tag:#${tag}`);
 					});
 				}
 			}
