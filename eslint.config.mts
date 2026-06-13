@@ -32,6 +32,7 @@ export default tseslint.config(
 			// Async event handlers are idiomatic in Obsidian plugins.
 			"@typescript-eslint/no-misused-promises": "off",
 			"no-new-func": "error",
+			"eqeqeq": ["error", "always", { null: "ignore" }],
 		},
 	},
 	globalIgnores([

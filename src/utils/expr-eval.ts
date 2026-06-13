@@ -111,8 +111,8 @@ class ExprParser {
 		while (true) {
 			if (this.match("===")) { const r = this.parseRelational(); left = left === r; }
 			else if (this.match("!==")) { const r = this.parseRelational(); left = left !== r; }
-			else if (this.match("==")) { const r = this.parseRelational(); left = left == r; } // eslint-disable-line eqeqeq
-			else if (this.match("!=")) { const r = this.parseRelational(); left = left != r; } // eslint-disable-line eqeqeq
+			else if (this.match("==")) { const r = this.parseRelational(); left = left == r; } // eslint-disable-line eqeqeq -- intentionally implements JS loose equality semantics for the == operator
+			else if (this.match("!=")) { const r = this.parseRelational(); left = left != r; } // eslint-disable-line eqeqeq -- intentionally implements JS loose equality semantics for the != operator
 			else break;
 			this.ws();
 		}
@@ -141,7 +141,7 @@ class ExprParser {
 			const right = this.parseMultiplicative();
 			if (op === "+") {
 				left = typeof left === "string" || typeof right === "string"
-					? String(left ?? "") + String(right ?? "")
+					? String((left ?? "") as string | number | boolean) + String((right ?? "") as string | number | boolean)
 					: (left as number) + (right as number);
 			} else {
 				left = (left as number) - (right as number);
