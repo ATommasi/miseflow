@@ -26,6 +26,7 @@ import {
 	MiseFlowSettings,
 } from "../settings";
 import { BadgeColor, CategoryOverride, CustomBadge } from "../types";
+import { checkExprSyntax } from "../utils/expr-eval";
 
 export interface SettingsHost {
 	app: App;
@@ -104,7 +105,10 @@ class BadgeEditModal extends Modal {
 		const formulaLinter = linter((view): Diagnostic[] => {
 			const doc = view.state.doc.toString().trim();
 			this.draft.formula = doc || undefined;
-			return [];
+			if (!doc) return [];
+			const err = checkExprSyntax(doc);
+			if (!err) return [];
+			return [{ from: 0, to: view.state.doc.length, severity: "error", message: err }];
 		}, { delay: 300 });
 
 		const formulaTheme = EditorView.theme({
