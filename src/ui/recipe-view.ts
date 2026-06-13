@@ -8,6 +8,7 @@ import {
 	setIcon,
 	EventRef,
 } from "obsidian";
+import vm from "vm";
 import { stampRecipeCooked } from "../grocery/selection";
 import { GroceryContribution } from "../grocery/note-writer";
 import { isHighGi, parseGiDictionary } from "../parser/glycemic";
@@ -139,11 +140,9 @@ function normalizeScalar(v: unknown, valueType: BadgeValueType): string {
 
 function evalFormula(expr: string, fm: Record<string, unknown>): string | number | boolean | null {
 	try {
-		// eslint-disable-next-line @typescript-eslint/no-implied-eval, no-new-func -- user-defined badge formulas require dynamic code execution; input is controlled by the plugin user in their own vault
-		const fn = new Function(...Object.keys(fm), `"use strict"; return (${expr});`) as (...args: unknown[]) => unknown;
-		const result = fn(...Object.values(fm));
+		const result = vm.runInNewContext(`(${expr})`, { ...fm }, { timeout: 100 });
 		if (result == null) return null;
-		if (typeof result !== 'string' && typeof result !== 'number' && typeof result !== 'boolean') return null;
+		if (typeof result !== "string" && typeof result !== "number" && typeof result !== "boolean") return null;
 		return result;
 	} catch {
 		return null;
