@@ -16,8 +16,11 @@
 
 MiseFlow is an [Obsidian](https://obsidian.md) plugin that transforms your recipes from simple markdown into a complete meal planning, grocery shopping, and recipe management system.
 
+[Read the docs here](https://miseflow-docs.vercel.app/)
+
 ### Core Features
-- Create a meal plan and generate grocery lists from only the ingredients you need.
+- Import recipes from a URL
+- Create a meal plans and generate grocery lists
 - Shopping assistant with item groupings
 - Pure markdown files for recipes, meal plans and grocery lists
 - Recipe view - desktop and mobile optimized
